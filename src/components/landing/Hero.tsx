@@ -132,19 +132,19 @@ export default function Hero() {
             Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
-          {/* Model ticker — glass pills */}
-          <div className="anim-fade-up anim-d3 flex flex-nowrap justify-center gap-2 mb-12 px-2 overflow-x-auto">
+          {/* Model ticker — glass pills: wrap on mobile, single line on desktop */}
+          <div className="anim-fade-up anim-d3 flex flex-wrap sm:flex-nowrap justify-center gap-2 mb-12 px-2 sm:overflow-x-auto min-w-0">
             {models.map((model) => (
               <span
                 key={model}
-                className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full text-foreground/70 border border-white/[0.08] shrink-0 transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105"
+                className="text-xs sm:text-sm font-semibold tracking-wide px-3 sm:px-4 py-1.5 rounded-full text-foreground/70 border border-white/[0.08] shrink-0 transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105"
                 style={{ background: "rgba(17,17,22,0.5)" }}
               >
                 {model}
               </span>
             ))}
             <span
-              className="text-sm font-bold tracking-wide px-4 py-1.5 rounded-full text-brand-300 border border-brand-200 shrink-0"
+              className="text-xs sm:text-sm font-bold tracking-wide px-3 sm:px-4 py-1.5 rounded-full text-brand-300 border border-brand-200 shrink-0"
               style={{ background: "rgba(232,118,75,0.06)" }}
             >
               +20 more
