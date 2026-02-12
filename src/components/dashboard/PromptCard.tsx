@@ -166,7 +166,7 @@ export function PromptCard({
                   onClick={handlePrevious}
                   onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    'absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    'absolute left-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Previous media"
@@ -179,7 +179,7 @@ export function PromptCard({
                   onClick={handleNext}
                   onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    'absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    'absolute right-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Next media"
@@ -189,7 +189,7 @@ export function PromptCard({
                 </button>
 
                 {/* Navigation Dots */}
-                <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
                   {displayMedia.map((_, index) => (
                     <button
                       key={index}
@@ -235,7 +235,7 @@ export function PromptCard({
         {/* Hover Overlay */}
         <div
           className={cn(
-            'absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-200',
+            'absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-200 pointer-events-none',
             isHovered ? 'opacity-100' : 'opacity-0'
           )}
         />
@@ -243,7 +243,7 @@ export function PromptCard({
         {/* Hover Content — title + actions only */}
         <div
           className={cn(
-            'absolute inset-x-0 bottom-0 p-4 transition-all duration-200',
+            'absolute inset-x-0 bottom-0 z-20 p-4 transition-all duration-200',
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >
