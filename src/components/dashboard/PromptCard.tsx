@@ -118,7 +118,10 @@ export function PromptCard({
               gradientClass
             )}
           >
-            <p className="text-sm font-medium text-white/80 line-clamp-3">
+            <p className={cn(
+              'text-sm font-medium text-white/80 line-clamp-3 transition-opacity duration-200',
+              isHovered ? 'opacity-0' : 'opacity-100'
+            )}>
               {firstLine}
             </p>
           </div>
