@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PromptCard } from './PromptCard';
 import { cn } from '@/lib/utils';
 
@@ -29,9 +29,15 @@ export function PromptGrid({
 }: PromptGridProps) {
   const [animatedItems, setAnimatedItems] = useState<Set<string>>(new Set());
 
-  const handleCardLoad = (id: string) => {
-    setAnimatedItems((prev) => new Set([...prev, id]));
-  };
+  // Trigger staggered fade-in after mount
+  useEffect(() => {
+    const ids = prompts.map((p) => p.id);
+    // Small delay to ensure DOM is painted before triggering animation
+    const timer = requestAnimationFrame(() => {
+      setAnimatedItems(new Set(ids));
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [prompts]);
 
   if (prompts.length === 0) {
     return null;
@@ -60,7 +66,6 @@ export function PromptGrid({
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-4'
             )}
-            onLoad={() => handleCardLoad(prompt.id)}
             style={{
               transitionDelay: `${Array.from(prompts).findIndex((p) => p.id === prompt.id) * 50}ms`,
             }}
