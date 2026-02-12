@@ -73,7 +73,7 @@ export default function WaitlistForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="font-display font-bold text-sm px-7 py-3 rounded-[10px] border-none cursor-pointer bg-brand-500 text-white whitespace-nowrap transition-all duration-250 shadow-[0_4px_20px_rgba(255,107,43,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-brand-600 hover:-translate-y-px hover:shadow-[0_6px_30px_rgba(255,107,43,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="font-sans font-bold text-sm tracking-wide px-7 py-3 rounded-[10px] border-none cursor-pointer bg-brand-500 text-white whitespace-nowrap transition-all duration-250 shadow-[0_4px_20px_rgba(255,107,43,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-brand-600 hover:-translate-y-px hover:shadow-[0_6px_30px_rgba(255,107,43,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "loading" ? "Joining..." : "Get Early Access"}
       </button>

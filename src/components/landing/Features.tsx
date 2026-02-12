@@ -1,33 +1,33 @@
 const features = [
   {
     num: "01",
-    name: "Visual-First Library",
-    desc: "Every prompt has a face. Browse your collection as a beautiful grid of thumbnails — not a wall of text.",
+    name: "Visual Library",
+    desc: "Browse prompts as thumbnails, not text walls.",
   },
   {
     num: "02",
     name: "Save from Anywhere",
-    desc: "Paste a URL from X, Instagram, YouTube, or LinkedIn. We extract the prompt, preview, and model automatically.",
+    desc: "Paste any URL. We extract the prompt automatically.",
   },
   {
     num: "03",
     name: "Screenshot OCR",
-    desc: "Upload a screenshot of a prompt and our AI reads it for you. Works with Instagram Stories, tutorials, Discord — anything.",
+    desc: "Upload a screenshot — AI reads the prompt for you.",
   },
   {
     num: "04",
-    name: "Trending Prompts",
-    desc: "Discover what's working right now. A curated feed of the most effective prompts for image, video, and audio generation.",
+    name: "Trending Feed",
+    desc: "Discover what's working right now across AI tools.",
   },
   {
     num: "05",
     name: "Chrome Extension",
-    desc: "Highlight any prompt text on the web, right-click, and save it to your library. Zero friction capture.",
+    desc: "Right-click any prompt on the web. Saved instantly.",
   },
   {
     num: "06",
     name: "Smart Organization",
-    desc: "Folders, tags, and auto-detected AI models. Find any prompt instantly with powerful search and filters.",
+    desc: "Folders, tags, filters. Find anything in seconds.",
   },
 ];
 

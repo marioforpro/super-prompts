@@ -19,13 +19,13 @@ export default function Hero() {
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-[rgba(8,8,10,0.85)] backdrop-blur-[20px] backdrop-saturate-150 border-b border-white/[0.04]">
         <Logo size="md" />
         <div className="flex items-center gap-3">
-          {/* Live pulse dot */}
-          <span className="relative flex h-2 w-2">
+          {/* Live blinking dot */}
+          <span className="relative flex h-2.5 w-2.5">
             <span
               className="absolute inline-flex h-full w-full rounded-full bg-brand-400"
-              style={{ animation: "pulse-dot 2s ease-in-out infinite" }}
+              style={{ animation: "blink-dot 1.5s ease-in-out infinite" }}
             />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-400" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-400" />
           </span>
           <span className="text-[0.7rem] font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/15">
             Coming Soon
@@ -68,10 +68,6 @@ export default function Hero() {
             }}
           />
         </div>
-
-        {/* Decorative corner marks */}
-        <div className="absolute top-28 left-8 w-8 h-8 border-l border-t border-surface-300/40 hidden lg:block" />
-        <div className="absolute top-28 right-8 w-8 h-8 border-r border-t border-surface-300/40 hidden lg:block" />
 
         {/* Hero content */}
         <div className="max-w-[60rem] text-center relative z-10">

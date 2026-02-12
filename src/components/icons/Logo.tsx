@@ -10,9 +10,9 @@ export default function Logo({
   showText = true,
 }: LogoProps) {
   const sizes = {
-    sm: { icon: 24, text: "text-sm", gap: "gap-2" },
-    md: { icon: 30, text: "text-base", gap: "gap-2.5" },
-    lg: { icon: 40, text: "text-xl", gap: "gap-3" },
+    sm: { icon: 24, text: "text-base", gap: "gap-2" },
+    md: { icon: 32, text: "text-xl", gap: "gap-2.5" },
+    lg: { icon: 44, text: "text-2xl", gap: "gap-3" },
   };
 
   const s = sizes[size];
@@ -60,8 +60,8 @@ export default function Logo({
       </div>
       {showText && (
         <span
-          className={`font-bold tracking-[0.12em] uppercase text-foreground ${s.text}`}
-          style={{ fontFamily: "var(--font-sans)" }}
+          className={`font-extrabold tracking-[0.08em] uppercase text-foreground ${s.text}`}
+          style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.06em" }}
         >
           SUPER
           <span className="text-brand-400">PROMPTS</span>

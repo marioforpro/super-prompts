@@ -77,10 +77,8 @@ export default function MockPreview() {
   return (
     <section className="px-6 md:px-8 pb-24 relative">
       <div
-        className="max-w-5xl mx-auto rounded-2xl overflow-hidden border border-surface-300 bg-surface-50 relative scanlines"
+        className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-surface-300 bg-surface-50 relative"
         style={{
-          boxShadow:
-            "0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02)",
           animation: "fadeUp 1s ease-out 0.8s both",
         }}
       >
