@@ -16,7 +16,7 @@ export default function Hero() {
   return (
     <>
       {/* Fixed Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-[rgba(250,247,242,0.9)] backdrop-blur-[20px] backdrop-saturate-150 border-b border-surface-300/50">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-[rgba(245,245,243,0.9)] backdrop-blur-[20px] backdrop-saturate-150 border-b border-surface-300/50">
         <Logo size="md" />
         <div className="flex items-center gap-3">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-400 blink-dot" />
@@ -36,13 +36,13 @@ export default function Hero() {
           <div
             className="absolute top-[0%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px]"
             style={{
-              background: "radial-gradient(ellipse, rgba(232,118,75,0.07) 0%, transparent 65%)",
+              background: "radial-gradient(ellipse, rgba(217,119,87,0.07) 0%, transparent 65%)",
             }}
           />
           <div
             className="absolute bottom-[15%] left-[10%] w-[400px] h-[400px]"
             style={{
-              background: "radial-gradient(circle, rgba(245,160,122,0.05) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(232,149,111,0.05) 0%, transparent 70%)",
             }}
           />
         </div>
@@ -96,7 +96,7 @@ export default function Hero() {
             <span
               className="italic"
               style={{
-                background: "linear-gradient(135deg, #e8764b 0%, #f5a07a 40%, #d4663e 80%)",
+                background: "linear-gradient(135deg, #d97757 0%, #e8956f 40%, #c46a4b 80%)",
                 backgroundSize: "200% auto",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",

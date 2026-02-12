@@ -52,8 +52,8 @@ export default function Logo({
               y2="40"
               gradientUnits="userSpaceOnUse"
             >
-              <stop stopColor="#e8764b" />
-              <stop offset="1" stopColor="#d4663e" />
+              <stop stopColor="#d97757" />
+              <stop offset="1" stopColor="#c46a4b" />
             </linearGradient>
           </defs>
         </svg>
@@ -107,8 +107,8 @@ export function PlusIcon({
           y2="40"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#e8764b" />
-          <stop offset="1" stopColor="#d4663e" />
+          <stop stopColor="#d97757" />
+          <stop offset="1" stopColor="#c46a4b" />
         </linearGradient>
       </defs>
     </svg>

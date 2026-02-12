@@ -1,34 +1,34 @@
 const sidebarItems = [
-  { name: "All Prompts", color: "#e8764b", active: true, count: 127 },
+  { name: "All Prompts", color: "#d97757", active: true, count: 127 },
   { name: "Video FX", color: "#e84373", active: false, count: 43 },
-  { name: "Portraits", color: "#3ba0d8", active: false, count: 31 },
-  { name: "Sound Design", color: "#2ebb4e", active: false, count: 18 },
-  { name: "Product Shots", color: "#f0a050", active: false, count: 24 },
+  { name: "Portraits", color: "#6a9bcc", active: false, count: 31 },
+  { name: "Sound Design", color: "#788c5d", active: false, count: 18 },
+  { name: "Product Shots", color: "#e8956f", active: false, count: 24 },
 ];
 
 const cards = [
   {
     title: "Cinematic sunset aerial",
     badge: "Sora",
-    badgeBg: "rgba(232,118,75,0.1)",
-    badgeColor: "#d4663e",
-    gradient: "linear-gradient(135deg, #fdb99b, #e8764b, #cf5c36, #a84a2e)",
+    badgeBg: "rgba(217,119,87,0.1)",
+    badgeColor: "#c46a4b",
+    gradient: "linear-gradient(135deg, #f5c4aa, #d97757, #c46a4b, #a4573d)",
     fav: true,
   },
   {
     title: "Neon portrait cyberpunk",
     badge: "Midjourney",
-    badgeBg: "rgba(59,160,216,0.1)",
-    badgeColor: "#2a7fb8",
-    gradient: "linear-gradient(135deg, #89cff0, #3ba0d8, #1b6fa0, #0d4f7a)",
+    badgeBg: "rgba(106,155,204,0.1)",
+    badgeColor: "#5585b0",
+    gradient: "linear-gradient(135deg, #a8cee8, #6a9bcc, #4a7fb0, #335f88)",
     fav: false,
   },
   {
     title: "Ambient forest texture",
     badge: "Suno",
-    badgeBg: "rgba(46,187,78,0.1)",
-    badgeColor: "#1e8a3a",
-    gradient: "linear-gradient(135deg, #95e8a8, #40c463, #2d8f4e, #1a6b35)",
+    badgeBg: "rgba(120,140,93,0.1)",
+    badgeColor: "#607048",
+    gradient: "linear-gradient(135deg, #b8cca0, #788c5d, #607048, #4a5838)",
     fav: true,
   },
   {
@@ -50,8 +50,8 @@ const cards = [
   {
     title: "Abstract motion trails",
     badge: "Runway",
-    badgeBg: "rgba(232,118,75,0.1)",
-    badgeColor: "#d4663e",
+    badgeBg: "rgba(217,119,87,0.1)",
+    badgeColor: "#c46a4b",
     gradient: "linear-gradient(135deg, #fba4c4, #e06888, #c84b6b, #a83858)",
     fav: true,
   },
@@ -180,7 +180,7 @@ export default function MockPreview() {
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
-                        fill="#e8764b"
+                        fill="#d97757"
                         stroke="none"
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />

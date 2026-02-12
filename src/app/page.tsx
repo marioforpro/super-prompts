@@ -25,7 +25,7 @@ export default function Home() {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(232,118,75,0.06) 0%, transparent 65%)",
+              "radial-gradient(circle, rgba(217,119,87,0.06) 0%, transparent 65%)",
           }}
         />
 
