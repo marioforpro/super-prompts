@@ -133,18 +133,18 @@ export default function Hero() {
           </p>
 
           {/* Model ticker — glass pills: wrap on mobile, single line on desktop */}
-          <div className="anim-fade-up anim-d3 flex flex-wrap sm:flex-nowrap justify-center gap-2 mb-12 px-2 sm:overflow-x-auto min-w-0">
+          <div className="anim-fade-up anim-d3 flex flex-wrap sm:flex-nowrap justify-center gap-2 mb-12 px-2 sm:overflow-x-auto min-w-0 overflow-y-visible py-0.5">
             {models.map((model) => (
               <span
                 key={model}
-                className="text-xs sm:text-sm font-semibold tracking-wide px-3 sm:px-4 py-1.5 rounded-full text-foreground/70 border border-white/[0.08] shrink-0 transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105"
+                className="text-xs sm:text-sm font-semibold tracking-wide px-3 sm:px-4 py-2 rounded-full text-foreground/70 border border-white/[0.08] shrink-0 transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105 inline-flex items-center"
                 style={{ background: "rgba(17,17,22,0.5)" }}
               >
                 {model}
               </span>
             ))}
             <span
-              className="text-xs sm:text-sm font-bold tracking-wide px-3 sm:px-4 py-1.5 rounded-full text-brand-300 border border-brand-200 shrink-0"
+              className="text-xs sm:text-sm font-bold tracking-wide px-3 sm:px-4 py-2 rounded-full text-brand-300 border border-brand-200 shrink-0 inline-flex items-center"
               style={{ background: "rgba(232,118,75,0.06)" }}
             >
               +20 more
