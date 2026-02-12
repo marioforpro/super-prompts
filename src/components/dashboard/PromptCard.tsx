@@ -147,19 +147,11 @@ export function PromptCard({
               >
                 {displayMedia.map((media, idx) => (
                   <div key={idx} className="relative min-w-full h-full flex-shrink-0 overflow-hidden">
-                    {media.frameFit === 'contain' && (
-                      <div className="absolute inset-0 bg-gray-900" />
-                    )}
                     <Image
                       src={media.url}
                       alt={`${title} - ${idx + 1}`}
                       fill
-                      className={cn(
-                        'transition-transform duration-300 group-hover:scale-110',
-                        media.frameFit === 'cover' && 'object-cover',
-                        media.frameFit === 'contain' && 'object-contain',
-                        media.frameFit === 'fill' && 'object-fill'
-                      )}
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
                       style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
                         objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                         transform: `scale(${media.cropScale ?? 1})`,
@@ -181,29 +173,31 @@ export function PromptCard({
             {hasMultipleMedia && (
               <>
                 <button
-                  onClick={handlePrevious}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === 0 ? displayMedia.length - 1 : prev - 1)); }}
+                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute left-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20',
-                    isHovered ? 'opacity-100' : 'opacity-0'
+                    'absolute left-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20 pointer-events-auto',
+                    'transition-[background-color,border-color,box-shadow,transform] duration-200 hover:scale-110 active:scale-95',
+                    isHovered ? 'opacity-100 transition-opacity duration-200' : 'opacity-0 transition-opacity duration-200'
                   )}
                   aria-label="Previous media"
                   title="Previous media"
                 >
-                  <ChevronLeft size={12} className="text-white" />
+                  <ChevronLeft size={16} className="text-white" />
                 </button>
 
                 <button
-                  onClick={handleNext}
-                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === displayMedia.length - 1 ? 0 : prev + 1)); }}
+                  onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute right-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20',
-                    isHovered ? 'opacity-100' : 'opacity-0'
+                    'absolute right-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20 pointer-events-auto',
+                    'transition-[background-color,border-color,box-shadow,transform] duration-200 hover:scale-110 active:scale-95',
+                    isHovered ? 'opacity-100 transition-opacity duration-200' : 'opacity-0 transition-opacity duration-200'
                   )}
                   aria-label="Next media"
                   title="Next media"
                 >
-                  <ChevronRight size={12} className="text-white" />
+                  <ChevronRight size={16} className="text-white" />
                 </button>
 
                 {/* Navigation Dots — centered */}
@@ -258,10 +252,10 @@ export function PromptCard({
           )}
         />
 
-        {/* Hover Content — title + actions only */}
+        {/* Hover Content — title + actions only, pointer-events-none so arrows below work */}
         <div
           className={cn(
-            'absolute inset-x-0 bottom-0 z-20 p-4 pb-8 transition-all duration-200',
+            'absolute inset-x-0 bottom-0 z-20 p-4 pb-8 transition-all duration-200 pointer-events-none',
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >
@@ -269,8 +263,8 @@ export function PromptCard({
             {title}
           </h3>
 
-          {/* Action Icons — copy + favorite only */}
-          <div className="flex items-center justify-end gap-2">
+          {/* Action Icons — copy + favorite centered */}
+          <div className="flex items-center justify-center gap-2 pointer-events-auto">
             <button
               onClick={handleCopyClick}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-110 active:scale-95 hover:border-white/40 hover:shadow-lg hover:shadow-black/20"

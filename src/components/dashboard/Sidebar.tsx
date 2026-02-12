@@ -67,9 +67,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // Pointer-based drag-to-reorder state
-  const [pointerDragId, setPointerDragId] = useState<string | null>(null);
-  const [pointerDragOverId, setPointerDragOverId] = useState<string | null>(null);
+  // (drag state removed — using Move Up/Down menu instead)
 
   // Focus input when creating folder
   useEffect(() => {
@@ -169,54 +167,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  // Pointer-based drag handlers (replaces broken HTML5 DnD)
-  const handlePointerDragStart = (e: React.MouseEvent, folderId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setPointerDragId(folderId);
-
-    const onMove = (ev: MouseEvent) => {
-      const el = document.elementFromPoint(ev.clientX, ev.clientY);
-      const folderRow = el?.closest('[data-folder-id]');
-      const targetId = folderRow?.getAttribute('data-folder-id') || null;
-      if (targetId && targetId !== folderId) {
-        setPointerDragOverId(targetId);
-      } else {
-        setPointerDragOverId(null);
-      }
-    };
-
-    const onUp = (ev: MouseEvent) => {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-
-      const el = document.elementFromPoint(ev.clientX, ev.clientY);
-      const folderRow = el?.closest('[data-folder-id]');
-      const targetId = folderRow?.getAttribute('data-folder-id') || null;
-
-      if (targetId && targetId !== folderId) {
-        // Reorder folders in local state
-        const currentFolders = [...folders];
-        const draggedIndex = currentFolders.findIndex(f => f.id === folderId);
-        const targetIndex = currentFolders.findIndex(f => f.id === targetId);
-        if (draggedIndex !== -1 && targetIndex !== -1) {
-          const [draggedFolder] = currentFolders.splice(draggedIndex, 1);
-          currentFolders.splice(targetIndex, 0, draggedFolder);
-          currentFolders.forEach((f, i) => {
-            updateFolder(f.id, { sort_order: i });
-          });
-          for (let i = 0; i < currentFolders.length; i++) {
-            updateFolderAction(currentFolders[i].id, { sort_order: i }).catch(() => {});
-          }
-        }
-      }
-
-      setPointerDragId(null);
-      setPointerDragOverId(null);
-    };
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
+  // Move folder up/down in the list
+  const handleMoveFolder = async (folderId: string, direction: 'up' | 'down') => {
+    const currentFolders = [...folders];
+    const idx = currentFolders.findIndex(f => f.id === folderId);
+    if (idx === -1) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= currentFolders.length) return;
+    // Swap
+    [currentFolders[idx], currentFolders[targetIdx]] = [currentFolders[targetIdx], currentFolders[idx]];
+    // Update sort_order in context
+    currentFolders.forEach((f, i) => updateFolder(f.id, { sort_order: i }));
+    // Persist to DB
+    for (let i = 0; i < currentFolders.length; i++) {
+      updateFolderAction(currentFolders[i].id, { sort_order: i }).catch(() => {});
+    }
+    setFolderMenuId(null);
   };
 
   // Delete tag handler
@@ -365,16 +331,35 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               {/* Inline folder creation */}
               {isCreatingFolder && (
                 <div className="px-4 mt-1 mb-1">
-                  <input
-                    ref={folderInputRef}
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onKeyDown={handleFolderKeyDown}
-                    onBlur={handleCreateFolder}
-                    placeholder="Folder name..."
-                    className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      ref={folderInputRef}
+                      type="text"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={handleFolderKeyDown}
+                      placeholder="Folder name..."
+                      className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                    />
+                    <button
+                      onClick={handleCreateFolder}
+                      className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
+                      title="Create folder"
+                    >
+                      <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderError(""); }}
+                      className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
+                      title="Cancel"
+                    >
+                      <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                   {folderError && (
                     <p className="text-xs text-red-400 mt-1">{folderError}</p>
                   )}
@@ -388,12 +373,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   sortedFolders.map((folder) => (
                     <div
                       key={folder.id}
-                      data-folder-id={folder.id}
-                      className={`relative group transition-all duration-150 ${
-                        pointerDragOverId === folder.id && pointerDragId !== folder.id
-                          ? 'border-t-2 border-brand-400'
-                          : 'border-t-2 border-transparent'
-                      } ${pointerDragId === folder.id ? 'opacity-50' : ''}`}
+                      className="relative group transition-all duration-150"
                     >
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
@@ -428,17 +408,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
                           }`}
                         >
-                          {/* Drag handle — absolute left, visible on hover, uses pointer events */}
-                          <svg
-                            onMouseDown={(e) => handlePointerDragStart(e, folder.id)}
-                            className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                          >
-                            <circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" />
-                            <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
-                            <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
-                          </svg>
                           {/* Folder SVG icon with dynamic color — aligned with nav icons */}
                           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
                             <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
@@ -467,6 +436,37 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
                         >
+                          {/* Move Up — hidden if first */}
+                          {sortedFolders.indexOf(folder) > 0 && (
+                            <button
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                                handleMoveFolder(folder.id, 'up');
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer flex items-center gap-2"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                              Move up
+                            </button>
+                          )}
+                          {/* Move Down — hidden if last */}
+                          {sortedFolders.indexOf(folder) < sortedFolders.length - 1 && (
+                            <button
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                                handleMoveFolder(folder.id, 'down');
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer flex items-center gap-2"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                              Move down
+                            </button>
+                          )}
+                          <div className="h-px bg-surface-200 my-0.5" />
                           <button
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
@@ -491,6 +491,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           >
                             Change color
                           </button>
+                          <div className="h-px bg-surface-200 my-0.5" />
                           <button
                             onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {

@@ -537,9 +537,7 @@ export function CreatePromptModal({
                       {item.type === 'video' ? (
                         <video
                           src={item.preview}
-                          className={`w-full h-full ${
-                            item.frameFit === 'contain' ? 'object-contain' : 'object-cover'
-                          }`}
+                          className="w-full h-full object-cover"
                           muted
                           playsInline
                         />
@@ -548,9 +546,7 @@ export function CreatePromptModal({
                           src={item.preview}
                           alt={`Media ${index + 1}`}
                           fill
-                          className={`${
-                            item.frameFit === 'contain' ? 'object-contain' : 'object-cover'
-                          } pointer-events-none`}
+                          className="object-cover pointer-events-none"
                           style={{
                             objectPosition: `${item.cropX}% ${item.cropY}%`,
                             transform: `scale(${item.cropScale})`,
@@ -620,33 +616,7 @@ export function CreatePromptModal({
                       </button>
                     </div>
 
-                    {/* Frame fit toggle */}
-                    <div className="flex items-center gap-1 mt-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleFrameFitChange(index, 'cover')}
-                        className={`flex-1 py-1 rounded text-[10px] font-medium transition-colors ${
-                          item.frameFit === 'cover' || item.frameFit === 'fill'
-                            ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                            : 'bg-surface-100 text-text-dim hover:text-text-muted border border-transparent'
-                        }`}
-                      >
-                        Crop
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleFrameFitChange(index, 'contain')}
-                        className={`flex-1 py-1 rounded text-[10px] font-medium transition-colors ${
-                          item.frameFit === 'contain'
-                            ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                            : 'bg-surface-100 text-text-dim hover:text-text-muted border border-transparent'
-                        }`}
-                      >
-                        Fit
-                      </button>
-                    </div>
-
-                    {/* Scale slider — for all modes */}
+                    {/* Zoom slider + Reset */}
                     {item.type === 'image' && (
                       <div className="mt-1.5">
                         <div className="flex items-center gap-1.5">
@@ -665,6 +635,16 @@ export function CreatePromptModal({
                             className="flex-1 h-1 accent-brand-400 cursor-pointer"
                             title={`Zoom: ${Math.round(item.cropScale * 100)}%`}
                           />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: 50, cropY: 50, cropScale: 1 } : m));
+                            }}
+                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-text-dim hover:text-foreground bg-surface-100 hover:bg-surface-200 transition-colors cursor-pointer"
+                            title="Reset zoom and position"
+                          >
+                            Reset
+                          </button>
                         </div>
                       </div>
                     )}
