@@ -210,6 +210,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
+  const dragInsertAfter = useRef(false);
+
   const handleDragMove = (e: React.PointerEvent) => {
     if (!dragId || !folderListRef.current) return;
     // Only start visual dragging after 3px threshold to avoid accidental drags
@@ -219,14 +221,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const els = folderListRef.current.querySelectorAll<HTMLElement>('[data-folder-drag]');
     let closestId: string | null = null;
     let closestDist = Infinity;
+    let closestCy = 0;
     els.forEach(el => {
       const fid = el.dataset.folderDrag || null;
       if (fid === dragId) return; // Skip the dragged element itself
       const rect = el.getBoundingClientRect();
       const cy = rect.top + rect.height / 2;
       const dist = Math.abs(e.clientY - cy);
-      if (dist < closestDist) { closestDist = dist; closestId = fid; }
+      if (dist < closestDist) { closestDist = dist; closestId = fid; closestCy = cy; }
     });
+    // Track whether cursor is above or below the closest item's center
+    dragInsertAfter.current = e.clientY > closestCy;
     setDragOverId(closestId);
   };
 
@@ -237,7 +242,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       const toIdx = sorted.findIndex(f => f.id === dragOverId);
       if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
         const [moved] = sorted.splice(fromIdx, 1);
-        sorted.splice(toIdx, 0, moved);
+        // If cursor was below center, insert after the target
+        const adjustedIdx = sorted.findIndex(f => f.id === dragOverId);
+        const insertIdx = dragInsertAfter.current ? adjustedIdx + 1 : adjustedIdx;
+        sorted.splice(insertIdx, 0, moved);
         reorderFolders(sorted);
       }
     }
@@ -439,9 +447,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         dragId === folder.id && isDragging.current ? 'opacity-30 scale-[0.97]' : ''
                       }`}
                     >
-                      {/* Drop indicator line */}
+                      {/* Drop indicator line — above or below depending on cursor position */}
                       {dragOverId === folder.id && dragId !== folder.id && isDragging.current && (
-                        <div className="absolute -top-px left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20" />
+                        <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${dragInsertAfter.current ? '-bottom-px' : '-top-px'}`} />
                       )}
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
@@ -482,7 +490,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             onPointerMove={handleDragMove}
                             onPointerUp={handleDragEnd}
                             onPointerCancel={handleDragEnd}
-                            className="absolute left-0 top-0 bottom-0 w-6 flex items-center justify-center opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
+                            className="absolute left-1.5 top-0 bottom-0 w-5 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
                           >
                             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
                               <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />

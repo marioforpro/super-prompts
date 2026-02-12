@@ -90,14 +90,14 @@ export function PromptListView({
   }) => (
     <button
       onClick={() => handleSort(field)}
-      className="flex items-center gap-1 text-xs font-medium text-text-muted hover:text-foreground transition-colors duration-200"
+      className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-foreground transition-colors duration-200"
     >
       {label}
       {sortField === field && (
         <ChevronDown
-          size={14}
+          size={12}
           className={cn(
-            'transition-transform duration-200',
+            'transition-transform duration-200 ml-0.5',
             sortDirection === 'desc' ? 'rotate-0' : 'rotate-180'
           )}
         />

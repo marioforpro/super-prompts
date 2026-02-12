@@ -35,8 +35,8 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
   }, []);
 
   return (
-    <div className="sticky top-0 z-40 w-full bg-surface/80 backdrop-blur-md border-b border-surface-200">
-      <div className="px-6 h-[57px] flex items-center justify-between gap-4">
+    <div className="sticky top-0 z-40 w-full h-[57px] bg-surface/80 backdrop-blur-md border-b border-surface-200">
+      <div className="px-6 h-full flex items-center justify-between gap-4">
         {/* Left: Hamburger + Search */}
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <button

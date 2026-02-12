@@ -237,9 +237,9 @@ export function PromptCard({
           </div>
         )}
 
-        {/* Model Badge */}
+        {/* Model Badge — vertically centered with action buttons */}
         {modelName && (
-          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-200">
+          <div className="absolute top-3 left-3 h-[26px] flex items-center px-2.5 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-200">
             {modelName}
           </div>
         )}
@@ -252,16 +252,16 @@ export function PromptCard({
           )}
         />
 
-        {/* Action Icons — top-right corner, visible on hover */}
+        {/* Action Icons — top-right corner, aligned with model pill (top-3) */}
         <div
           className={cn(
-            'absolute top-2.5 right-2.5 z-20 flex items-center gap-1 pointer-events-auto transition-all duration-200',
+            'absolute top-3 right-3 z-20 flex items-center gap-1 pointer-events-auto transition-all duration-200',
             isHovered ? 'opacity-100' : 'opacity-0'
           )}
         >
           <button
             onClick={handleCopyClick}
-            className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
+            className="w-[26px] h-[26px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
             aria-label="Copy prompt"
             title="Copy prompt"
           >
@@ -270,7 +270,7 @@ export function PromptCard({
           <button
             onClick={handleFavoriteClick}
             className={cn(
-              'p-1.5 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
+              'w-[26px] h-[26px] flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
               isFavoritedLocally
                 ? 'bg-red-500/40 text-red-300 hover:bg-red-500/60'
                 : 'bg-black/40 hover:bg-black/60 text-white'
