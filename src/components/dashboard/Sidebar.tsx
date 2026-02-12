@@ -71,11 +71,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [editingFolderId]);
 
   // Close folder context menu on outside click
+  const folderMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!folderMenuId) return;
-    const handleClick = () => setFolderMenuId(null);
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    const handleClick = (e: MouseEvent) => {
+      // Don't close if clicking inside the menu itself
+      if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
+      setFolderMenuId(null);
+    };
+    // Use setTimeout to avoid immediately closing from the same click that opened it
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClick);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleClick);
+    };
   }, [folderMenuId]);
 
   const handleCreateFolder = async () => {
@@ -323,7 +334,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                       {/* Context menu */}
                       {folderMenuId === folder.id && (
-                        <div className="absolute left-8 top-full z-50 mt-1 w-32 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden">
+                        <div ref={folderMenuRef} className="absolute left-8 top-full z-50 mt-1 w-32 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
