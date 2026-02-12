@@ -80,8 +80,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [modelMenuId, setModelMenuId] = useState<string | null>(null);
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
   const [editingModelName, setEditingModelName] = useState("");
+  const [modelColorPickerId, setModelColorPickerId] = useState<string | null>(null);
   const editModelInputRef = useRef<HTMLInputElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  const modelColorPickerRef = useRef<HTMLDivElement>(null);
 
   // Drag-to-reorder state (indicator position is now managed via dragAfterIndex state)
   const [dragId, setDragId] = useState<string | null>(null);
@@ -124,14 +126,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!folderMenuId && !colorPickerId && !modelMenuId) return;
+    if (!folderMenuId && !colorPickerId && !modelMenuId && !modelColorPickerId) return;
     const handleClick = (e: MouseEvent) => {
       if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
       if (colorPickerRef.current && colorPickerRef.current.contains(e.target as Node)) return;
       if (modelMenuRef.current && modelMenuRef.current.contains(e.target as Node)) return;
+      if (modelColorPickerRef.current && modelColorPickerRef.current.contains(e.target as Node)) return;
       setFolderMenuId(null);
       setColorPickerId(null);
       setModelMenuId(null);
+      setModelColorPickerId(null);
     };
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
@@ -140,7 +144,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       clearTimeout(timer);
       document.removeEventListener("click", handleClick);
     };
-  }, [folderMenuId, colorPickerId, modelMenuId]);
+  }, [folderMenuId, colorPickerId, modelMenuId, modelColorPickerId]);
 
   const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
@@ -347,6 +351,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       await deleteModelAction(modelId);
     } catch (err) {
       setModelError(err instanceof Error ? err.message : "Failed to delete model");
+    }
+  };
+
+  // Model color change handler
+  const handleModelColorChange = async (modelId: string, newColor: string) => {
+    // Close picker immediately (optimistic)
+    setModelColorPickerId(null);
+    setModelMenuId(null);
+    updateModelCtx(modelId, { icon_url: newColor });
+    try {
+      await updateModelAction(modelId, { icon_url: newColor });
+    } catch (err) {
+      setModelError(err instanceof Error ? err.message : "Failed to update model color");
     }
   };
 
@@ -833,7 +850,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             >
                               <span
                                 className="w-2 h-2 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: getModelColor(model.name) }}
+                                style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
                               />
                               <span className="truncate flex-1">{model.name}</span>
                               <span
@@ -865,6 +882,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               >
                                 Rename
                               </button>
+                              <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setModelColorPickerId(model.id); }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
+                              >
+                                Change color
+                              </button>
                               <div className="h-px bg-surface-200 my-0.5" />
                               <button
                                 onMouseDown={(e) => e.stopPropagation()}
@@ -873,6 +897,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               >
                                 Delete
                               </button>
+                            </div>
+                          )}
+
+                          {/* Model color picker */}
+                          {modelColorPickerId === model.id && (
+                            <div
+                              ref={modelColorPickerRef}
+                              className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              <div className="grid grid-cols-5 gap-2">
+                                {MODEL_COLORS.map((color) => {
+                                  const currentColor = (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name);
+                                  return (
+                                    <button
+                                      key={color}
+                                      onClick={(e) => { e.stopPropagation(); handleModelColorChange(model.id, color); }}
+                                      className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
+                                      style={{
+                                        backgroundColor: color,
+                                        borderColor: currentColor === color ? '#ffffff' : 'transparent'
+                                      }}
+                                      title={color}
+                                    />
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </div>

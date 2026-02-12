@@ -173,6 +173,8 @@ export function CreatePromptModal({
     setRemovedMediaIds([]);
   };
 
+  const MAX_MEDIA_ITEMS = 3;
+
   // Validate and process multiple files
   const processFiles = (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -180,10 +182,20 @@ export function CreatePromptModal({
     const validVideoTypes = ["video/mp4", "video/webm", "video/quicktime"];
     const allValidTypes = [...validImageTypes, ...validVideoTypes];
 
+    const slotsAvailable = MAX_MEDIA_ITEMS - mediaItems.length;
+    if (slotsAvailable <= 0) {
+      setError(`Maximum ${MAX_MEDIA_ITEMS} media files allowed per prompt.`);
+      return;
+    }
+
     const newItems: LocalMediaItem[] = [];
     let currentMaxOrder = mediaItems.length > 0 ? Math.max(...mediaItems.map(m => m.sortOrder)) + 1 : 0;
 
     for (const file of fileArray) {
+      if (newItems.length >= slotsAvailable) {
+        setError(`Maximum ${MAX_MEDIA_ITEMS} media files allowed. Only ${slotsAvailable} slot${slotsAvailable !== 1 ? 's' : ''} available.`);
+        break;
+      }
       if (!allValidTypes.includes(file.type)) {
         setError("Unsupported file type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.");
         continue;
@@ -532,11 +544,11 @@ export function CreatePromptModal({
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
               Media
-              {mediaItems.length > 0 && (
-                <span className="ml-2 text-xs text-text-dim font-normal">
-                  {mediaItems.length} file{mediaItems.length !== 1 ? 's' : ''} · drag on image to reposition, use slider to zoom
-                </span>
-              )}
+              <span className="ml-2 text-xs text-text-dim font-normal">
+                {mediaItems.length > 0
+                  ? `${mediaItems.length}/${MAX_MEDIA_ITEMS} · drag on image to reposition, use slider to zoom`
+                  : `up to ${MAX_MEDIA_ITEMS} files`}
+              </span>
             </label>
 
             {mediaItems.length > 0 && (
@@ -692,52 +704,54 @@ export function CreatePromptModal({
               </div>
             )}
 
-            {/* Upload zone */}
-            <div
-              ref={dropZoneRef}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className={`w-full flex flex-col items-center justify-center gap-2 ${
-                  mediaItems.length > 0 ? 'py-4' : 'py-8'
-                } border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer group ${
-                  isDragging
-                    ? "border-brand-400 bg-brand-500/15 scale-[1.01]"
-                    : "border-surface-300 hover:border-brand-400/60 bg-surface-100/50 hover:bg-surface-100"
-                }`}
-                disabled={isLoading}
+            {/* Upload zone — hidden when at max */}
+            {mediaItems.length < MAX_MEDIA_ITEMS && (
+              <div
+                ref={dropZoneRef}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                  isDragging ? "bg-brand-500/20" : "bg-surface-200 group-hover:bg-brand-500/10"
-                }`}>
-                  {isDragging ? (
-                    <Upload size={18} className="text-brand-400" />
-                  ) : (
-                    <ImagePlus size={18} className="text-text-dim group-hover:text-brand-400 transition-colors" />
-                  )}
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-text-muted font-medium">
-                    {isDragging ? "Drop files here" : mediaItems.length > 0 ? "Add more media" : "Click or drag to upload"}
-                  </p>
-                  <p className="text-xs text-text-dim mt-0.5">
-                    JPG, PNG, WebP, GIF (5MB) or MP4, WebM, MOV (50MB)
-                  </p>
-                </div>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
-                onChange={handleFileSelect}
-                className="hidden"
-                multiple
-              />
-            </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-full flex flex-col items-center justify-center gap-2 ${
+                    mediaItems.length > 0 ? 'py-4' : 'py-8'
+                  } border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer group ${
+                    isDragging
+                      ? "border-brand-400 bg-brand-500/15 scale-[1.01]"
+                      : "border-surface-300 hover:border-brand-400/60 bg-surface-100/50 hover:bg-surface-100"
+                  }`}
+                  disabled={isLoading}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                    isDragging ? "bg-brand-500/20" : "bg-surface-200 group-hover:bg-brand-500/10"
+                  }`}>
+                    {isDragging ? (
+                      <Upload size={18} className="text-brand-400" />
+                    ) : (
+                      <ImagePlus size={18} className="text-text-dim group-hover:text-brand-400 transition-colors" />
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-text-muted font-medium">
+                      {isDragging ? "Drop files here" : mediaItems.length > 0 ? "Add more media" : "Click or drag to upload"}
+                    </p>
+                    <p className="text-xs text-text-dim mt-0.5">
+                      JPG, PNG, WebP, GIF (5MB) or MP4, WebM, MOV (50MB)
+                    </p>
+                  </div>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  multiple
+                />
+              </div>
+            )}
           </div>
 
           {/* Title */}

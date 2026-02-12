@@ -122,7 +122,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="p-2 hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-sm font-bold">
                 {userInitial}
               </div>
             </button>

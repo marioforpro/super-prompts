@@ -272,7 +272,7 @@ export function PromptCard({
             className={cn(
               'w-[30px] h-[30px] flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
               isFavoritedLocally
-                ? 'bg-red-500/40 text-red-300 hover:bg-red-500/60'
+                ? 'bg-brand-500/50 text-brand-300 hover:bg-brand-500/70'
                 : 'bg-black/40 hover:bg-black/60 text-white'
             )}
             aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}

@@ -10,7 +10,7 @@ export default function Logo({
   showText = true,
 }: LogoProps) {
   const sizes = {
-    sm: { icon: 24, text: "text-base", gap: "gap-2" },
+    sm: { icon: 30, text: "text-lg", gap: "gap-2.5" },
     md: { icon: 32, text: "text-xl", gap: "gap-2.5" },
     lg: { icon: 44, text: "text-2xl", gap: "gap-3" },
   };
