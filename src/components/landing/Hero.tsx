@@ -121,7 +121,7 @@ export default function Hero() {
           </h1>
 
           {/* Subheadline */}
-          <p className="anim-fade-up anim-d3 text-base sm:text-xl leading-relaxed text-text-muted mx-auto mb-12 max-w-xl px-2">
+          <p className="anim-fade-up anim-d3 text-base sm:text-xl leading-relaxed text-text-muted mx-auto mb-12 max-w-xl px-2 whitespace-nowrap overflow-x-auto">
             Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
