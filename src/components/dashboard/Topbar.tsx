@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { PlusIcon } from "@/components/icons/Logo";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
+import { signOut } from "@/lib/actions/auth";
 
 interface TopbarProps {
   onMenuToggle: () => void;
@@ -127,7 +128,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                   <p className="text-sm font-medium text-foreground truncate">{userEmail}</p>
                 </div>
                 <div className="border-t border-surface-200 py-2">
-                  <form action="/api/auth/signout" method="POST">
+                  <form action={signOut}>
                     <button type="submit" className="w-full text-left px-4 py-2 text-sm text-text-muted hover:bg-surface-200 hover:text-white transition-colors cursor-pointer">
                       Sign Out
                     </button>

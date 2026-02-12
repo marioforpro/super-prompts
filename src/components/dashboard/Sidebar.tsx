@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
-import { createFolder } from "@/lib/actions/folders";
+import { createFolder, deleteFolder, renameFolder } from "@/lib/actions/folders";
+import { signOut } from "@/lib/actions/auth";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const {
     folders,
     addFolder,
+    removeFolder,
     models: _models,
     tags,
     selectedFolderId,
@@ -47,12 +49,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [folderError, setFolderError] = useState("");
   const folderInputRef = useRef<HTMLInputElement>(null);
 
+  // Folder management
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState("");
+  const [folderMenuId, setFolderMenuId] = useState<string | null>(null);
+  const editFolderInputRef = useRef<HTMLInputElement>(null);
+
   // Focus input when creating folder
   useEffect(() => {
     if (isCreatingFolder && folderInputRef.current) {
       folderInputRef.current.focus();
     }
   }, [isCreatingFolder]);
+
+  // Focus input when renaming folder
+  useEffect(() => {
+    if (editingFolderId && editFolderInputRef.current) {
+      editFolderInputRef.current.focus();
+      editFolderInputRef.current.select();
+    }
+  }, [editingFolderId]);
+
+  // Close folder context menu on outside click
+  useEffect(() => {
+    if (!folderMenuId) return;
+    const handleClick = () => setFolderMenuId(null);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [folderMenuId]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
@@ -69,6 +93,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to create folder");
     }
+  };
+
+  const handleRenameFolder = async () => {
+    if (!editingFolderId || !editingFolderName.trim()) {
+      setEditingFolderId(null);
+      setEditingFolderName("");
+      return;
+    }
+    try {
+      const updated = await renameFolder(editingFolderId, editingFolderName.trim());
+      // Update in context — replace the folder with updated one
+      removeFolder(editingFolderId);
+      addFolder(updated);
+      setEditingFolderId(null);
+      setEditingFolderName("");
+    } catch (err) {
+      setFolderError(err instanceof Error ? err.message : "Failed to rename folder");
+      setEditingFolderId(null);
+    }
+  };
+
+  const handleDeleteFolderAction = async (folderId: string) => {
+    try {
+      await deleteFolder(folderId);
+      removeFolder(folderId);
+      if (selectedFolderId === folderId) setSelectedFolderId(null);
+    } catch (err) {
+      setFolderError(err instanceof Error ? err.message : "Failed to delete folder");
+    }
+    setFolderMenuId(null);
   };
 
   const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -216,23 +270,83 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
                 ) : (
                   folders.map((folder) => (
-                    <button
-                      key={folder.id}
-                      onClick={() =>
-                        handleNavClick(() => {
-                          setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
-                          setShowFavoritesOnly(false);
-                        })
-                      }
-                      className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm rounded-lg transition-all duration-150 cursor-pointer ${
-                        selectedFolderId === folder.id
-                          ? "bg-surface-200 text-foreground"
-                          : "text-text-muted hover:text-foreground hover:bg-surface-100"
-                      }`}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: folder.color || "#e8764b" }} />
-                      <span className="truncate">{folder.name}</span>
-                    </button>
+                    <div key={folder.id} className="relative group">
+                      {editingFolderId === folder.id ? (
+                        <div className="px-4 py-1">
+                          <input
+                            ref={editFolderInputRef}
+                            type="text"
+                            value={editingFolderName}
+                            onChange={(e) => setEditingFolderName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") { e.preventDefault(); handleRenameFolder(); }
+                              else if (e.key === "Escape") { setEditingFolderId(null); setEditingFolderName(""); }
+                            }}
+                            onBlur={handleRenameFolder}
+                            className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                          />
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleNavClick(() => {
+                              setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
+                              setShowFavoritesOnly(false);
+                            })
+                          }
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm rounded-lg transition-all duration-150 cursor-pointer ${
+                            selectedFolderId === folder.id
+                              ? "bg-surface-200 text-foreground"
+                              : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                          }`}
+                        >
+                          <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: folder.color || "#e8764b" }} />
+                          <span className="truncate flex-1 text-left">{folder.name}</span>
+                          {/* Three-dot menu button - visible on hover */}
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded"
+                          >
+                            <svg className="w-3.5 h-3.5 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                          </span>
+                        </button>
+                      )}
+
+                      {/* Context menu */}
+                      {folderMenuId === folder.id && (
+                        <div className="absolute left-8 top-full z-50 mt-1 w-32 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingFolderId(folder.id);
+                              setEditingFolderName(folder.name);
+                              setFolderMenuId(null);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFolderAction(folder.id);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   ))
                 )}
               </div>
@@ -313,7 +427,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           {/* Sign Out */}
           <div className="border-t border-surface-200 px-3 py-4">
-            <form action="/api/auth/signout" method="POST">
+            <form action={signOut}>
               <button type="submit" className="w-full px-4 py-2 text-sm text-text-muted hover:text-white hover:bg-surface-100 rounded-lg transition-colors cursor-pointer">
                 Sign Out
               </button>

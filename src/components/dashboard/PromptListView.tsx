@@ -109,12 +109,12 @@ export function PromptListView({
     <div className="w-full">
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/5 flex items-center gap-4">
-        <div className="flex-1 flex items-center gap-8">
-          <div className="w-12" />
+        <div className="flex-1 flex items-center gap-4 sm:gap-8">
+          <div className="w-10 sm:w-12 flex-shrink-0" />
           <SortButton label="TITLE" field="title" />
-          <SortButton label="MODEL" field="model" />
-          <div className="text-xs font-medium text-text-muted">TAGS</div>
-          <SortButton label="DATE" field="date" />
+          <div className="hidden md:block"><SortButton label="MODEL" field="model" /></div>
+          <div className="hidden lg:block text-xs font-medium text-text-muted">TAGS</div>
+          <div className="hidden sm:block"><SortButton label="DATE" field="date" /></div>
         </div>
         <div className="w-16" />
       </div>
@@ -134,7 +134,7 @@ export function PromptListView({
               onClick={() => onClickPrompt?.(prompt.id)}
             >
               {/* Thumbnail */}
-              <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-surface">
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden flex-shrink-0 bg-surface">
                 {prompt.coverUrl ? (
                   <>
                     <Image
@@ -156,16 +156,22 @@ export function PromptListView({
               </div>
 
               {/* Content */}
-              <div className="flex-1 flex items-center gap-8 min-w-0">
-                {/* Title */}
+              <div className="flex-1 flex items-center gap-4 sm:gap-8 min-w-0">
+                {/* Title + Model on mobile */}
                 <div className="min-w-0 flex-1">
                   <h4 className="text-sm font-medium text-foreground truncate">
                     {prompt.title}
                   </h4>
+                  {/* Show model below title on mobile */}
+                  {prompt.modelName && (
+                    <span className="md:hidden text-xs text-text-dim mt-0.5 block">
+                      {prompt.modelName}
+                    </span>
+                  )}
                 </div>
 
-                {/* Model */}
-                <div className="min-w-[120px]">
+                {/* Model - hidden on mobile */}
+                <div className="hidden md:block min-w-[120px]">
                   {prompt.modelName && (
                     <span className="text-xs font-medium text-text-muted bg-white/5 px-2 py-1 rounded">
                       {prompt.modelName}
@@ -173,8 +179,8 @@ export function PromptListView({
                   )}
                 </div>
 
-                {/* Tags */}
-                <div className="flex items-center gap-1 min-w-[100px]">
+                {/* Tags - hidden on mobile/tablet */}
+                <div className="hidden lg:flex items-center gap-1 min-w-[100px]">
                   {prompt.tags && prompt.tags.length > 0 ? (
                     <span className="text-xs text-text-muted truncate">
                       {prompt.tags.slice(0, 2).join(', ')}
@@ -187,8 +193,8 @@ export function PromptListView({
                   )}
                 </div>
 
-                {/* Date */}
-                <div className="min-w-[100px]">
+                {/* Date - hidden on very small screens */}
+                <div className="hidden sm:block min-w-[100px]">
                   <span className="text-xs text-text-muted">
                     {prompt.createdAt
                       ? new Date(prompt.createdAt).toLocaleDateString()

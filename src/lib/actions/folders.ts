@@ -59,6 +59,37 @@ export async function createFolder(
   return data as Folder;
 }
 
+export async function renameFolder(id: string, name: string): Promise<Folder> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  if (!name.trim()) throw new Error("Folder name is required");
+
+  // Verify ownership
+  const { data: folder, error: fetchError } = await supabase
+    .from("folders")
+    .select("user_id")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !folder) throw new Error("Folder not found");
+  if (folder.user_id !== user.id)
+    throw new Error("Unauthorized to rename this folder");
+
+  const { data, error } = await supabase
+    .from("folders")
+    .update({ name: name.trim() })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  if (!data) throw new Error("Failed to rename folder");
+
+  return data as Folder;
+}
+
 export async function deleteFolder(id: string): Promise<void> {
   const supabase = await createClient();
 

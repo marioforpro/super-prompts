@@ -75,8 +75,8 @@ export function EmptyState({
         onClick={handleClick}
         className={cn(
           'px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200',
-          'bg-gradient-to-r from-brand-coral to-pink-600',
-          'hover:shadow-lg hover:shadow-brand-coral/50 hover:scale-105',
+          'bg-gradient-to-r from-brand-400 to-pink-600',
+          'hover:shadow-lg hover:shadow-brand-400/50 hover:scale-105',
           'text-white font-display',
           'flex items-center gap-2'
         )}
@@ -86,7 +86,7 @@ export function EmptyState({
       </button>
 
       {/* Decorative elements */}
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-t from-brand-coral/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-t from-brand-400/5 to-transparent rounded-full blur-3xl pointer-events-none" />
     </div>
   );
 }

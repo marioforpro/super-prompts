@@ -83,6 +83,13 @@ export function CreatePromptModal({
     setError("");
   }, [prompt, isOpen]);
 
+  // Cleanup blob URLs when modal closes
+  useEffect(() => {
+    if (!isOpen && thumbnailPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
+  }, [isOpen]);
+
   // Handle model search
   useEffect(() => {
     if (tagInput && isSearchingModels) {
@@ -395,7 +402,7 @@ export function CreatePromptModal({
           {/* Thumbnail Upload */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
-              Thumbnail
+              Cover Media
             </label>
             <div
               ref={dropZoneRef}
@@ -407,8 +414,7 @@ export function CreatePromptModal({
               {thumbnailPreview ? (
                 <div className="relative group rounded-lg overflow-hidden border border-surface-200">
                   <div className="relative w-full aspect-video bg-surface-100">
-                    {thumbnailFile?.type.startsWith("video/") ||
-                    (thumbnailPreview.startsWith("blob:") && !thumbnailFile?.type.startsWith("image/")) ? (
+                    {thumbnailFile?.type.startsWith("video/") ? (
                       <video
                         src={thumbnailPreview}
                         className="w-full h-full object-cover"
@@ -455,8 +461,8 @@ export function CreatePromptModal({
                   onClick={() => fileInputRef.current?.click()}
                   className={`w-full flex flex-col items-center justify-center gap-3 py-8 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer group ${
                     isDragging
-                      ? "border-brand-400 bg-brand-500/10"
-                      : "border-surface-300 hover:border-brand-400/50 bg-surface-100/50 hover:bg-surface-100"
+                      ? "border-brand-400 bg-brand-500/15 scale-[1.01]"
+                      : "border-surface-300 hover:border-brand-400/60 bg-surface-100/50 hover:bg-surface-100"
                   }`}
                   disabled={isLoading}
                 >
@@ -479,7 +485,7 @@ export function CreatePromptModal({
                       {isDragging ? "Drop file here" : "Click or drag to upload"}
                     </p>
                     <p className="text-xs text-text-dim mt-1">
-                      Images or videos — max 50MB
+                      JPG, PNG, WebP, GIF (5MB) or MP4, WebM, MOV (50MB)
                     </p>
                   </div>
                 </button>
