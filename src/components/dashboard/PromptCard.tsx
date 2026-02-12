@@ -160,9 +160,10 @@ export function PromptCard({
                         media.frameFit === 'contain' && 'object-contain',
                         media.frameFit === 'fill' && 'object-fill'
                       )}
-                      style={media.frameFit === 'cover' && (media.cropX !== undefined || media.cropScale !== undefined) ? {
+                      style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
                         objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                         transform: `scale(${media.cropScale ?? 1})`,
+                        transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                       } : undefined}
                       sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                     />
@@ -183,7 +184,7 @@ export function PromptCard({
                   onClick={handlePrevious}
                   onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    'absolute left-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    'absolute left-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Previous media"
@@ -196,7 +197,7 @@ export function PromptCard({
                   onClick={handleNext}
                   onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    'absolute right-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    'absolute right-3 top-1/2 -translate-y-1/2 z-20 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Next media"
@@ -205,8 +206,8 @@ export function PromptCard({
                   <ChevronRight size={12} className="text-white" />
                 </button>
 
-                {/* Navigation Dots */}
-                <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5">
+                {/* Navigation Dots — centered */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
                   {displayMedia.map((_, index) => (
                     <button
                       key={index}
@@ -260,7 +261,7 @@ export function PromptCard({
         {/* Hover Content — title + actions only */}
         <div
           className={cn(
-            'absolute inset-x-0 bottom-0 z-20 p-4 transition-all duration-200',
+            'absolute inset-x-0 bottom-0 z-20 p-4 pb-8 transition-all duration-200',
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >

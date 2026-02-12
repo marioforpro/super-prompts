@@ -22,7 +22,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
+      className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
       title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
     >
       {/* Sun icon */}

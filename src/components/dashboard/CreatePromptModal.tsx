@@ -551,16 +551,17 @@ export function CreatePromptModal({
                           className={`${
                             item.frameFit === 'contain' ? 'object-contain' : 'object-cover'
                           } pointer-events-none`}
-                          style={item.frameFit === 'cover' || item.frameFit === 'fill' ? {
+                          style={{
                             objectPosition: `${item.cropX}% ${item.cropY}%`,
                             transform: `scale(${item.cropScale})`,
-                          } : undefined}
+                            transformOrigin: `${item.cropX}% ${item.cropY}%`,
+                          }}
                           unoptimized={item.preview.startsWith("data:") || item.preview.startsWith("blob:")}
                         />
                       )}
 
-                      {/* Drag-to-reposition overlay for crop mode */}
-                      {item.type === 'image' && (item.frameFit === 'cover' || item.frameFit === 'fill') && (
+                      {/* Drag-to-reposition overlay for all modes */}
+                      {item.type === 'image' && (
                         <div
                           className="absolute inset-0 cursor-move z-10"
                           title="Drag to reposition image"
@@ -645,8 +646,8 @@ export function CreatePromptModal({
                       </button>
                     </div>
 
-                    {/* Scale slider — only for crop mode */}
-                    {(item.frameFit === 'cover' || item.frameFit === 'fill') && (
+                    {/* Scale slider — for all modes */}
+                    {item.type === 'image' && (
                       <div className="mt-1.5">
                         <div className="flex items-center gap-1.5">
                           <svg className="w-3 h-3 text-text-dim flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -794,7 +795,7 @@ export function CreatePromptModal({
               className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
               disabled={isLoading}
             >
-              <option value="">Unfiled</option>
+              <option value="">All Prompts</option>
               {folders.map((folder) => (
                 <option key={folder.id} value={folder.id}>
                   {folder.name}

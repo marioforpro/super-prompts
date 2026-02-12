@@ -30,6 +30,7 @@ interface DashboardState {
   updateFolder: (id: string, updates: Partial<Folder>) => void;
   models: AiModel[];
   tags: Tag[];
+  removeTag: (id: string) => void;
   // User
   userEmail: string;
   userInitial: string;
@@ -58,6 +59,7 @@ export function DashboardProvider({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
+  const [tagsState, setTagsState] = useState<Tag[]>(tags);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";
@@ -74,6 +76,10 @@ export function DashboardProvider({
     setFolders((prev) =>
       prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
     );
+  };
+
+  const removeTag = (id: string) => {
+    setTagsState((prev) => prev.filter((t) => t.id !== id));
   };
 
   return (
@@ -99,7 +105,8 @@ export function DashboardProvider({
         removeFolder,
         updateFolder,
         models,
-        tags,
+        tags: tagsState,
+        removeTag,
         userEmail,
         userInitial,
       }}

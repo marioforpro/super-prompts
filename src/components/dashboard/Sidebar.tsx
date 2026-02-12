@@ -5,6 +5,7 @@ import Link from "next/link";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
+import { deleteTag } from "@/lib/actions/tags";
 import { signOut } from "@/lib/actions/auth";
 import ThemeToggle from "./ThemeToggle";
 
@@ -51,6 +52,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setSelectedTag,
     showFavoritesOnly,
     setShowFavoritesOnly,
+    removeTag: removeTagFromContext,
   } = useDashboard();
 
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -65,9 +67,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // Drag-to-reorder state
-  const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
-  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  // Pointer-based drag-to-reorder state
+  const [pointerDragId, setPointerDragId] = useState<string | null>(null);
+  const [pointerDragOverId, setPointerDragOverId] = useState<string | null>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -167,61 +169,72 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  const handleDragStart = (e: React.DragEvent, folderId: string) => {
-    setDraggedFolderId(folderId);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', folderId);
-    // Make drag image semi-transparent
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = '0.5';
-    }
-  };
-
-  const handleDragEnd = (e: React.DragEvent) => {
-    if (e.currentTarget instanceof HTMLElement) {
-      e.currentTarget.style.opacity = '1';
-    }
-    setDraggedFolderId(null);
-    setDragOverFolderId(null);
-  };
-
-  const handleDragOverFolder = (e: React.DragEvent, folderId: string) => {
+  // Pointer-based drag handlers (replaces broken HTML5 DnD)
+  const handlePointerDragStart = (e: React.MouseEvent, folderId: string) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (folderId !== draggedFolderId) {
-      setDragOverFolderId(folderId);
-    }
+    e.stopPropagation();
+    setPointerDragId(folderId);
+
+    const onMove = (ev: MouseEvent) => {
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const folderRow = el?.closest('[data-folder-id]');
+      const targetId = folderRow?.getAttribute('data-folder-id') || null;
+      if (targetId && targetId !== folderId) {
+        setPointerDragOverId(targetId);
+      } else {
+        setPointerDragOverId(null);
+      }
+    };
+
+    const onUp = (ev: MouseEvent) => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const folderRow = el?.closest('[data-folder-id]');
+      const targetId = folderRow?.getAttribute('data-folder-id') || null;
+
+      if (targetId && targetId !== folderId) {
+        // Reorder folders in local state
+        const currentFolders = [...folders];
+        const draggedIndex = currentFolders.findIndex(f => f.id === folderId);
+        const targetIndex = currentFolders.findIndex(f => f.id === targetId);
+        if (draggedIndex !== -1 && targetIndex !== -1) {
+          const [draggedFolder] = currentFolders.splice(draggedIndex, 1);
+          currentFolders.splice(targetIndex, 0, draggedFolder);
+          currentFolders.forEach((f, i) => {
+            updateFolder(f.id, { sort_order: i });
+          });
+          for (let i = 0; i < currentFolders.length; i++) {
+            updateFolderAction(currentFolders[i].id, { sort_order: i }).catch(() => {});
+          }
+        }
+      }
+
+      setPointerDragId(null);
+      setPointerDragOverId(null);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   };
 
-  const handleDragLeaveFolder = () => {
-    setDragOverFolderId(null);
-  };
-
-  const handleDropOnFolder = async (e: React.DragEvent, targetFolderId: string) => {
-    e.preventDefault();
-    setDragOverFolderId(null);
-    if (!draggedFolderId || draggedFolderId === targetFolderId) return;
-
-    // Reorder folders in local state
-    const currentFolders = [...folders];
-    const draggedIndex = currentFolders.findIndex(f => f.id === draggedFolderId);
-    const targetIndex = currentFolders.findIndex(f => f.id === targetFolderId);
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    const [draggedFolder] = currentFolders.splice(draggedIndex, 1);
-    currentFolders.splice(targetIndex, 0, draggedFolder);
-
-    // Update sort_order for all folders and apply to context
-    currentFolders.forEach((f, i) => {
-      updateFolder(f.id, { sort_order: i });
-    });
-
-    // Persist to DB (fire and forget for each)
-    for (let i = 0; i < currentFolders.length; i++) {
-      updateFolderAction(currentFolders[i].id, { sort_order: i }).catch(() => {});
+  // Delete tag handler
+  const handleDeleteTag = async (tagId: string) => {
+    // Optimistic: clear selection if deleting the selected tag
+    if (selectedTag) {
+      const tagObj = tags.find(t => t.id === tagId);
+      if (tagObj && tagObj.name === selectedTag) {
+        setSelectedTag(null);
+      }
     }
-
-    setDraggedFolderId(null);
+    removeTagFromContext(tagId);
+    try {
+      await deleteTag(tagId);
+    } catch (err) {
+      // Non-fatal — tag already removed from UI
+      console.error("Failed to delete tag:", err);
+    }
   };
 
   const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -375,17 +388,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   sortedFolders.map((folder) => (
                     <div
                       key={folder.id}
+                      data-folder-id={folder.id}
                       className={`relative group transition-all duration-150 ${
-                        dragOverFolderId === folder.id && draggedFolderId !== folder.id
+                        pointerDragOverId === folder.id && pointerDragId !== folder.id
                           ? 'border-t-2 border-brand-400'
                           : 'border-t-2 border-transparent'
-                      }`}
-                      draggable={editingFolderId !== folder.id}
-                      onDragStart={(e) => handleDragStart(e, folder.id)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOverFolder(e, folder.id)}
-                      onDragLeave={handleDragLeaveFolder}
-                      onDrop={(e) => handleDropOnFolder(e, folder.id)}
+                      } ${pointerDragId === folder.id ? 'opacity-50' : ''}`}
                     >
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
@@ -414,20 +422,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             e.preventDefault();
                             setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                           }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
                             selectedFolderId === folder.id
                               ? "bg-surface-200 text-foreground"
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
                           }`}
                         >
-                          {/* Drag handle - visible on hover */}
-                          <svg className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity" fill="currentColor" viewBox="0 0 16 16">
+                          {/* Drag handle — absolute left, visible on hover, uses pointer events */}
+                          <svg
+                            onMouseDown={(e) => handlePointerDragStart(e, folder.id)}
+                            className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10"
+                            fill="currentColor"
+                            viewBox="0 0 16 16"
+                          >
                             <circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" />
                             <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
                             <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
                           </svg>
-                          {/* Folder SVG icon with dynamic color - macOS style */}
-                          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
+                          {/* Folder SVG icon with dynamic color — aligned with nav icons */}
+                          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
                             <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
                           </svg>
                           <span className="truncate flex-1 text-left">{folder.name}</span>
@@ -576,33 +589,47 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
                 ) : (
                   tags.map((tag) => (
-                    <button
-                      key={tag.id}
-                      onClick={() =>
-                        handleNavClick(() => {
-                          setSelectedTag(selectedTag === tag.name ? null : tag.name);
-                          setShowFavoritesOnly(false);
-                        })
-                      }
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
-                        selectedTag === tag.name
-                          ? "bg-brand-500/15 border border-brand-400/50 text-brand-300"
-                          : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground"
-                      }`}
-                    >
-                      #{tag.name}
-                    </button>
+                    <div key={tag.id} className="relative group/tag inline-flex">
+                      <button
+                        onClick={() =>
+                          handleNavClick(() => {
+                            setSelectedTag(selectedTag === tag.name ? null : tag.name);
+                            setShowFavoritesOnly(false);
+                          })
+                        }
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
+                          selectedTag === tag.name
+                            ? "bg-brand-500/15 border border-brand-400/50 text-brand-300 pr-6"
+                            : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground group-hover/tag:pr-6"
+                        }`}
+                      >
+                        #{tag.name}
+                      </button>
+                      {/* Delete tag button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTag(tag.id);
+                        }}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300 transition-all cursor-pointer"
+                        title="Delete tag"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   ))
                 )}
               </div>
             </div>
           </nav>
 
-          {/* Settings + Sign Out */}
-          <div className="border-t border-surface-200 px-3 py-3 space-y-1">
+          {/* Settings + Sign Out — side by side */}
+          <div className="border-t border-surface-200 px-3 py-3 flex items-center justify-between">
             <ThemeToggle />
             <form action={signOut}>
-              <button type="submit" className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors cursor-pointer">
+              <button type="submit" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors cursor-pointer">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
