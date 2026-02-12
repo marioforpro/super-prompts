@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PromptCard, type MediaItem } from './PromptCard';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
@@ -27,6 +27,13 @@ export interface PromptGridProps {
   onClickPrompt?: (id: string) => void;
 }
 
+const SORT_OPTIONS: { value: GridSortField; label: string }[] = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'title_az', label: 'Title A→Z' },
+  { value: 'title_za', label: 'Title Z→A' },
+];
+
 export function PromptGrid({
   prompts,
   onCopyPrompt,
@@ -35,12 +42,26 @@ export function PromptGrid({
 }: PromptGridProps) {
   const [mounted, setMounted] = useState(false);
   const [sortBy, setSortBy] = useState<GridSortField>('newest');
+  const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useRef<HTMLDivElement>(null);
 
   // Trigger fade-in shortly after mount using setTimeout for reliability
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(timer);
   }, []);
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    if (!sortOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (sortRef.current && !sortRef.current.contains(e.target as Node)) {
+        setSortOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [sortOpen]);
 
   if (prompts.length === 0) {
     return null;
@@ -62,27 +83,46 @@ export function PromptGrid({
     }
   });
 
+  const currentLabel = SORT_OPTIONS.find(o => o.value === sortBy)?.label || 'Newest first';
+
   return (
     <div className="w-full">
-      {/* Sort controls */}
+      {/* Sort controls — custom dropdown for precise chevron positioning */}
       <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-2">
           <span className="text-xs text-text-dim">Sort:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as GridSortField)}
-            className="text-xs bg-surface-100 border border-surface-200 rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:border-brand-400 cursor-pointer"
-          >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="title_az">Title A→Z</option>
-            <option value="title_za">Title Z→A</option>
-          </select>
+          <div ref={sortRef} className="relative">
+            <button
+              onClick={() => setSortOpen(!sortOpen)}
+              className="flex items-center gap-2 text-xs bg-surface-100 border border-surface-200 rounded-lg px-3 py-1.5 text-foreground hover:border-surface-300 focus:outline-none focus:border-brand-400 cursor-pointer transition-colors"
+            >
+              <span>{currentLabel}</span>
+              <ChevronDown size={13} className={cn('text-text-muted transition-transform duration-200', sortOpen && 'rotate-180')} />
+            </button>
+            {sortOpen && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-40 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setSortBy(opt.value); setSortOpen(false); }}
+                    className={cn(
+                      'w-full text-left px-3 py-2 text-xs transition-colors cursor-pointer',
+                      sortBy === opt.value
+                        ? 'bg-brand-500/15 text-brand-300'
+                        : 'text-text-muted hover:text-foreground hover:bg-surface-200'
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Grid — row-based layout (left to right), larger cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3">
+      {/* Grid — auto-fill with minmax to prevent cards from squishing on resize */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
         {sortedPrompts.map((prompt, index) => (
           <div
             key={prompt.id}

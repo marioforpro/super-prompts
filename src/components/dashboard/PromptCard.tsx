@@ -176,28 +176,28 @@ export function PromptCard({
                   onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === 0 ? displayMedia.length - 1 : prev - 1)); }}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute left-1.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm pointer-events-auto',
+                    'absolute left-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm pointer-events-auto',
                     'transition-all duration-200 hover:scale-110 active:scale-95',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Previous media"
                   title="Previous media"
                 >
-                  <ChevronLeft size={12} className="text-white" />
+                  <ChevronLeft size={14} className="text-white" />
                 </button>
 
                 <button
                   onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === displayMedia.length - 1 ? 0 : prev + 1)); }}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute right-1.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm pointer-events-auto',
+                    'absolute right-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm pointer-events-auto',
                     'transition-all duration-200 hover:scale-110 active:scale-95',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Next media"
                   title="Next media"
                 >
-                  <ChevronRight size={12} className="text-white" />
+                  <ChevronRight size={14} className="text-white" />
                 </button>
 
                 {/* Navigation Dots — centered */}
@@ -239,7 +239,7 @@ export function PromptCard({
 
         {/* Model Badge — vertically centered with action buttons */}
         {modelName && (
-          <div className="absolute top-3 left-3 h-[26px] flex items-center px-2.5 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-200">
+          <div className="absolute top-3 left-3 h-[30px] flex items-center px-3 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-200">
             {modelName}
           </div>
         )}
@@ -255,22 +255,22 @@ export function PromptCard({
         {/* Action Icons — top-right corner, aligned with model pill (top-3) */}
         <div
           className={cn(
-            'absolute top-3 right-3 z-20 flex items-center gap-1 pointer-events-auto transition-all duration-200',
+            'absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto transition-all duration-200',
             isHovered ? 'opacity-100' : 'opacity-0'
           )}
         >
           <button
             onClick={handleCopyClick}
-            className="w-[26px] h-[26px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
+            className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
             aria-label="Copy prompt"
             title="Copy prompt"
           >
-            <Copy size={12} className="text-white" />
+            <Copy size={14} className="text-white" />
           </button>
           <button
             onClick={handleFavoriteClick}
             className={cn(
-              'w-[26px] h-[26px] flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
+              'w-[30px] h-[30px] flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
               isFavoritedLocally
                 ? 'bg-red-500/40 text-red-300 hover:bg-red-500/60'
                 : 'bg-black/40 hover:bg-black/60 text-white'
@@ -279,16 +279,16 @@ export function PromptCard({
             title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
           >
             <Heart
-              size={12}
+              size={14}
               className={isFavoritedLocally ? 'fill-current' : ''}
             />
           </button>
         </div>
 
-        {/* Hover Content — title at bottom with more space */}
+        {/* Hover Content — title at bottom, well above the dots */}
         <div
           className={cn(
-            'absolute inset-x-0 bottom-0 z-20 px-3 pb-4 pt-8 transition-all duration-200 pointer-events-none',
+            'absolute inset-x-0 bottom-0 z-20 px-4 pb-7 pt-10 transition-all duration-200 pointer-events-none',
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >

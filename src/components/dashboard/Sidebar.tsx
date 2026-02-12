@@ -484,15 +484,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
                           }`}
                         >
-                          {/* Drag handle — pointer capture for reorder */}
+                          {/* Drag handle — pointer capture for reorder, flush left edge */}
                           <div
                             onPointerDown={(e) => handleDragStart(e, folder.id)}
                             onPointerMove={handleDragMove}
                             onPointerUp={handleDragEnd}
                             onPointerCancel={handleDragEnd}
-                            className="absolute left-1.5 top-0 bottom-0 w-5 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
+                            className="absolute left-0 top-0 bottom-0 w-4 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
                           >
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
                               <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
                               <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
                               <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
