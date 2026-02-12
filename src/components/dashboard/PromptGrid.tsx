@@ -28,17 +28,13 @@ export function PromptGrid({
   onFavoritePrompt,
   onClickPrompt,
 }: PromptGridProps) {
-  const [animatedItems, setAnimatedItems] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
 
-  // Trigger staggered fade-in after mount
+  // Trigger fade-in shortly after mount using setTimeout for reliability
   useEffect(() => {
-    const ids = prompts.map((p) => p.id);
-    // Small delay to ensure DOM is painted before triggering animation
-    const timer = requestAnimationFrame(() => {
-      setAnimatedItems(new Set(ids));
-    });
-    return () => cancelAnimationFrame(timer);
-  }, [prompts]);
+    const timer = setTimeout(() => setMounted(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (prompts.length === 0) {
     return null;
@@ -54,21 +50,18 @@ export function PromptGrid({
         columnGap: '0.375rem', // 6px
       }}
     >
-      {prompts.map((prompt) => {
-        const isAnimated = animatedItems.has(prompt.id);
-
-        return (
+      {prompts.map((prompt, index) => (
           <div
             key={prompt.id}
             className={cn(
               'break-inside-avoid mb-1.5 inline-block w-full',
               'transition-all duration-700 ease-out',
-              isAnimated
+              mounted
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-4'
             )}
             style={{
-              transitionDelay: `${Array.from(prompts).findIndex((p) => p.id === prompt.id) * 50}ms`,
+              transitionDelay: `${index * 50}ms`,
             }}
           >
             <PromptCard
@@ -87,8 +80,7 @@ export function PromptGrid({
               onClick={() => onClickPrompt?.(prompt.id)}
             />
           </div>
-        );
-      })}
+        ))}
     </div>
   );
 }
