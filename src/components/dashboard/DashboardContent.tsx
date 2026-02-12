@@ -31,6 +31,7 @@ export function DashboardContent({
     selectedModelSlug,
     selectedTag,
     showFavoritesOnly,
+    folders: contextFolders,
   } = useDashboard();
 
   const [prompts, setPrompts] = useState<Prompt[]>(initialPrompts);
@@ -162,7 +163,7 @@ export function DashboardContent({
   const activeFilterLabel = useMemo(() => {
     if (showFavoritesOnly) return "Favorites";
     if (selectedFolderId) {
-      const folder = folders.find((f) => f.id === selectedFolderId);
+      const folder = contextFolders.find((f) => f.id === selectedFolderId);
       return folder ? folder.name : "Folder";
     }
     if (selectedModelSlug) {
@@ -171,7 +172,7 @@ export function DashboardContent({
     }
     if (selectedTag) return `#${selectedTag}`;
     return "All Prompts";
-  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTag, folders, models]);
+  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTag, contextFolders, models]);
 
   const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTag || showFavoritesOnly);
 
@@ -198,7 +199,7 @@ export function DashboardContent({
         onSuccess={handleSuccessModal}
         prompt={editingPrompt}
         models={models}
-        folders={folders}
+        folders={contextFolders}
         tags={tags}
         onTagsChange={setTags}
       />
@@ -252,7 +253,7 @@ export function DashboardContent({
             )}
             {selectedFolderId && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
-                Folder: {folders.find((f) => f.id === selectedFolderId)?.name}
+                Folder: {contextFolders.find((f) => f.id === selectedFolderId)?.name}
               </span>
             )}
             {selectedModelSlug && (
