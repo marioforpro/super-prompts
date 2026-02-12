@@ -9,6 +9,9 @@ export interface MediaItem {
   url: string;
   type: 'image' | 'video';
   frameFit: 'cover' | 'contain' | 'fill';
+  cropX?: number;
+  cropY?: number;
+  cropScale?: number;
 }
 
 export interface PromptCardProps {
@@ -84,7 +87,6 @@ export function PromptCard({
     ? mediaItems
     : (coverUrl ? [{ url: coverUrl, type: coverType, frameFit: 'cover' as const }] : []);
 
-  const currentMedia = displayMedia[currentMediaIndex];
   const hasMultipleMedia = displayMedia.length > 1;
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -135,33 +137,44 @@ export function PromptCard({
     >
       {/* Cover Image/Video or Gradient Placeholder */}
       <div className={cn('relative w-full bg-background overflow-hidden', aspectClass)}>
-        {currentMedia ? (
+        {displayMedia.length > 0 ? (
           <>
-            {/* Media background for contain mode */}
-            {currentMedia.frameFit === 'contain' && (
-              <div className="absolute inset-0 bg-gray-900" />
-            )}
-
-            {/* Media Image/Video */}
-            <Image
-              src={currentMedia.url}
-              alt={title}
-              fill
-              className={cn(
-                'transition-transform duration-300 group-hover:scale-110',
-                currentMedia.frameFit === 'cover' && 'object-cover',
-                currentMedia.frameFit === 'contain' && 'object-contain',
-                currentMedia.frameFit === 'fill' && 'object-fill'
-              )}
-              sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-            />
-
-            {/* Play Icon for Videos */}
-            {currentMedia.type === 'video' && !isHovered && (
-              <div className="absolute bottom-3 left-3 flex items-center justify-center w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200">
-                <Play size={18} className="text-white fill-white" />
+            {/* Sliding media strip */}
+            <div className="relative w-full h-full overflow-hidden">
+              <div
+                className="flex h-full transition-transform duration-300 ease-out"
+                style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
+              >
+                {displayMedia.map((media, idx) => (
+                  <div key={idx} className="relative w-full h-full flex-shrink-0">
+                    {media.frameFit === 'contain' && (
+                      <div className="absolute inset-0 bg-gray-900" />
+                    )}
+                    <Image
+                      src={media.url}
+                      alt={`${title} - ${idx + 1}`}
+                      fill
+                      className={cn(
+                        'transition-transform duration-300 group-hover:scale-110',
+                        media.frameFit === 'cover' && 'object-cover',
+                        media.frameFit === 'contain' && 'object-contain',
+                        media.frameFit === 'fill' && 'object-fill'
+                      )}
+                      style={media.frameFit === 'cover' && (media.cropX !== undefined || media.cropScale !== undefined) ? {
+                        objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
+                        transform: `scale(${media.cropScale ?? 1})`,
+                      } : undefined}
+                      sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                    />
+                    {media.type === 'video' && !isHovered && idx === currentMediaIndex && (
+                      <div className="absolute bottom-3 left-3 flex items-center justify-center w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200">
+                        <Play size={18} className="text-white fill-white" />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
             {/* Navigation Arrows (visible only on hover when multiple media items exist) */}
             {hasMultipleMedia && (

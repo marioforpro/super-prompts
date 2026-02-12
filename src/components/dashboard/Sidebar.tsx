@@ -65,8 +65,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // Folder sort mode
-  const [folderSortMode, setFolderSortMode] = useState<'custom' | 'name'>('custom');
+  // Drag-to-reorder state
+  const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -104,12 +105,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     };
   }, [folderMenuId, colorPickerId]);
 
+  const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
+    if (isCreatingRef.current) return;
     if (!newFolderName.trim()) {
       setIsCreatingFolder(false);
       setNewFolderName("");
       return;
     }
+    isCreatingRef.current = true;
     setFolderError("");
     try {
       const folder = await createFolder(newFolderName.trim());
@@ -118,6 +122,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       setIsCreatingFolder(false);
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to create folder");
+    } finally {
+      isCreatingRef.current = false;
     }
   };
 
@@ -139,14 +145,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleDeleteFolderAction = async (folderId: string) => {
+    // Optimistic: close menu and remove from UI immediately
+    setFolderMenuId(null);
+    if (selectedFolderId === folderId) setSelectedFolderId(null);
+    removeFolder(folderId);
     try {
       await deleteFolder(folderId);
-      removeFolder(folderId);
-      if (selectedFolderId === folderId) setSelectedFolderId(null);
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to delete folder");
     }
-    setFolderMenuId(null);
   };
 
   const handleFolderColorChange = async (folderId: string, newColor: string) => {
@@ -158,6 +165,62 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to update folder color");
     }
+  };
+
+  const handleDragStart = (e: React.DragEvent, folderId: string) => {
+    setDraggedFolderId(folderId);
+    e.dataTransfer.effectAllowed = 'move';
+    // Make drag image semi-transparent
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    setDraggedFolderId(null);
+    setDragOverFolderId(null);
+  };
+
+  const handleDragOverFolder = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (folderId !== draggedFolderId) {
+      setDragOverFolderId(folderId);
+    }
+  };
+
+  const handleDragLeaveFolder = () => {
+    setDragOverFolderId(null);
+  };
+
+  const handleDropOnFolder = async (e: React.DragEvent, targetFolderId: string) => {
+    e.preventDefault();
+    setDragOverFolderId(null);
+    if (!draggedFolderId || draggedFolderId === targetFolderId) return;
+
+    // Reorder folders in local state
+    const currentFolders = [...folders];
+    const draggedIndex = currentFolders.findIndex(f => f.id === draggedFolderId);
+    const targetIndex = currentFolders.findIndex(f => f.id === targetFolderId);
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    const [draggedFolder] = currentFolders.splice(draggedIndex, 1);
+    currentFolders.splice(targetIndex, 0, draggedFolder);
+
+    // Update sort_order for all folders and apply to context
+    currentFolders.forEach((f, i) => {
+      updateFolder(f.id, { sort_order: i });
+    });
+
+    // Persist to DB (fire and forget for each)
+    for (let i = 0; i < currentFolders.length; i++) {
+      updateFolderAction(currentFolders[i].id, { sort_order: i }).catch(() => {});
+    }
+
+    setDraggedFolderId(null);
   };
 
   const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -179,14 +242,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isAllActive =
     !selectedFolderId && !selectedModelSlug && !selectedTag && !showFavoritesOnly;
 
-  // Sort folders based on mode
-  const sortedFolders = [...folders].sort((a, b) => {
-    if (folderSortMode === 'name') {
-      return a.name.localeCompare(b.name);
-    }
-    // custom mode: keep original order (sort_order from DB)
-    return 0;
-  });
+  // Use folders as-is (sorted by sort_order from DB)
+  const sortedFolders = folders;
 
   return (
     <>
@@ -215,7 +272,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="px-5 py-4 border-b border-surface-200">
+          <div className="px-5 h-[73px] flex items-center border-b border-surface-200">
             <Link href="/dashboard">
               <Logo size="sm" showText={true} />
             </Link>
@@ -278,15 +335,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   Folders
                 </span>
                 <button
-                  onClick={() => setFolderSortMode(folderSortMode === 'custom' ? 'name' : 'custom')}
-                  className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
-                  title={`Sort: ${folderSortMode === 'custom' ? 'Custom' : 'Name'}`}
-                >
-                  <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm10-13a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1V4zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1v-2zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1v-2z" />
-                  </svg>
-                </button>
-                <button
                   onClick={() => {
                     setIsCreatingFolder(true);
                     setFolderError("");
@@ -324,7 +372,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
                 ) : (
                   sortedFolders.map((folder) => (
-                    <div key={folder.id} className="relative group">
+                    <div
+                      key={folder.id}
+                      className={`relative group transition-all duration-150 ${
+                        dragOverFolderId === folder.id && draggedFolderId !== folder.id
+                          ? 'border-t-2 border-brand-400'
+                          : 'border-t-2 border-transparent'
+                      }`}
+                      draggable={editingFolderId !== folder.id}
+                      onDragStart={(e) => handleDragStart(e, folder.id)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOverFolder(e, folder.id)}
+                      onDragLeave={handleDragLeaveFolder}
+                      onDrop={(e) => handleDropOnFolder(e, folder.id)}
+                    >
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
                           <input
@@ -358,9 +419,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
                           }`}
                         >
-                          {/* Folder SVG icon with dynamic color */}
-                          <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" style={{ color: folder.color || "#e8764b" }}>
-                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2h-6L9.172 1.172A2 2 0 007.757 1H4z" />
+                          {/* Drag handle - visible on hover */}
+                          <svg className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity" fill="currentColor" viewBox="0 0 16 16">
+                            <circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" />
+                            <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+                            <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
+                          </svg>
+                          {/* Folder SVG icon with dynamic color - macOS style */}
+                          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
+                            <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
                           </svg>
                           <span className="truncate flex-1 text-left">{folder.name}</span>
                           {/* Three-dot menu button - visible on hover */}
