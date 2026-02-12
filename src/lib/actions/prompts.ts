@@ -16,7 +16,7 @@ export async function getPrompts(): Promise<Prompt[]> {
       *,
       ai_model:ai_models(*),
       prompt_tags(tag:tags(*)),
-      media:prompt_media(*)
+      media:prompt_media!prompt_media_prompt_id_fkey(*)
     `
     )
     .eq("user_id", user.id)
@@ -50,7 +50,7 @@ export async function getPrompt(id: string): Promise<Prompt> {
       *,
       ai_model:ai_models(*),
       prompt_tags(tag:tags(*)),
-      media:prompt_media(*)
+      media:prompt_media!prompt_media_prompt_id_fkey(*)
     `
     )
     .eq("id", id)
