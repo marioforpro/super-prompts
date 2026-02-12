@@ -15,18 +15,17 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-// Preset folder colors
-const FOLDER_COLORS = [
-  '#e8764b', '#f87171', '#facc15', '#34d399',
-  '#38bdf8', '#a78bfa', '#e879f9', '#fb923c',
-  '#2dd4bf', '#f0eff2'
+// Shared color palette for folders and AI models
+const COLOR_PALETTE = [
+  '#e8764b', '#f87171', '#fb923c', '#facc15', '#fbbf24',
+  '#a3e635', '#34d399', '#2dd4bf', '#22d3ee', '#38bdf8',
+  '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9',
+  '#f472b6', '#fb7185', '#d4a574', '#94a3b8', '#f0eff2',
 ];
 
-// Model color palette — deterministic from name hash
-const MODEL_COLORS = [
-  '#facc15', '#38bdf8', '#a78bfa', '#f87171', '#34d399',
-  '#60a5fa', '#fb923c', '#e879f9', '#2dd4bf', '#4ade80', '#d4a574',
-];
+// Legacy aliases
+const FOLDER_COLORS = COLOR_PALETTE;
+const MODEL_COLORS = COLOR_PALETTE;
 
 function getModelColor(name: string): string {
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -450,8 +449,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="px-4 h-[57px] flex items-center border-b border-surface-200">
-            <Link href="/dashboard">
+          <div className="px-4 h-[57px] flex items-center justify-center border-b border-surface-200">
+            <Link href="/dashboard" className="flex items-center">
               <Logo size="sm" showText={true} />
             </Link>
           </div>

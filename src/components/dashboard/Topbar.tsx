@@ -41,7 +41,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <button
             onClick={onMenuToggle}
-            className="p-2 hover:bg-surface-100 rounded-lg transition-colors md:hidden flex-shrink-0 cursor-pointer"
+            className="h-[38px] w-[38px] flex items-center justify-center hover:bg-surface-100 rounded-lg transition-colors md:hidden flex-shrink-0 cursor-pointer"
           >
             <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -59,7 +59,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
                 placeholder="Search prompts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-16 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                className="w-full h-[38px] pl-9 pr-16 bg-surface-100 border border-surface-200 rounded-lg text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
               />
               <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-surface-200 border border-surface-300 text-[10px] text-text-dim font-mono pointer-events-none">
                 ⌘K
@@ -71,10 +71,10 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
         {/* Right: View Toggle + New Prompt + User */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Grid/List Toggle */}
-          <div className="hidden sm:flex items-center gap-1 bg-surface-100 rounded-lg p-1">
+          <div className="hidden sm:flex items-center gap-1 bg-surface-100 rounded-lg h-[38px] px-1">
             <button
               onClick={() => setViewMode("grid")}
-              className={`px-3 py-1.5 rounded transition-all cursor-pointer ${
+              className={`px-3 h-[30px] rounded transition-all cursor-pointer ${
                 viewMode === "grid" ? "bg-surface-300 text-foreground" : "text-text-muted hover:text-foreground"
               }`}
               title="Grid view"
@@ -88,7 +88,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`px-3 py-1.5 rounded transition-all cursor-pointer ${
+              className={`px-3 h-[30px] rounded transition-all cursor-pointer ${
                 viewMode === "list" ? "bg-surface-300 text-foreground" : "text-text-muted hover:text-foreground"
               }`}
               title="List view"
@@ -102,7 +102,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           {/* New Prompt Button */}
           <button
             onClick={() => openCreateModal()}
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 font-medium text-sm cursor-pointer"
+            className="hidden sm:flex items-center gap-2 px-4 h-[38px] bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 font-medium text-sm cursor-pointer"
           >
             <PlusIcon size={16} />
             <span>New Prompt</span>
@@ -111,7 +111,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           {/* Mobile New Prompt */}
           <button
             onClick={() => openCreateModal()}
-            className="sm:hidden p-2.5 bg-gradient-to-br from-brand-400 to-brand-500 text-white rounded-lg shadow-lg shadow-brand-500/20 cursor-pointer"
+            className="sm:hidden h-[38px] w-[38px] flex items-center justify-center bg-gradient-to-br from-brand-400 to-brand-500 text-white rounded-lg shadow-lg shadow-brand-500/20 cursor-pointer"
           >
             <PlusIcon size={16} />
           </button>
@@ -120,9 +120,9 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="p-2 hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
+              className="h-[38px] w-[38px] flex items-center justify-center hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-sm font-bold">
+              <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold">
                 {userInitial}
               </div>
             </button>

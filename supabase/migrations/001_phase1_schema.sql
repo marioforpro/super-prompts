@@ -71,13 +71,8 @@ create policy "Users can create custom models"
 -- Pre-seed models
 insert into public.ai_models (name, slug, category) values
   ('Midjourney', 'midjourney', 'image'),
-  ('DALL-E 3', 'dall-e-3', 'image'),
-  ('Stable Diffusion', 'stable-diffusion', 'image'),
   ('Flux', 'flux', 'image'),
-  ('Leonardo AI', 'leonardo-ai', 'image'),
-  ('Freepik AI', 'freepik-ai', 'image'),
   ('Nano Banana Pro', 'nano-banana-pro', 'image'),
-  ('Ideogram', 'ideogram', 'image'),
   ('Runway', 'runway', 'video'),
   ('Kling', 'kling', 'video'),
   ('Sora', 'sora', 'video'),
