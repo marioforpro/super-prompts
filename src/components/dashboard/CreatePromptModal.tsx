@@ -79,6 +79,10 @@ export function CreatePromptModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
+  // Image analysis state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState("");
+
   // Initialize form with existing prompt data
   useEffect(() => {
     if (prompt) {
@@ -171,6 +175,7 @@ export function CreatePromptModal({
     setTagInput("");
     setMediaItems([]);
     setRemovedMediaIds([]);
+    setAnalysisError("");
   };
 
   const MAX_MEDIA_ITEMS = 3;
@@ -257,6 +262,89 @@ export function CreatePromptModal({
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) processFiles(files);
+  };
+
+  // Analyze image with Claude Vision
+  const analyzeImage = async () => {
+    const imageItem = mediaItems.find(m => m.type === 'image');
+    if (!imageItem) return;
+
+    setIsAnalyzing(true);
+    setAnalysisError("");
+
+    try {
+      let base64Data: string;
+      let mediaType: string;
+
+      if (imageItem.file) {
+        // Convert File to base64
+        const buffer = await imageItem.file.arrayBuffer();
+        base64Data = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        mediaType = imageItem.file.type;
+      } else if (imageItem.preview && !imageItem.preview.startsWith('blob:')) {
+        // Fetch existing URL and convert
+        const resp = await fetch(imageItem.preview);
+        const blob = await resp.blob();
+        const buffer = await blob.arrayBuffer();
+        base64Data = btoa(
+          new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        mediaType = blob.type || 'image/jpeg';
+      } else {
+        setAnalysisError("Cannot analyze this image");
+        return;
+      }
+
+      const response = await fetch('/api/analyze-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Data, mediaType }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setAnalysisError(result.error || 'Analysis failed');
+        return;
+      }
+
+      // Auto-fill empty fields only
+      if (!title.trim() && result.suggested_title) {
+        setTitle(result.suggested_title);
+      }
+      if (!content.trim() && result.prompt_text) {
+        setContent(result.prompt_text);
+      }
+      if (!modelId && result.model_name) {
+        const matchedModel = models.find(
+          m => m.name.toLowerCase() === result.model_name.toLowerCase()
+        );
+        if (matchedModel) setModelId(matchedModel.id);
+      }
+      if (selectedTags.length === 0 && result.suggested_tags?.length > 0) {
+        // Create or find tags
+        for (const tagName of result.suggested_tags) {
+          const existing = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
+          if (existing) {
+            setSelectedTags(prev => prev.includes(existing.id) ? prev : [...prev, existing.id]);
+          } else {
+            try {
+              const newTag = await createTag(tagName);
+              setSelectedTags(prev => [...prev, newTag.id]);
+              onTagsChange?.([...tags, newTag]);
+            } catch {
+              // Non-fatal
+            }
+          }
+        }
+      }
+    } catch (err) {
+      setAnalysisError(err instanceof Error ? err.message : 'Analysis failed');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Remove media at index
@@ -750,6 +838,38 @@ export function CreatePromptModal({
                   className="hidden"
                   multiple
                 />
+              </div>
+            )}
+
+            {/* Analyze with AI button — appears when there's at least 1 image */}
+            {mediaItems.some(m => m.type === 'image') && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={analyzeImage}
+                  disabled={isAnalyzing || isLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-brand-400/30 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 hover:text-brand-200 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Analyzing image...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span>Extract prompt from image</span>
+                    </>
+                  )}
+                </button>
+                {analysisError && (
+                  <p className="text-xs text-red-400 mt-1.5 text-center">{analysisError}</p>
+                )}
               </div>
             )}
           </div>
