@@ -82,6 +82,7 @@ export function CreatePromptModal({
   // Image analysis state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [showAnalysisPrompt, setShowAnalysisPrompt] = useState(false);
 
   // Initialize form with existing prompt data
   useEffect(() => {
@@ -176,6 +177,7 @@ export function CreatePromptModal({
     setMediaItems([]);
     setRemovedMediaIds([]);
     setAnalysisError("");
+    setShowAnalysisPrompt(false);
   };
 
   const MAX_MEDIA_ITEMS = 3;
@@ -228,6 +230,11 @@ export function CreatePromptModal({
     if (newItems.length > 0) {
       setMediaItems(prev => [...prev, ...newItems]);
       setError("");
+      // Show analysis prompt if a new image was added
+      if (newItems.some(item => item.type === 'image')) {
+        setShowAnalysisPrompt(true);
+        setAnalysisError("");
+      }
     }
   };
 
@@ -269,6 +276,7 @@ export function CreatePromptModal({
     const imageItem = mediaItems.find(m => m.type === 'image');
     if (!imageItem) return;
 
+    setShowAnalysisPrompt(false);
     setIsAnalyzing(true);
     setAnalysisError("");
 
@@ -841,36 +849,44 @@ export function CreatePromptModal({
               </div>
             )}
 
-            {/* Analyze with AI button — appears when there's at least 1 image */}
-            {mediaItems.some(m => m.type === 'image') && (
-              <div className="mt-3">
+            {/* Inline analysis prompt — appears after uploading a new image */}
+            {showAnalysisPrompt && !isAnalyzing && (
+              <div className="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-brand-400/30 bg-brand-500/8">
+                <svg className="w-4 h-4 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-sm text-text-muted flex-1">Extract prompt from this image?</span>
                 <button
                   type="button"
                   onClick={analyzeImage}
-                  disabled={isAnalyzing || isLoading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-brand-400/30 bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 hover:text-brand-200 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  className="px-3 py-1 rounded-md text-xs font-medium bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 hover:text-brand-200 border border-brand-500/30 transition-all cursor-pointer"
                 >
-                  {isAnalyzing ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Analyzing image...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span>Extract prompt from image</span>
-                    </>
-                  )}
+                  Yes
                 </button>
-                {analysisError && (
-                  <p className="text-xs text-red-400 mt-1.5 text-center">{analysisError}</p>
-                )}
+                <button
+                  type="button"
+                  onClick={() => setShowAnalysisPrompt(false)}
+                  className="px-3 py-1 rounded-md text-xs font-medium text-text-dim hover:text-text-muted hover:bg-surface-200 transition-all cursor-pointer"
+                >
+                  No
+                </button>
               </div>
+            )}
+
+            {/* Analysis in progress */}
+            {isAnalyzing && (
+              <div className="mt-3 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-brand-400/20 bg-brand-500/5">
+                <svg className="w-4 h-4 animate-spin text-brand-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="text-sm text-text-muted">Analyzing image...</span>
+              </div>
+            )}
+
+            {/* Analysis error */}
+            {analysisError && (
+              <p className="text-xs text-red-400 mt-1.5 text-center">{analysisError}</p>
             )}
           </div>
 
