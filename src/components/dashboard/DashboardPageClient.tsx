@@ -31,7 +31,6 @@ export function DashboardPageClient({
       models={models}
       folders={folders}
       tags={tags}
-      viewMode="grid"
       onModalOpen={handleModalOpen}
     />
   );
