@@ -222,8 +222,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isAllActive =
     !selectedFolderId && !selectedModelSlug && !selectedTag && !showFavoritesOnly;
 
-  // Use folders as-is (sorted by sort_order from DB)
-  const sortedFolders = folders;
+  // Sort folders by sort_order so Move Up/Down is reflected instantly
+  const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   return (
     <>
