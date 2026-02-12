@@ -125,7 +125,11 @@ export function PromptCard({
       className="group relative overflow-hidden rounded-lg bg-surface cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={onClick}
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button')) return;
+        onClick?.();
+      }}
       role="article"
       aria-label={`Prompt: ${title}`}
     >
