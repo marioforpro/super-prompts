@@ -15,7 +15,7 @@ export async function getPrompts(): Promise<Prompt[]> {
       `
       *,
       ai_model:ai_models(*),
-      tags:prompt_tags(tags(*)),
+      prompt_tags(tag:tags(*)),
       media:prompt_media(*)
     `
     )
@@ -24,7 +24,17 @@ export async function getPrompts(): Promise<Prompt[]> {
 
   if (error) throw error;
 
-  return (data || []) as Prompt[];
+  // Flatten prompt_tags junction into a tags array
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const prompts = (data || []).map((p: any) => {
+    const tags = Array.isArray(p.prompt_tags)
+      ? p.prompt_tags.map((pt: any) => pt.tag).filter(Boolean)
+      : [];
+    const { prompt_tags: _, ...rest } = p;
+    return { ...rest, tags };
+  });
+
+  return prompts as unknown as Prompt[];
 }
 
 export async function getPrompt(id: string): Promise<Prompt> {
@@ -39,7 +49,7 @@ export async function getPrompt(id: string): Promise<Prompt> {
       `
       *,
       ai_model:ai_models(*),
-      tags:prompt_tags(tags(*)),
+      prompt_tags(tag:tags(*)),
       media:prompt_media(*)
     `
     )
@@ -50,7 +60,16 @@ export async function getPrompt(id: string): Promise<Prompt> {
   if (error) throw error;
   if (!data) throw new Error("Prompt not found");
 
-  return data as Prompt;
+  // Flatten prompt_tags junction into a tags array
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const d = data as any;
+  const tags = Array.isArray(d.prompt_tags)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? d.prompt_tags.map((pt: any) => pt.tag).filter(Boolean)
+    : [];
+  const { prompt_tags: _, ...rest } = d;
+
+  return { ...rest, tags } as unknown as Prompt;
 }
 
 export async function createPrompt(input: CreatePromptInput): Promise<Prompt> {

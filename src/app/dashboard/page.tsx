@@ -31,7 +31,12 @@ export default async function DashboardPage() {
       />
     );
   } catch (error) {
-    console.error("Error loading dashboard:", error);
+    const errMsg = error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error
+        ? String((error as Record<string, unknown>).message)
+        : JSON.stringify(error);
+    console.error("Error loading dashboard:", errMsg);
     return (
       <div className="space-y-8 animate-fadeIn">
         <div>
@@ -48,7 +53,7 @@ export default async function DashboardPage() {
               Unable to load prompts
             </h2>
             <p className="text-text-muted text-sm">
-              {error instanceof Error ? error.message : "Something went wrong"}
+              {errMsg || "Something went wrong"}
             </p>
           </div>
         </div>
