@@ -9,10 +9,25 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+// Curated model list with unique colors, in display order
+const SIDEBAR_MODELS: { slug: string; name: string; color: string }[] = [
+  { slug: "nano-banana-pro", name: "Nano Banana Pro", color: "#facc15" },
+  { slug: "flux",            name: "FLUX",            color: "#38bdf8" },
+  { slug: "kling",           name: "Kling",           color: "#a78bfa" },
+  { slug: "midjourney",      name: "Midjourney",      color: "#f87171" },
+  { slug: "sora",            name: "Sora",            color: "#34d399" },
+  { slug: "veo",             name: "VEO",             color: "#60a5fa" },
+  { slug: "seedance",        name: "Seedance",        color: "#fb923c" },
+  { slug: "seedream",        name: "Seedream",        color: "#e879f9" },
+  { slug: "suno",            name: "Suno",            color: "#2dd4bf" },
+  { slug: "chatgpt",         name: "ChatGPT",         color: "#4ade80" },
+  { slug: "claude",          name: "Claude",          color: "#d4a574" },
+];
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const {
     folders,
-    models,
+    models: _models,
     tags,
     selectedFolderId,
     setSelectedFolderId,
@@ -164,9 +179,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </span>
               </div>
               <div className="mt-1 space-y-0.5 pl-2">
-                {models.slice(0, 12).map((model) => (
+                {SIDEBAR_MODELS.map((model) => (
                   <button
-                    key={model.id}
+                    key={model.slug}
                     onClick={() =>
                       handleNavClick(() => {
                         setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
@@ -180,21 +195,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }`}
                   >
                     <span
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{
-                        backgroundColor:
-                          model.category === "image" ? "#e8764b"
-                          : model.category === "video" ? "#7c6bea"
-                          : model.category === "text" ? "#4ade80"
-                          : "#60a5fa",
-                      }}
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: model.color }}
                     />
                     <span className="truncate">{model.name}</span>
                   </button>
                 ))}
-                {models.length > 12 && (
-                  <p className="px-4 py-1 text-xs text-text-dim">+{models.length - 12} more</p>
-                )}
               </div>
             </div>
 

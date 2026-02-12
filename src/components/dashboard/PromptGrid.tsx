@@ -13,6 +13,7 @@ export interface PromptGridProps {
     coverType?: 'image' | 'video';
     modelName?: string | null;
     modelSlug?: string | null;
+    modelCategory?: string | null;
     isFavorite?: boolean;
     tags?: string[];
   }>;
@@ -78,6 +79,7 @@ export function PromptGrid({
               coverType={prompt.coverType}
               modelName={prompt.modelName}
               modelSlug={prompt.modelSlug}
+              modelCategory={prompt.modelCategory}
               isFavorite={prompt.isFavorite}
               tags={prompt.tags}
               onCopy={() => onCopyPrompt?.(prompt.id, prompt.content)}

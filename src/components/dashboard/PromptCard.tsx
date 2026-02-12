@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, Share2, Play } from 'lucide-react';
+import { Copy, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface PromptCardProps {
@@ -13,6 +13,7 @@ export interface PromptCardProps {
   coverType?: 'image' | 'video';
   modelName?: string | null;
   modelSlug?: string | null;
+  modelCategory?: string | null;
   isFavorite?: boolean;
   tags?: string[];
   onCopy?: () => void;
@@ -33,6 +34,24 @@ const getGradientBackground = (seed: string): string => {
   return colors[hash % colors.length];
 };
 
+/**
+ * Returns the aspect ratio class based on model category:
+ * - image: 3:4 portrait (default)
+ * - video: 16:9 landscape
+ * - audio: 1:1 square
+ * - text/other: 3:4 portrait
+ */
+function getAspectRatio(category?: string | null): string {
+  switch (category) {
+    case 'video':
+      return 'aspect-video'; // 16:9
+    case 'audio':
+      return 'aspect-square'; // 1:1
+    default:
+      return 'aspect-[3/4]'; // portrait
+  }
+}
+
 export function PromptCard({
   id,
   title,
@@ -41,6 +60,7 @@ export function PromptCard({
   coverType = 'image',
   modelName,
   modelSlug,
+  modelCategory,
   isFavorite = false,
   tags = [],
   onCopy,
@@ -61,13 +81,9 @@ export function PromptCard({
     onCopy?.();
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Share functionality can be implemented later
-  };
-
   const firstLine = content.split('\n')[0] || content.substring(0, 60);
   const gradientClass = getGradientBackground(id);
+  const aspectClass = getAspectRatio(modelCategory);
 
   return (
     <div
@@ -79,7 +95,7 @@ export function PromptCard({
       aria-label={`Prompt: ${title}`}
     >
       {/* Cover Image/Video or Gradient Placeholder */}
-      <div className="relative w-full aspect-[3/4] bg-background overflow-hidden">
+      <div className={cn('relative w-full bg-background overflow-hidden', aspectClass)}>
         {coverUrl ? (
           <>
             <Image
@@ -118,59 +134,48 @@ export function PromptCard({
         {/* Hover Overlay */}
         <div
           className={cn(
-            'absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-200',
+            'absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-200',
             isHovered ? 'opacity-100' : 'opacity-0'
           )}
         />
 
-        {/* Hover Content */}
+        {/* Hover Content — title + actions only */}
         <div
           className={cn(
             'absolute inset-x-0 bottom-0 p-4 transition-all duration-200',
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >
-          <h3 className="text-sm font-semibold text-foreground line-clamp-2 mb-3">
+          <h3 className="text-sm font-semibold text-white line-clamp-2 mb-3">
             {title}
           </h3>
 
-          {/* Action Icons */}
-          <div className="flex items-center justify-between">
-            <div />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCopyClick}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-colors duration-200"
-                aria-label="Copy prompt"
-                title="Copy prompt"
-              >
-                <Copy size={16} className="text-white" />
-              </button>
-              <button
-                onClick={handleFavoriteClick}
-                className={cn(
-                  'p-2 rounded-lg backdrop-blur-sm border transition-all duration-200',
-                  isFavoritedLocally
-                    ? 'bg-red-500/30 border-red-400/50 text-red-300'
-                    : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
-                )}
-                aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
-                title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                <Heart
-                  size={16}
-                  className={isFavoritedLocally ? 'fill-current' : ''}
-                />
-              </button>
-              <button
-                onClick={handleShareClick}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-colors duration-200"
-                aria-label="Share prompt"
-                title="Share prompt"
-              >
-                <Share2 size={16} className="text-white" />
-              </button>
-            </div>
+          {/* Action Icons — copy + favorite only */}
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={handleCopyClick}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-colors duration-200"
+              aria-label="Copy prompt"
+              title="Copy prompt"
+            >
+              <Copy size={16} className="text-white" />
+            </button>
+            <button
+              onClick={handleFavoriteClick}
+              className={cn(
+                'p-2 rounded-lg backdrop-blur-sm border transition-all duration-200',
+                isFavoritedLocally
+                  ? 'bg-red-500/30 border-red-400/50 text-red-300'
+                  : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
+              )}
+              aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
+              title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              <Heart
+                size={16}
+                className={isFavoritedLocally ? 'fill-current' : ''}
+              />
+            </button>
           </div>
         </div>
       </div>

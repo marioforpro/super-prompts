@@ -184,6 +184,7 @@ export function DashboardContent({
     coverType: (p.primary_media?.type as "image" | "video" | undefined) || "image",
     modelName: p.ai_model?.name || null,
     modelSlug: p.ai_model?.slug || null,
+    modelCategory: p.ai_model?.category || null,
     isFavorite: p.is_favorite,
     tags: p.tags?.map((t) => t.name) || [],
   }));
