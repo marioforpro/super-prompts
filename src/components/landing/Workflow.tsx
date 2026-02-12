@@ -49,17 +49,16 @@ const steps = [
 export default function Workflow() {
   return (
     <section className="px-6 md:px-8 py-24 max-w-[68rem] mx-auto">
-      <div className="font-display text-xs font-bold tracking-[0.15em] uppercase text-brand-400 mb-4">
+      <div className="text-xs font-bold tracking-[0.2em] uppercase text-brand-400 mb-4" style={{ fontFamily: "var(--font-mono)" }}>
         How It Works
       </div>
       <h2
-        className="font-display font-extrabold leading-tight mb-10 max-w-[30rem]"
+        className="font-display leading-[0.95] mb-10 tracking-[0.01em]"
         style={{
-          fontSize: "clamp(2rem, 4vw, 3rem)",
-          letterSpacing: "-0.03em",
+          fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
         }}
       >
-        From discovery to creation in four steps.
+        FROM DISCOVERY TO CREATION IN FOUR STEPS
       </h2>
 
       <div className="flex flex-col md:flex-row border border-surface-300 rounded-2xl overflow-hidden">
@@ -73,14 +72,14 @@ export default function Workflow() {
             }`}
           >
             {/* Step number watermark */}
-            <div className="absolute top-4 right-4 font-display text-[3rem] font-extrabold text-surface-300/30 leading-none select-none group-hover:text-brand-500/8 transition-colors duration-400">
+            <div className="absolute top-4 right-4 font-display text-[3rem] text-surface-300/30 leading-none select-none group-hover:text-brand-500/8 transition-colors duration-400">
               {String(i + 1).padStart(2, "0")}
             </div>
             <div className="mb-4 opacity-70 group-hover:opacity-100 transition-opacity">{step.icon}</div>
-            <div className="font-display text-[0.7rem] font-bold tracking-widest text-brand-400 mb-2">
+            <div className="text-[0.7rem] font-bold tracking-widest text-brand-400 mb-2" style={{ fontFamily: "var(--font-mono)" }}>
               {step.num}
             </div>
-            <h3 className="font-display text-lg font-bold text-foreground mb-2">
+            <h3 className="text-lg font-bold text-foreground mb-2">
               {step.title}
             </h3>
             <p className="text-sm leading-relaxed text-text-muted">

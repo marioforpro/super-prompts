@@ -80,7 +80,7 @@ export default function MockPreview() {
         className="max-w-5xl mx-auto rounded-2xl overflow-hidden border border-surface-300 bg-surface-50 relative scanlines"
         style={{
           boxShadow:
-            "0 40px 100px rgba(0,0,0,0.5), 0 0 80px rgba(255,107,43,0.04)",
+            "0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.02)",
           animation: "fadeUp 1s ease-out 0.8s both",
         }}
       >

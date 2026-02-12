@@ -38,18 +38,17 @@ export default function Features() {
       <div className="absolute inset-0 dot-grid opacity-30 pointer-events-none" />
 
       <div className="relative z-10">
-        <div className="font-display text-xs font-bold tracking-[0.15em] uppercase text-brand-400 mb-4">
+        <div className="text-xs font-bold tracking-[0.2em] uppercase text-brand-400 mb-4" style={{ fontFamily: "var(--font-mono)" }}>
           Features
         </div>
         <h2
-          className="font-display font-extrabold leading-tight mb-4 max-w-[30rem]"
+          className="font-display leading-[0.95] mb-4 tracking-[0.01em]"
           style={{
-            fontSize: "clamp(2rem, 4vw, 3rem)",
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
           }}
         >
-          Built for how creatives{" "}
-          <span className="text-brand-400">actually work</span>
+          BUILT FOR HOW CREATIVES{" "}
+          <span className="text-brand-400">ACTUALLY WORK</span>
         </h2>
         <p className="text-text-muted text-lg leading-relaxed max-w-[32rem] mb-14">
           Not another text file manager. Super Prompts is designed for visual
@@ -68,13 +67,12 @@ export default function Features() {
               {/* Corner accent line on hover */}
               <div className="absolute top-0 left-0 w-0 h-[2px] bg-brand-500 group-hover:w-12 transition-all duration-500" />
               <div
-                className="font-display text-[2.5rem] font-extrabold text-surface-300 mb-4 leading-none group-hover:text-brand-500/15 transition-colors duration-400"
+                className="font-display text-[2.5rem] text-surface-300 mb-4 leading-none group-hover:text-brand-500/15 transition-colors duration-400"
               >
                 {feature.num}
               </div>
               <div
-                className="font-display text-lg font-bold text-foreground mb-2.5 relative z-10"
-                style={{ letterSpacing: "-0.01em" }}
+                className="text-base font-bold text-foreground mb-2.5 relative z-10"
               >
                 {feature.name}
               </div>

@@ -38,19 +38,17 @@ export default function Home() {
         <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="font-display text-xs font-bold tracking-[0.15em] uppercase text-brand-400 mb-6">
+          <div className="text-xs font-bold tracking-[0.2em] uppercase text-brand-400 mb-6" style={{ fontFamily: "var(--font-mono)" }}>
             Get Started
           </div>
           <h2
-            className="font-display font-extrabold mb-4"
+            className="font-display leading-[0.95] mb-4 tracking-[0.01em]"
             style={{
-              fontSize: "clamp(2rem, 5vw, 3.5rem)",
-              letterSpacing: "-0.03em",
+              fontSize: "clamp(2.2rem, 6vw, 4rem)",
             }}
           >
-            Ready to organize your
-            <br />
-            <span className="text-brand-400">creative prompts</span>?
+            READY TO ORGANIZE YOUR{" "}
+            <span className="text-brand-400">CREATIVE PROMPTS</span>?
           </h2>
           <p className="text-text-muted text-lg max-w-md mx-auto mb-8 leading-relaxed">
             Join the waitlist and be the first to know when Super Prompts

@@ -16,7 +16,7 @@ export default function Hero() {
   return (
     <>
       {/* Fixed Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-[rgba(8,8,10,0.8)] backdrop-blur-[20px] backdrop-saturate-150 border-b border-white/[0.04]">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-[rgba(8,8,10,0.85)] backdrop-blur-[20px] backdrop-saturate-150 border-b border-white/[0.04]">
         <Logo size="md" />
         <div className="flex items-center gap-3">
           {/* Live pulse dot */}
@@ -59,14 +59,6 @@ export default function Hero() {
               animation: "pulseGlow 8s ease-in-out infinite 2s",
             }}
           />
-          <div
-            className="absolute bottom-[20%] left-[10%] w-[300px] h-[300px]"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(229, 90, 27, 0.03) 0%, transparent 70%)",
-              animation: "pulseGlow 7s ease-in-out infinite 4s",
-            }}
-          />
           {/* Horizon line */}
           <div
             className="absolute bottom-0 left-0 right-0 h-px"
@@ -82,26 +74,75 @@ export default function Hero() {
         <div className="absolute top-28 right-8 w-8 h-8 border-r border-t border-surface-300/40 hidden lg:block" />
 
         {/* Hero content */}
-        <div className="max-w-[52rem] text-center relative z-10">
-          {/* Eyebrow */}
-          <div className="anim-fade-up anim-d1 inline-flex items-center gap-2.5 text-[0.8rem] font-medium tracking-widest uppercase text-brand-400 mb-8">
-            <span className="w-8 h-px bg-brand-500" />
-            Prompt management for creatives
-            <span className="w-8 h-px bg-brand-500" />
+        <div className="max-w-[60rem] text-center relative z-10">
+          {/* Creative "Prompt Management for Creatives" badge */}
+          <div className="anim-fade-up anim-d1 mb-10 inline-flex items-center gap-3">
+            {/* Decorative plus */}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              className="text-brand-400"
+            >
+              <rect
+                x="5.5"
+                y="0"
+                width="3"
+                height="14"
+                rx="1.5"
+                fill="currentColor"
+              />
+              <rect
+                x="0"
+                y="5.5"
+                width="14"
+                height="3"
+                rx="1.5"
+                fill="currentColor"
+              />
+            </svg>
+            <span
+              className="text-[0.7rem] font-bold tracking-[0.25em] uppercase text-brand-400"
+              style={{ fontFamily: "var(--font-mono)" }}
+            >
+              Prompt management for creatives
+            </span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              className="text-brand-400"
+            >
+              <rect
+                x="5.5"
+                y="0"
+                width="3"
+                height="14"
+                rx="1.5"
+                fill="currentColor"
+              />
+              <rect
+                x="0"
+                y="5.5"
+                width="14"
+                height="3"
+                rx="1.5"
+                fill="currentColor"
+              />
+            </svg>
           </div>
 
-          {/* Headline — original copy */}
-          <h1
-            className="anim-fade-up anim-d2 font-display font-extrabold leading-[1.05] mb-6"
+          {/* Headline — Bebas Neue, cinematic, horizontal */}
+          <h1 className="anim-fade-up anim-d2 font-display leading-[0.95] mb-6 tracking-[0.02em]"
             style={{
-              fontSize: "clamp(2.8rem, 7vw, 5.5rem)",
-              letterSpacing: "-0.04em",
+              fontSize: "clamp(3.5rem, 10vw, 7.5rem)",
             }}
           >
-            Never lose a great
-            <br />
+            NEVER LOSE A GREAT{" "}
             <span
-              className="bg-clip-text"
+              className="inline-block"
               style={{
                 background:
                   "linear-gradient(135deg, #ff8b3b 0%, #ffb347 50%, #ff6b2b 100%)",
@@ -111,12 +152,12 @@ export default function Hero() {
                 animation: "shimmer 4s linear infinite",
               }}
             >
-              prompt
+              PROMPT
             </span>{" "}
-            again.
+            AGAIN
           </h1>
 
-          {/* Subheadline — original copy */}
+          {/* Subheadline */}
           <p className="anim-fade-up anim-d3 text-lg leading-relaxed text-text-muted max-w-[36rem] mx-auto mb-10">
             The visual prompt library for creatives. Save prompts from anywhere,
             organize with previews, and discover what&apos;s trending — for
