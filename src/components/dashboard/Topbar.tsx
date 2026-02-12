@@ -2,21 +2,30 @@
 
 import { useState, useRef, useEffect } from "react";
 import { PlusIcon } from "@/components/icons/Logo";
+import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 
 interface TopbarProps {
   onMenuToggle: () => void;
   viewMode: "grid" | "list";
   setViewMode: (mode: "grid" | "list") => void;
+  onCreatePrompt?: () => void;
 }
 
 export default function Topbar({
   onMenuToggle,
   viewMode,
   setViewMode,
+  onCreatePrompt,
 }: TopbarProps) {
+  const { openCreateModal } = useCreatePromptModal();
   const [searchQuery, setSearchQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const handleCreateClick = () => {
+    onCreatePrompt?.();
+    openCreateModal();
+  };
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -133,6 +142,7 @@ export default function Topbar({
 
           {/* New Prompt Button */}
           <button
+            onClick={handleCreateClick}
             className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 font-medium text-sm"
             title="Create new prompt"
           >
@@ -142,6 +152,7 @@ export default function Topbar({
 
           {/* Compact New Prompt Button (Mobile) */}
           <button
+            onClick={handleCreateClick}
             className="sm:hidden p-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 flex-shrink-0"
             title="Create new prompt"
           >

@@ -1,0 +1,439 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { X } from "lucide-react";
+import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
+import {
+  createPrompt,
+  updatePrompt,
+  deletePrompt,
+} from "@/lib/actions/prompts";
+import { createTag } from "@/lib/actions/tags";
+
+interface CreatePromptModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: (prompt: Prompt) => void;
+  prompt?: Prompt | null;
+  models: AiModel[];
+  folders: Folder[];
+  tags: Tag[];
+  onTagsChange?: (tags: Tag[]) => void;
+}
+
+export function CreatePromptModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  prompt,
+  models,
+  folders,
+  tags,
+  onTagsChange,
+}: CreatePromptModalProps) {
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [modelId, setModelId] = useState<string | null>(null);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [notes, setNotes] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSearchingModels, setIsSearchingModels] = useState(false);
+  const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Initialize form with existing prompt data
+  useEffect(() => {
+    if (prompt) {
+      setTitle(prompt.title);
+      setContent(prompt.content);
+      setModelId(prompt.model_id || null);
+      setFolderId(prompt.folder_id || null);
+      setNotes(prompt.notes || "");
+      setSourceUrl(prompt.source_url || "");
+      setSelectedTags(prompt.tags?.map((t) => t.id) || []);
+    } else {
+      resetForm();
+    }
+    setError("");
+  }, [prompt, isOpen]);
+
+  // Handle model search
+  useEffect(() => {
+    if (tagInput && isSearchingModels) {
+      const filtered = models.filter((m) =>
+        m.name.toLowerCase().includes(tagInput.toLowerCase())
+      );
+      setFilteredModels(filtered);
+    } else {
+      setFilteredModels(models);
+    }
+  }, [tagInput, models, isSearchingModels]);
+
+  const resetForm = () => {
+    setTitle("");
+    setContent("");
+    setModelId(null);
+    setFolderId(null);
+    setNotes("");
+    setSourceUrl("");
+    setSelectedTags([]);
+    setTagInput("");
+  };
+
+  const handleAddTag = useCallback(
+    async (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
+        e.preventDefault();
+        const tagName = tagInput.trim().replace(/,/, "");
+
+        // Check if tag already exists
+        const existingTag = tags.find(
+          (t) => t.name.toLowerCase() === tagName.toLowerCase()
+        );
+
+        if (existingTag) {
+          if (!selectedTags.includes(existingTag.id)) {
+            setSelectedTags([...selectedTags, existingTag.id]);
+          }
+        } else {
+          // Create new tag
+          try {
+            const newTag = await createTag(tagName);
+            setSelectedTags([...selectedTags, newTag.id]);
+            onTagsChange?.([...tags, newTag]);
+          } catch (err) {
+            setError(
+              `Failed to create tag: ${err instanceof Error ? err.message : ""}`
+            );
+          }
+        }
+
+        setTagInput("");
+      }
+    },
+    [tagInput, tags, selectedTags, onTagsChange]
+  );
+
+  const removeTag = (tagId: string) => {
+    setSelectedTags(selectedTags.filter((id) => id !== tagId));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      if (!title.trim()) {
+        setError("Title is required");
+        return;
+      }
+
+      if (!content.trim()) {
+        setError("Prompt content is required");
+        return;
+      }
+
+      const input = {
+        title: title.trim(),
+        content: content.trim(),
+        model_id: modelId,
+        folder_id: folderId,
+        notes: notes.trim() || undefined,
+        source_url: sourceUrl.trim() || undefined,
+        tag_ids: selectedTags,
+      };
+
+      let result;
+      if (prompt) {
+        result = await updatePrompt(prompt.id, input);
+      } else {
+        result = await createPrompt(input);
+      }
+
+      onSuccess?.(result);
+      onClose();
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!prompt) return;
+
+    setIsLoading(true);
+    try {
+      await deletePrompt(prompt.id);
+      onSuccess?.(null as any);
+      onClose();
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete prompt");
+    } finally {
+      setIsLoading(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const selectedTagObjects = tags.filter((t) => selectedTags.includes(t.id));
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] bg-surface border-l border-surface-200 shadow-2xl shadow-black/40 z-50 flex flex-col overflow-hidden animate-in slide-in-from-right-full duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-surface-200">
+          <h2 className="text-lg font-semibold text-foreground">
+            {prompt ? "Edit Prompt" : "Create Prompt"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-surface-100 rounded-lg transition-colors"
+            disabled={isLoading}
+          >
+            <X size={20} className="text-text-muted" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Title */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Title *
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter prompt title"
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Prompt Content */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-foreground">
+                Prompt *
+              </label>
+              <span className="text-xs text-text-dim">
+                {content.length} characters
+              </span>
+            </div>
+            <textarea
+              ref={contentRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Enter your prompt text here"
+              rows={8}
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* AI Model */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              AI Model
+            </label>
+            <select
+              value={modelId || ""}
+              onChange={(e) => setModelId(e.target.value || null)}
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
+              disabled={isLoading}
+            >
+              <option value="">Select a model...</option>
+              {models.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Folder */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Folder
+            </label>
+            <select
+              value={folderId || ""}
+              onChange={(e) => setFolderId(e.target.value || null)}
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
+              disabled={isLoading}
+            >
+              <option value="">Unfiled</option>
+              {folders.map((folder) => (
+                <option key={folder.id} value={folder.id}>
+                  {folder.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tags */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Tags
+            </label>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleAddTag}
+              placeholder="Type tag name, press Enter to add"
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50 mb-3"
+              disabled={isLoading}
+            />
+            {selectedTagObjects.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {selectedTagObjects.map((tag) => (
+                  <div
+                    key={tag.id}
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500/30 text-sm text-foreground"
+                  >
+                    <span>{tag.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag.id)}
+                      className="hover:opacity-70 transition-opacity"
+                      disabled={isLoading}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add optional notes about this prompt"
+              rows={4}
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50"
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Source URL */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Source URL
+            </label>
+            <input
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="https://example.com"
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
+              disabled={isLoading}
+            />
+          </div>
+        </form>
+
+        {/* Footer */}
+        <div className="border-t border-surface-200 p-6 bg-surface/50 backdrop-blur-sm flex items-center justify-between gap-3">
+          {prompt && (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-4 py-2.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors font-medium text-sm disabled:opacity-50"
+              disabled={isLoading || showDeleteConfirm}
+            >
+              Delete
+            </button>
+          )}
+          <div className="flex-1" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 hover:bg-surface-100 rounded-lg transition-colors font-medium text-sm text-text-muted disabled:opacity-50"
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 disabled:from-brand-500/50 disabled:to-brand-500/50 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 disabled:shadow-brand-500/10 font-medium text-sm"
+            >
+              {isLoading ? "Saving..." : prompt ? "Update" : "Create"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            onClick={() => setShowDeleteConfirm(false)}
+          />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="w-full max-w-sm bg-surface border border-surface-200 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Delete Prompt?
+                </h3>
+                <p className="text-sm text-text-muted mb-6">
+                  This action cannot be undone. The prompt and all its associated data will be permanently deleted.
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 px-4 py-2.5 hover:bg-surface-100 rounded-lg transition-colors font-medium text-sm text-text-muted disabled:opacity-50"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 disabled:bg-red-500/10 border border-red-500/30 text-red-300 rounded-lg transition-colors font-medium text-sm disabled:opacity-50"
+                  >
+                    {isLoading ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}

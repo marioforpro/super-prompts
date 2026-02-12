@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EmptyStateProps {
+  onCreateClick?: () => void;
   onCreatePrompt?: () => void;
   title?: string;
   subtitle?: string;
@@ -11,11 +12,14 @@ export interface EmptyStateProps {
 }
 
 export function EmptyState({
+  onCreateClick,
   onCreatePrompt,
   title = 'NO PROMPTS YET',
   subtitle = 'Save your first prompt to get started',
   buttonLabel = '+ NEW PROMPT',
 }: EmptyStateProps) {
+  const handleClick = onCreateClick || onCreatePrompt;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       {/* Illustration */}
@@ -68,7 +72,7 @@ export function EmptyState({
 
       {/* CTA Button */}
       <button
-        onClick={onCreatePrompt}
+        onClick={handleClick}
         className={cn(
           'px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200',
           'bg-gradient-to-r from-brand-coral to-pink-600',

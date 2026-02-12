@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import { CreatePromptProvider } from "@/contexts/CreatePromptContext";
 import type { User } from "@supabase/supabase-js";
 
 interface DashboardLayoutProps {
@@ -17,6 +18,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState("all-prompts");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -26,32 +28,39 @@ export default function DashboardLayout({
     setSidebarOpen(false);
   };
 
-  return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={closeSidebar}
-        activeNav={activeNav}
-        setActiveNav={setActiveNav}
-      />
+  const handleCreatePrompt = () => {
+    setIsCreateModalOpen(true);
+  };
 
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Topbar */}
-        <Topbar
-          onMenuToggle={toggleSidebar}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
+  return (
+    <CreatePromptProvider>
+      <div className="flex h-screen bg-background overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={closeSidebar}
+          activeNav={activeNav}
+          setActiveNav={setActiveNav}
         />
 
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-background">
-          <div className="px-6 py-8">
-            {children}
-          </div>
-        </main>
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Topbar */}
+          <Topbar
+            onMenuToggle={toggleSidebar}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            onCreatePrompt={handleCreatePrompt}
+          />
+
+          {/* Content */}
+          <main className="flex-1 overflow-y-auto bg-background">
+            <div className="px-6 py-8">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </CreatePromptProvider>
   );
 }
