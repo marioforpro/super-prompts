@@ -1,74 +1,74 @@
 const sidebarItems = [
-  { name: "All Prompts", color: "#ff8b3b", active: true, count: 127 },
+  { name: "All Prompts", color: "#c8784e", active: true, count: 127 },
   { name: "Video FX", color: "#e43f5a", active: false, count: 43 },
   { name: "Portraits", color: "#38b6ff", active: false, count: 31 },
   { name: "Sound Design", color: "#28c840", active: false, count: 18 },
-  { name: "Product Shots", color: "#ffbd2e", active: false, count: 24 },
+  { name: "Product Shots", color: "#e8a87a", active: false, count: 24 },
 ];
 
 const cards = [
   {
     title: "Cinematic sunset aerial",
     badge: "Sora",
-    badgeBg: "rgba(255,107,43,0.15)",
-    badgeColor: "#ff8b3b",
-    gradient: "linear-gradient(135deg, #0d0d0d, #1a1a2e, #ff6b2b, #ffb347)",
+    badgeBg: "rgba(200,120,78,0.1)",
+    badgeColor: "#b06840",
+    gradient: "linear-gradient(135deg, #f5cba7, #f0a06e, #e07a5f, #c8784e)",
     fav: true,
   },
   {
     title: "Neon portrait cyberpunk",
     badge: "Midjourney",
-    badgeBg: "rgba(56,182,255,0.15)",
-    badgeColor: "#38b6ff",
-    gradient: "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460, #e94560)",
+    badgeBg: "rgba(56,182,255,0.1)",
+    badgeColor: "#2a8fd4",
+    gradient: "linear-gradient(135deg, #a8d8ea, #3d7ea6, #1b4965, #5fa8d3)",
     fav: false,
   },
   {
     title: "Ambient forest texture",
     badge: "Suno",
-    badgeBg: "rgba(40,200,64,0.15)",
-    badgeColor: "#28c840",
-    gradient: "linear-gradient(135deg, #2d1b69, #11998e, #38ef7d)",
+    badgeBg: "rgba(40,200,64,0.1)",
+    badgeColor: "#1e8a3a",
+    gradient: "linear-gradient(135deg, #b5e8b5, #56ab6b, #2d6a4f, #40916c)",
     fav: true,
   },
   {
     title: "Slow motion liquid pour",
     badge: "Kling",
-    badgeBg: "rgba(228,63,90,0.15)",
-    badgeColor: "#e43f5a",
-    gradient: "linear-gradient(135deg, #200122, #6f0000, #e94560)",
+    badgeBg: "rgba(228,63,90,0.1)",
+    badgeColor: "#c4304f",
+    gradient: "linear-gradient(135deg, #f8b4b4, #ef6f6f, #c84b65, #a83257)",
     fav: false,
   },
   {
     title: "Minimal product flat lay",
     badge: "FLUX",
-    badgeBg: "rgba(255,189,46,0.15)",
-    badgeColor: "#ffbd2e",
-    gradient: "linear-gradient(135deg, #141e30, #243b55, #38b6ff)",
+    badgeBg: "rgba(232,168,122,0.12)",
+    badgeColor: "#b06840",
+    gradient: "linear-gradient(135deg, #d4e4f7, #a3c4e7, #7baad4, #5b8fb9)",
     fav: false,
   },
   {
     title: "Abstract motion trails",
     badge: "Runway",
-    badgeBg: "rgba(255,107,43,0.15)",
-    badgeColor: "#ff8b3b",
-    gradient: "linear-gradient(135deg, #0c0c0c, #1a1a2e, #e94560, #f38181)",
+    badgeBg: "rgba(200,120,78,0.1)",
+    badgeColor: "#b06840",
+    gradient: "linear-gradient(135deg, #f8c4c4, #e87e7e, #d45b7a, #b8466e)",
     fav: true,
   },
   {
     title: "Drone through clouds",
     badge: "VEO",
-    badgeBg: "rgba(255,107,43,0.15)",
-    badgeColor: "#ff8b3b",
-    gradient: "linear-gradient(135deg, #1b1b2f, #162447, #1f4068, #e43f5a)",
+    badgeBg: "rgba(120,80,200,0.1)",
+    badgeColor: "#6b4fb5",
+    gradient: "linear-gradient(135deg, #c9b8e8, #9b8ec4, #7a6fad, #5d4e97)",
     fav: false,
   },
   {
     title: "Vintage film grain style",
     badge: "Seedream",
-    badgeBg: "rgba(56,182,255,0.15)",
-    badgeColor: "#38b6ff",
-    gradient: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
+    badgeBg: "rgba(56,182,255,0.1)",
+    badgeColor: "#2a8fd4",
+    gradient: "linear-gradient(135deg, #e8d5b7, #c9a87c, #a38160, #856b4d)",
     fav: false,
   },
 ];
@@ -77,13 +77,14 @@ export default function MockPreview() {
   return (
     <section className="px-6 md:px-8 pb-24 relative">
       <div
-        className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-surface-300 bg-surface-50 relative"
+        className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-surface-200 bg-white relative"
         style={{
           animation: "fadeUp 1s ease-out 0.8s both",
+          boxShadow: "0 8px 40px rgba(42,37,34,0.06), 0 1px 3px rgba(42,37,34,0.04)",
         }}
       >
         {/* Window chrome with search */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-surface-100 border-b border-surface-300">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-surface-50 border-b border-surface-200">
           <div className="flex items-center gap-2.5">
             <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
             <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
@@ -93,7 +94,7 @@ export default function MockPreview() {
             </span>
           </div>
           {/* Search bar */}
-          <div className="hidden sm:flex items-center gap-2 bg-surface-200 border border-surface-300 rounded-lg px-4 py-2 min-w-[200px]">
+          <div className="hidden sm:flex items-center gap-2 bg-white border border-surface-200 rounded-lg px-4 py-2 min-w-[200px]">
             <svg
               width="14"
               height="14"
@@ -115,15 +116,15 @@ export default function MockPreview() {
         {/* Body */}
         <div className="flex min-h-[400px]">
           {/* Sidebar with counts */}
-          <div className="w-[220px] shrink-0 p-5 border-r border-surface-300 bg-surface-100 hidden md:flex flex-col">
+          <div className="w-[220px] shrink-0 p-5 border-r border-surface-200 bg-surface-50/50 hidden md:flex flex-col">
             <div className="flex-1">
               {sidebarItems.map((item) => (
                 <div
                   key={item.name}
                   className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all duration-200 ${
                     item.active
-                      ? "bg-brand-500/8 text-brand-400"
-                      : "text-text-muted"
+                      ? "bg-brand-50 text-brand-600 font-medium"
+                      : "text-text-muted hover:bg-surface-100"
                   }`}
                 >
                   <div
@@ -133,7 +134,7 @@ export default function MockPreview() {
                   <span className="flex-1">{item.name}</span>
                   <span
                     className={`text-xs ${
-                      item.active ? "text-brand-400/60" : "text-text-dim"
+                      item.active ? "text-brand-400" : "text-text-dim"
                     }`}
                   >
                     {item.count}
@@ -142,8 +143,8 @@ export default function MockPreview() {
               ))}
             </div>
             {/* Sidebar bottom */}
-            <div className="pt-4 border-t border-surface-300 mt-4">
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-brand-400 font-semibold">
+            <div className="pt-4 border-t border-surface-200 mt-4">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-brand-500 font-semibold">
                 <svg
                   width="12"
                   height="12"
@@ -165,7 +166,8 @@ export default function MockPreview() {
             {cards.map((card) => (
               <div
                 key={card.title}
-                className="group rounded-xl overflow-hidden border border-surface-300 bg-surface-200 transition-all duration-300 hover:border-brand-500/30 hover:-translate-y-0.5"
+                className="group rounded-xl overflow-hidden border border-surface-200 bg-white transition-all duration-300 hover:border-brand-300 hover:-translate-y-0.5"
+                style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
               >
                 {/* Card image with optional favorite */}
                 <div
@@ -173,12 +175,12 @@ export default function MockPreview() {
                   style={{ background: card.gradient }}
                 >
                   {card.fav && (
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center">
                       <svg
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
-                        fill="#ff6b2b"
+                        fill="#c8784e"
                         stroke="none"
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />

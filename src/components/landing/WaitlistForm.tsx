@@ -38,9 +38,9 @@ export default function WaitlistForm() {
 
   if (status === "success") {
     return (
-      <div className="flex items-center gap-3 rounded-xl bg-brand-500/10 border border-brand-500/30 px-6 py-4">
+      <div className="flex items-center gap-3 rounded-xl bg-brand-50 border border-brand-200 px-6 py-4">
         <svg
-          className="w-5 h-5 text-brand-400 shrink-0"
+          className="w-5 h-5 text-brand-500 shrink-0"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={2}
@@ -52,7 +52,7 @@ export default function WaitlistForm() {
             d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <p className="text-brand-300 text-sm">{message}</p>
+        <p className="text-brand-600 text-sm">{message}</p>
       </div>
     );
   }
@@ -68,21 +68,22 @@ export default function WaitlistForm() {
           if (status === "error") setStatus("idle");
         }}
         required
-        className="flex-1 bg-surface-100 border border-surface-300 rounded-xl px-5 py-3.5 text-white text-base font-sans placeholder:text-text-dim outline-none transition-all duration-250 focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(255,107,43,0.1),0_0_30px_rgba(255,107,43,0.05)]"
+        className="flex-1 bg-white border border-surface-300 rounded-xl px-5 py-3.5 text-foreground text-base font-sans placeholder:text-text-dim outline-none transition-all duration-250 focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(200,120,78,0.1)]"
+        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
       />
       <button
         type="submit"
         disabled={status === "loading"}
         className="group font-sans font-bold text-base tracking-wide px-8 py-3.5 rounded-xl border-none cursor-pointer text-white whitespace-nowrap transition-all duration-300 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2.5"
         style={{
-          background: "linear-gradient(135deg, #ff8b3b 0%, #ff6b2b 50%, #e55a1b 100%)",
-          boxShadow: "0 4px 20px rgba(255,107,43,0.35), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 0 0 rgba(255,107,43,0)",
+          background: "linear-gradient(135deg, #d08860 0%, #c8784e 50%, #b06840 100%)",
+          boxShadow: "0 4px 16px rgba(200,120,78,0.25), inset 0 1px 0 rgba(255,255,255,0.15)",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = "0 6px 30px rgba(255,107,43,0.5), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 40px rgba(255,107,43,0.15)";
+          e.currentTarget.style.boxShadow = "0 6px 24px rgba(200,120,78,0.35), inset 0 1px 0 rgba(255,255,255,0.15)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = "0 4px 20px rgba(255,107,43,0.35), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 0 0 rgba(255,107,43,0)";
+          e.currentTarget.style.boxShadow = "0 4px 16px rgba(200,120,78,0.25), inset 0 1px 0 rgba(255,255,255,0.15)";
         }}
       >
         {status === "loading" ? (
@@ -98,7 +99,7 @@ export default function WaitlistForm() {
         )}
       </button>
       {status === "error" && (
-        <p className="text-red-400 text-sm mt-1 absolute -bottom-6 left-0">
+        <p className="text-red-500 text-sm mt-1 absolute -bottom-6 left-0">
           {message}
         </p>
       )}

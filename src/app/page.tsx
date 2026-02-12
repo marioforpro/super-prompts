@@ -20,29 +20,27 @@ export default function Home() {
 
       {/* Bottom CTA */}
       <section className="px-6 md:px-8 py-36 text-center relative overflow-hidden">
-        {/* Background glow */}
+        {/* Soft warm background wash */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,107,43,0.06) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(200,120,78,0.05) 0%, transparent 65%)",
           }}
         />
-        {/* Plus grid */}
-        <div className="absolute inset-0 plus-grid pointer-events-none" />
 
         <div className="relative z-10">
-          <div className="text-sm font-bold tracking-[0.2em] uppercase text-brand-400 mb-6" style={{ fontFamily: "var(--font-mono)" }}>
+          <div className="text-sm font-bold tracking-[0.2em] uppercase text-brand-500 mb-6" style={{ fontFamily: "var(--font-mono)" }}>
             Get Started
           </div>
           <h2
-            className="font-display leading-[0.95] mb-6 tracking-[0.01em]"
+            className="font-display leading-[1] mb-6"
             style={{
-              fontSize: "clamp(2.8rem, 7vw, 5.5rem)",
+              fontSize: "clamp(2.4rem, 6vw, 4.8rem)",
             }}
           >
-            READY TO ORGANIZE YOUR{" "}
-            <span className="text-brand-400">CREATIVE PROMPTS</span>?
+            Ready to Organize Your{" "}
+            <span className="text-brand-400 italic">Creative Prompts</span>?
           </h2>
           <p className="text-text-muted text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
             Join the waitlist and be the first to know when Super Prompts launches.
