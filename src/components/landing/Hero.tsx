@@ -30,7 +30,7 @@ export default function Hero() {
       {/* Hero Section */}
       <section
         id="top"
-        className="relative min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 md:px-8 pt-32 pb-16 overflow-hidden"
+        className="relative min-h-screen w-full flex flex-col items-center justify-center pt-32 pb-16 overflow-hidden"
       >
         {/* Atmospheric gradient orbs — punchy */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -71,8 +71,15 @@ export default function Hero() {
           <BackgroundPattern />
         </div>
 
-        {/* Hero content */}
-        <div className="max-w-[58rem] text-center relative z-10">
+        {/* Hero content — explicitly centered */}
+        <div
+          className="w-full max-w-[58rem] px-4 sm:px-6 md:px-8 relative z-10 flex flex-col items-center justify-center min-w-0"
+          style={{
+            marginLeft: "auto",
+            marginRight: "auto",
+            textAlign: "center",
+          }}
+        >
           {/* Badge */}
           <div className="anim-fade-up anim-d1 mb-10 inline-flex items-center gap-2 sm:gap-3 flex-wrap justify-center px-2">
             <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
@@ -121,23 +128,23 @@ export default function Hero() {
           </h1>
 
           {/* Subheadline */}
-          <p className="anim-fade-up anim-d3 text-base sm:text-xl leading-relaxed text-text-muted mx-auto mb-12 max-w-xl px-2 whitespace-nowrap overflow-x-auto">
+          <p className="anim-fade-up anim-d3 text-base sm:text-xl leading-relaxed text-text-muted mb-12">
             Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
           {/* Model ticker — glass pills */}
-          <div className="anim-fade-up anim-d3 flex flex-wrap justify-center gap-2 mb-12 px-2">
+          <div className="anim-fade-up anim-d3 flex flex-nowrap justify-center gap-2 mb-12 px-2 overflow-x-auto">
             {models.map((model) => (
               <span
                 key={model}
-                className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full text-foreground/70 border border-white/[0.08] transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105"
+                className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full text-foreground/70 border border-white/[0.08] shrink-0 transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105"
                 style={{ background: "rgba(17,17,22,0.5)" }}
               >
                 {model}
               </span>
             ))}
             <span
-              className="text-sm font-bold tracking-wide px-4 py-1.5 rounded-full text-brand-300 border border-brand-200"
+              className="text-sm font-bold tracking-wide px-4 py-1.5 rounded-full text-brand-300 border border-brand-200 shrink-0"
               style={{ background: "rgba(232,118,75,0.06)" }}
             >
               +20 more
@@ -145,7 +152,7 @@ export default function Hero() {
           </div>
 
           {/* Waitlist */}
-          <div className="anim-fade-up anim-d4 flex justify-center mb-4 px-2">
+          <div className="anim-fade-up anim-d4 flex justify-center items-center w-full mb-4">
             <WaitlistForm />
           </div>
           <p className="anim-fade-up anim-d5 text-sm text-text-dim mt-1">

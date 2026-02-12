@@ -5,7 +5,7 @@ import WaitlistForm from "@/components/landing/WaitlistForm";
 import Footer from "@/components/landing/Footer";
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen w-full overflow-x-hidden">
       <Hero />
       <MockPreview />
 
