@@ -233,25 +233,6 @@ export function DashboardContent({
                   : `${prompts.length} prompt${prompts.length === 1 ? "" : "s"} total`}
             </p>
           </div>
-          <button
-            onClick={handleOpenModal}
-            className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 font-medium text-sm"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>New Prompt</span>
-          </button>
         </div>
 
         {/* Active Filters Chips */}
