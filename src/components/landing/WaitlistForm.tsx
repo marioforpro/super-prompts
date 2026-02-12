@@ -73,9 +73,29 @@ export default function WaitlistForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="font-sans font-bold text-base tracking-wide px-8 py-3.5 rounded-xl border-none cursor-pointer bg-brand-500 text-white whitespace-nowrap transition-all duration-250 shadow-[0_4px_20px_rgba(255,107,43,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-brand-600 hover:-translate-y-px hover:shadow-[0_6px_30px_rgba(255,107,43,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="group font-sans font-bold text-base tracking-wide px-8 py-3.5 rounded-xl border-none cursor-pointer text-white whitespace-nowrap transition-all duration-300 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2.5"
+        style={{
+          background: "linear-gradient(135deg, #ff8b3b 0%, #ff6b2b 50%, #e55a1b 100%)",
+          boxShadow: "0 4px 20px rgba(255,107,43,0.35), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 0 0 rgba(255,107,43,0)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = "0 6px 30px rgba(255,107,43,0.5), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 40px rgba(255,107,43,0.15)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = "0 4px 20px rgba(255,107,43,0.35), inset 0 1px 0 rgba(255,255,255,0.15), 0 0 0 0 rgba(255,107,43,0)";
+        }}
       >
-        {status === "loading" ? "Joining..." : "Get Early Access"}
+        {status === "loading" ? (
+          "Joining..."
+        ) : (
+          <>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+              <rect x="6.5" y="1" width="3" height="14" rx="1.5" fill="white" />
+              <rect x="1" y="6.5" width="14" height="3" rx="1.5" fill="white" />
+            </svg>
+            Get Early Access
+          </>
+        )}
       </button>
       {status === "error" && (
         <p className="text-red-400 text-sm mt-1 absolute -bottom-6 left-0">

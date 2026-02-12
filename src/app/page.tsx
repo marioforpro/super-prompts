@@ -28,8 +28,8 @@ export default function Home() {
               "radial-gradient(circle, rgba(255,107,43,0.06) 0%, transparent 70%)",
           }}
         />
-        {/* Dot grid */}
-        <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
+        {/* Plus grid */}
+        <div className="absolute inset-0 plus-grid pointer-events-none" />
 
         <div className="relative z-10">
           <div className="text-sm font-bold tracking-[0.2em] uppercase text-brand-400 mb-6" style={{ fontFamily: "var(--font-mono)" }}>
@@ -44,9 +44,8 @@ export default function Home() {
             READY TO ORGANIZE YOUR{" "}
             <span className="text-brand-400">CREATIVE PROMPTS</span>?
           </h2>
-          <p className="text-text-muted text-xl max-w-lg mx-auto mb-10 leading-relaxed">
-            Join the waitlist and be the first to know when Super Prompts
-            launches.
+          <p className="text-text-muted text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+            Join the waitlist and be the first to know when Super Prompts launches.
           </p>
           <div className="flex justify-center">
             <WaitlistForm />

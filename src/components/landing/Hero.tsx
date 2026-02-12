@@ -7,9 +7,9 @@ const models = [
   "Kling",
   "Sora",
   "FLUX",
-  "Pika",
+  "VEO",
   "Suno",
-  "Udio",
+  "Banana Pro",
 ];
 
 export default function Hero() {
@@ -20,13 +20,9 @@ export default function Hero() {
         <Logo size="md" />
         <div className="flex items-center gap-3">
           {/* Live blinking dot */}
-          <span className="relative flex h-2.5 w-2.5">
-            <span
-              className="absolute inline-flex h-full w-full rounded-full bg-brand-400"
-              style={{ animation: "blink-dot 1.5s ease-in-out infinite" }}
-            />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-400" />
-          </span>
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full bg-brand-400 blink-dot"
+          />
           <span className="text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/15">
             Coming Soon
           </span>
@@ -38,8 +34,8 @@ export default function Hero() {
         id="top"
         className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 pt-32 pb-16 overflow-hidden"
       >
-        {/* Dot grid background texture */}
-        <div className="absolute inset-0 dot-grid opacity-40" />
+        {/* Plus grid background texture */}
+        <div className="absolute inset-0 plus-grid opacity-100" />
 
         {/* Atmospheric glow orbs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
@@ -67,6 +63,30 @@ export default function Hero() {
                 "linear-gradient(90deg, transparent, rgba(255, 107, 43, 0.15), transparent)",
             }}
           />
+        </div>
+
+        {/* Scattered decorative plus signs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none hidden lg:block">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="absolute top-[18%] left-[8%] text-brand-500/[0.07]" style={{ animation: "float 8s ease-in-out infinite" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          </svg>
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" className="absolute top-[35%] right-[6%] text-brand-500/[0.06]" style={{ animation: "float 10s ease-in-out infinite 1s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          </svg>
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none" className="absolute top-[60%] left-[5%] text-brand-500/[0.05]" style={{ animation: "float 12s ease-in-out infinite 2s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          </svg>
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="absolute top-[75%] right-[10%] text-brand-500/[0.05]" style={{ animation: "float 9s ease-in-out infinite 3s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          </svg>
+          <svg width="10" height="10" viewBox="0 0 20 20" fill="none" className="absolute top-[25%] left-[22%] text-brand-500/[0.04]" style={{ animation: "float 11s ease-in-out infinite 4s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          </svg>
         </div>
 
         {/* Hero content */}
@@ -154,10 +174,8 @@ export default function Hero() {
           </h1>
 
           {/* Subheadline */}
-          <p className="anim-fade-up anim-d3 text-xl leading-relaxed text-text-muted max-w-[40rem] mx-auto mb-12">
-            The visual prompt library for creatives. Save prompts from anywhere,
-            organize with previews, and discover what&apos;s trending — for
-            image, video, and sound generation.
+          <p className="anim-fade-up anim-d3 text-xl leading-relaxed text-text-muted max-w-[48rem] mx-auto mb-12">
+            Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
           {/* Model ticker */}
