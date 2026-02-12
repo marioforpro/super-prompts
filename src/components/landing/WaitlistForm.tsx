@@ -64,7 +64,7 @@ export default function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3 w-full max-w-lg">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-lg">
       <input
         type="email"
         placeholder="your@email.com"
@@ -117,7 +117,7 @@ export default function WaitlistForm() {
         )}
       </button>
       {status === "error" && (
-        <p className="text-red-400 text-sm mt-1 absolute -bottom-6 left-0">
+        <p className="text-red-400 text-sm mt-1 text-center sm:text-left">
           {message}
         </p>
       )}

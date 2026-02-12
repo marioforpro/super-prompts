@@ -24,7 +24,7 @@ const cards = [
     fav: false,
   },
   {
-    title: "Ambient forest texture",
+    title: "Ambient forest sound",
     badge: "Suno",
     badgeBg: "rgba(122,199,122,0.12)",
     badgeColor: "#7ac77a",
@@ -75,23 +75,22 @@ const cards = [
 
 export default function MockPreview() {
   return (
-    <section className="px-6 md:px-8 pb-24 relative">
+    <section className="px-4 sm:px-6 md:px-8 py-24 relative">
       <div
-        className="max-w-6xl mx-auto rounded-2xl overflow-hidden relative"
+        className="max-w-6xl mx-auto rounded-2xl overflow-hidden relative my-8 sm:my-12 md:my-16"
         style={{
           animation: "fadeUp 1s ease-out 0.8s both",
           background: "rgba(17,17,22,0.7)",
           border: "1px solid rgba(255,255,255,0.06)",
-          boxShadow: "0 8px 60px rgba(0,0,0,0.4), 0 0 80px rgba(232,118,75,0.05)",
         }}
       >
         {/* Window chrome with search */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]" style={{ background: "rgba(22,22,32,0.8)" }}>
-          <div className="flex items-center gap-2.5">
-            <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-            <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
-            <span className="w-3 h-3 rounded-full bg-[#28c840]" />
-            <span className="ml-3 text-sm text-text-dim font-medium">
+        <div className="flex items-center justify-between px-3 sm:px-5 py-3.5 border-b border-white/[0.06]" style={{ background: "rgba(22,22,32,0.8)" }}>
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <span className="w-3 h-3 rounded-full bg-[#ff5f57] shrink-0" />
+            <span className="w-3 h-3 rounded-full bg-[#ffbd2e] shrink-0" />
+            <span className="w-3 h-3 rounded-full bg-[#28c840] shrink-0" />
+            <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-text-dim font-medium truncate">
               Super Prompts — My Library
             </span>
           </div>
@@ -165,7 +164,7 @@ export default function MockPreview() {
           </div>
 
           {/* Card grid */}
-          <div className="flex-1 p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 content-start">
+          <div className="flex-1 p-3 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5 content-start">
             {cards.map((card) => (
               <div
                 key={card.title}

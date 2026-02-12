@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="border-t border-white/[0.06] px-6 md:px-8 py-12">
       <div className="max-w-[68rem] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
         <Logo size="md" />
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6">
           <a
             href="https://x.com"
             target="_blank"

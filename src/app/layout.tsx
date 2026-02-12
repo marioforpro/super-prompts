@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "prompt library",
   ],
   openGraph: {
-    title: "Super Prompts — Never Lose a Great Prompt Again",
+    title: "Super Prompts — NEVER LOSE A GREAT PROMPT AGAIN",
     description:
       "The visual prompt library for creatives. Save, organize, and discover AI prompts.",
     type: "website",

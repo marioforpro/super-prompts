@@ -48,7 +48,7 @@ const steps = [
 
 export default function Workflow() {
   return (
-    <section className="px-6 md:px-8 py-28 max-w-[68rem] mx-auto text-center">
+    <section className="px-4 sm:px-6 md:px-8 py-16 sm:py-28 max-w-[68rem] mx-auto text-center">
       <div className="text-sm font-bold tracking-[0.2em] uppercase text-brand-400 mb-4" style={{ fontFamily: "var(--font-mono)" }}>
         How It Works
       </div>
@@ -58,7 +58,7 @@ export default function Workflow() {
           fontSize: "clamp(2.4rem, 5vw, 4.2rem)",
         }}
       >
-        Four Simple Steps
+        FOUR SIMPLE STEPS
       </h2>
 
       {/* Timeline-style horizontal layout */}
