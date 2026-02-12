@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { DashboardProvider } from "@/contexts/DashboardContext";
-import { CreatePromptProvider } from "@/contexts/CreatePromptContext";
+import { CreatePromptProvider, useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -38,6 +39,43 @@ export default function DashboardShell({
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboard();
+  const { openCreateModal } = useCreatePromptModal();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
+      const isMod = e.metaKey || e.ctrlKey;
+
+      // Cmd/Ctrl + K → Focus search
+      if (isMod && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // Esc → Blur search
+      if (e.key === "Escape" && target === searchInputRef.current) {
+        searchInputRef.current?.blur();
+        return;
+      }
+
+      // Only fire letter shortcuts when not typing in an input
+      if (isInput) return;
+
+      // N → New Prompt
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        openCreateModal();
+        return;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [openCreateModal]);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -46,7 +84,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
         onClose={() => setSidebarOpen(false)}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar onMenuToggle={toggleSidebar} />
+        <Topbar onMenuToggle={toggleSidebar} searchInputRef={searchInputRef} />
         <main className="flex-1 overflow-y-auto bg-background">
           <div className="px-6 py-8">{children}</div>
         </main>

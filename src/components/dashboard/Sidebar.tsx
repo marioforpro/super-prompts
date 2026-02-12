@@ -32,6 +32,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     folders,
     addFolder,
     removeFolder,
+    updateFolder,
     models: _models,
     tags,
     selectedFolderId,
@@ -114,9 +115,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     try {
       const updated = await renameFolder(editingFolderId, editingFolderName.trim());
-      // Update in context — replace the folder with updated one
-      removeFolder(editingFolderId);
-      addFolder(updated);
+      // Update in context — in-place update preserves sort order
+      updateFolder(editingFolderId, { name: updated.name });
       setEditingFolderId(null);
       setEditingFolderName("");
     } catch (err) {

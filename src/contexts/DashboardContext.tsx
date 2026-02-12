@@ -27,6 +27,7 @@ interface DashboardState {
   folders: Folder[];
   addFolder: (folder: Folder) => void;
   removeFolder: (id: string) => void;
+  updateFolder: (id: string, updates: Partial<Folder>) => void;
   models: AiModel[];
   tags: Tag[];
   // User
@@ -69,6 +70,12 @@ export function DashboardProvider({
     setFolders((prev) => prev.filter((f) => f.id !== id));
   };
 
+  const updateFolder = (id: string, updates: Partial<Folder>) => {
+    setFolders((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+    );
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -90,6 +97,7 @@ export function DashboardProvider({
         folders,
         addFolder,
         removeFolder,
+        updateFolder,
         models,
         tags,
         userEmail,

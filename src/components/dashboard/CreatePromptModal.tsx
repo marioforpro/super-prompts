@@ -83,6 +83,20 @@ export function CreatePromptModal({
     setError("");
   }, [prompt, isOpen]);
 
+  // Cmd/Ctrl+Enter to submit
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !isLoading) {
+        e.preventDefault();
+        const form = document.querySelector<HTMLFormElement>('form');
+        if (form) form.requestSubmit();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, isLoading]);
+
   // Cleanup blob URLs when modal closes
   useEffect(() => {
     if (!isOpen && thumbnailPreview?.startsWith("blob:")) {
@@ -677,6 +691,9 @@ export function CreatePromptModal({
                 : prompt
                   ? "Update"
                   : "Create"}
+              {!isLoading && (
+                <kbd className="hidden sm:inline ml-2 px-1 py-0.5 rounded bg-white/10 text-[10px] font-mono">⌘↵</kbd>
+              )}
             </button>
           </div>
         </div>

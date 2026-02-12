@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { PromptGrid } from "./PromptGrid";
 import { PromptListView } from "./PromptListView";
 import { EmptyState } from "./EmptyState";
@@ -8,6 +8,7 @@ import { CreatePromptModal } from "./CreatePromptModal";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import { toggleFavorite } from "@/lib/actions/prompts";
 import { useDashboard } from "@/contexts/DashboardContext";
+import { fuzzySearchFields } from "@/lib/fuzzySearch";
 
 interface DashboardContentProps {
   initialPrompts: Prompt[];
@@ -38,8 +39,8 @@ export function DashboardContent({
   const [tags, setTags] = useState<Tag[]>(initialTags);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
-  const [toastMessage, setToastMessage] = useState("");
-  const [copyToast, setCopyToast] = useState("");
+  const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
+  const toastIdRef = useRef(0);
 
   // Register modal open callback with parent
   useEffect(() => {
@@ -49,15 +50,17 @@ export function DashboardContent({
     });
   }, [onModalOpen]);
 
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => setToastMessage(""), 3000);
-  };
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'info') => {
+    const id = ++toastIdRef.current;
+    setToasts((prev) => [...prev.slice(-2), { id, message, type }]); // Keep max 3
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, type === 'error' ? 4000 : 2500);
+  }, []);
 
-  const showCopyToast = (message: string) => {
-    setCopyToast(message);
-    setTimeout(() => setCopyToast(""), 2000);
-  };
+  const showCopyToast = useCallback((message: string) => {
+    showToast(message, 'success');
+  }, [showToast]);
 
   const handleOpenModal = () => {
     setEditingPrompt(null);
@@ -123,15 +126,23 @@ export function DashboardContent({
   const filteredPrompts = useMemo(() => {
     let result = prompts;
 
-    // Search query (title, content, notes)
+    // Search query (fuzzy match on title, content, notes, tags, model)
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.content.toLowerCase().includes(q) ||
-          (p.notes && p.notes.toLowerCase().includes(q))
-      );
+      const q = searchQuery.trim();
+      const scored = result
+        .map((p) => ({
+          prompt: p,
+          score: fuzzySearchFields(q, [
+            p.title,
+            p.content,
+            p.notes,
+            p.ai_model?.name,
+            ...(p.tags?.map((t) => t.name) || []),
+          ]),
+        }))
+        .filter((s) => s.score > 0)
+        .sort((a, b) => b.score - a.score);
+      result = scored.map((s) => s.prompt);
     }
 
     // Folder filter
@@ -308,17 +319,23 @@ export function DashboardContent({
         )}
       </div>
 
-      {/* Copy Toast */}
-      {copyToast && (
-        <div className="fixed bottom-6 right-6 px-4 py-3 rounded-lg bg-green-500/20 border border-green-500/30 text-green-300 text-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
-          {copyToast}
-        </div>
-      )}
-
-      {/* General Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-6 left-6 px-4 py-3 rounded-lg bg-brand-500/20 border border-brand-500/30 text-brand-300 text-sm animate-in fade-in slide-in-from-bottom-4 duration-300">
-          {toastMessage}
+      {/* Toast Stack */}
+      {toasts.length > 0 && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse gap-2 items-end">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`px-4 py-3 rounded-lg text-sm shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+                toast.type === 'success'
+                  ? 'bg-green-500/20 border border-green-500/30 text-green-300'
+                  : toast.type === 'error'
+                    ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+                    : 'bg-brand-500/20 border border-brand-500/30 text-brand-300'
+              }`}
+            >
+              {toast.message}
+            </div>
+          ))}
         </div>
       )}
     </>
