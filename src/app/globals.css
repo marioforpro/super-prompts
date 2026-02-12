@@ -1,36 +1,36 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Brand Colors — Claude Terracotta */
-  --color-brand-50: #fef5f0;
-  --color-brand-100: #fce0d4;
-  --color-brand-200: #f5c4aa;
-  --color-brand-300: #e8956f;
-  --color-brand-400: #d97757;
-  --color-brand-500: #c46a4b;
-  --color-brand-600: #a4573d;
-  --color-brand-700: #834530;
-  --color-brand-800: #633424;
-  --color-brand-900: #422318;
+  /* Brand Colors — Bright Coral for Dark Mode */
+  --color-brand-50: rgba(232, 118, 75, 0.06);
+  --color-brand-100: rgba(232, 118, 75, 0.10);
+  --color-brand-200: rgba(232, 118, 75, 0.18);
+  --color-brand-300: #f09070;
+  --color-brand-400: #e8764b;
+  --color-brand-500: #d06840;
+  --color-brand-600: #b85838;
+  --color-brand-700: #8a4228;
+  --color-brand-800: #6a3220;
+  --color-brand-900: #4a2418;
 
-  /* Surface Colors — Clean Light Grey */
-  --color-surface: #f5f5f3;
-  --color-surface-50: #efeeec;
-  --color-surface-100: #e8e6dc;
-  --color-surface-200: #dedcd4;
-  --color-surface-300: #d0cec6;
-  --color-surface-400: #b0aea5;
+  /* Surface Colors — Deep Cinematic Dark */
+  --color-surface: #111116;
+  --color-surface-50: #161620;
+  --color-surface-100: #1a1a26;
+  --color-surface-200: #222230;
+  --color-surface-300: #2e2e3c;
+  --color-surface-400: #44445a;
 
   /* Semantic */
-  --color-background: #f5f5f3;
-  --color-foreground: #141413;
+  --color-background: #08080c;
+  --color-foreground: #f0eff2;
 
   /* Text */
-  --color-text-muted: #5c5a55;
-  --color-text-dim: #9c9a93;
+  --color-text-muted: #8a8a9c;
+  --color-text-dim: #5a5a6c;
 
   /* Fonts */
-  --font-display: "Instrument Serif", Georgia, serif;
+  --font-display: "DM Sans", system-ui, sans-serif;
   --font-sans: "DM Sans", system-ui, sans-serif;
   --font-mono: "Space Mono", monospace;
 }
@@ -48,8 +48,8 @@ html {
 }
 
 ::selection {
-  background-color: rgba(217, 119, 87, 0.25);
-  color: #141413;
+  background-color: rgba(232, 118, 75, 0.35);
+  color: #f0eff2;
 }
 
 /* ===== ANIMATIONS ===== */
@@ -83,6 +83,17 @@ html {
   50% { opacity: 0; }
 }
 
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(15px, -10px) scale(1.03); }
+  66% { transform: translate(-10px, 8px) scale(0.98); }
+}
+
 .anim-fade-up { animation: fadeUp 0.8s ease-out both; }
 .anim-d1 { animation-delay: 0.1s; }
 .anim-d2 { animation-delay: 0.25s; }
@@ -97,9 +108,9 @@ html {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(217, 119, 87, 0.12) 20%,
-    rgba(217, 119, 87, 0.22) 50%,
-    rgba(217, 119, 87, 0.12) 80%,
+    rgba(232, 118, 75, 0.15) 20%,
+    rgba(232, 118, 75, 0.30) 50%,
+    rgba(232, 118, 75, 0.15) 80%,
     transparent 100%
   );
 }
@@ -115,4 +126,19 @@ html {
   animation: blink 1s step-end infinite;
   color: var(--color-brand-400);
   margin-left: 1px;
+}
+
+/* ===== GLASS MORPHISM ===== */
+.glass {
+  background: rgba(17, 17, 22, 0.6);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.glass-subtle {
+  background: rgba(17, 17, 22, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }

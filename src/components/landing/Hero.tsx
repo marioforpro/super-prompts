@@ -15,12 +15,12 @@ const models = [
 export default function Hero() {
   return (
     <>
-      {/* Fixed Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 bg-[rgba(245,245,243,0.9)] backdrop-blur-[20px] backdrop-saturate-150 border-b border-surface-300/50">
+      {/* Fixed Nav — Glass Morphism */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-8 py-4 glass border-b border-white/[0.06]">
         <Logo size="md" />
         <div className="flex items-center gap-3">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-400 blink-dot" />
-          <span className="text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-full bg-brand-50 text-brand-600 border border-brand-200">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-400 blink-dot" style={{ boxShadow: "0 0 8px rgba(232,118,75,0.5)" }} />
+          <span className="text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-full bg-brand-50 text-brand-300 border border-brand-200">
             Coming Soon
           </span>
         </div>
@@ -31,76 +31,88 @@ export default function Hero() {
         id="top"
         className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 pt-32 pb-16 overflow-hidden"
       >
-        {/* Warm atmospheric glow */}
+        {/* Atmospheric gradient orbs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
+          {/* Primary warm glow — top center */}
           <div
-            className="absolute top-[0%] left-1/2 -translate-x-1/2 w-[1000px] h-[700px]"
+            className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px]"
             style={{
-              background: "radial-gradient(ellipse, rgba(217,119,87,0.07) 0%, transparent 65%)",
+              background: "radial-gradient(ellipse, rgba(232,118,75,0.12) 0%, rgba(232,118,75,0.04) 40%, transparent 70%)",
+              animation: "orbFloat 20s ease-in-out infinite",
             }}
           />
+          {/* Secondary cool glow — bottom left */}
           <div
-            className="absolute bottom-[15%] left-[10%] w-[400px] h-[400px]"
+            className="absolute bottom-[5%] left-[-5%] w-[500px] h-[500px]"
             style={{
-              background: "radial-gradient(circle, rgba(232,149,111,0.05) 0%, transparent 70%)",
+              background: "radial-gradient(circle, rgba(100,140,200,0.06) 0%, transparent 65%)",
+              animation: "orbFloat 25s ease-in-out infinite 5s",
+            }}
+          />
+          {/* Accent warm glow — right side */}
+          <div
+            className="absolute top-[40%] right-[-8%] w-[400px] h-[400px]"
+            style={{
+              background: "radial-gradient(circle, rgba(232,118,75,0.06) 0%, transparent 65%)",
+              animation: "orbFloat 18s ease-in-out infinite 3s",
             }}
           />
         </div>
 
-        {/* Decorative plus signs — warm & confident */}
+        {/* Decorative plus signs — glowing on dark */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none hidden lg:block">
-          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="absolute top-[18%] left-[6%] text-brand-400/20" style={{ animation: "float 8s ease-in-out infinite" }}>
-            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
-            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          <svg width="22" height="22" viewBox="0 0 20 20" fill="none" className="absolute top-[18%] left-[6%]" style={{ animation: "float 8s ease-in-out infinite" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="rgba(232,118,75,0.20)" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="rgba(232,118,75,0.20)" />
           </svg>
-          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="absolute top-[35%] right-[5%] text-brand-300/20" style={{ animation: "float 11s ease-in-out infinite 1.5s" }}>
-            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
-            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" className="absolute top-[35%] right-[5%]" style={{ animation: "float 11s ease-in-out infinite 1.5s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="rgba(232,118,75,0.14)" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="rgba(232,118,75,0.14)" />
           </svg>
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" className="absolute top-[68%] left-[4%] text-brand-300/15" style={{ animation: "float 13s ease-in-out infinite 2.5s" }}>
-            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
-            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" className="absolute top-[68%] left-[4%]" style={{ animation: "float 13s ease-in-out infinite 2.5s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="rgba(232,118,75,0.10)" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="rgba(232,118,75,0.10)" />
           </svg>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="absolute top-[72%] right-[8%] text-brand-400/15" style={{ animation: "float 9s ease-in-out infinite 3.5s" }}>
-            <rect x="8" y="0" width="4" height="20" rx="2" fill="currentColor" />
-            <rect x="0" y="8" width="20" height="4" rx="2" fill="currentColor" />
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="absolute top-[72%] right-[8%]" style={{ animation: "float 9s ease-in-out infinite 3.5s" }}>
+            <rect x="8" y="0" width="4" height="20" rx="2" fill="rgba(232,118,75,0.12)" />
+            <rect x="0" y="8" width="20" height="4" rx="2" fill="rgba(232,118,75,0.12)" />
           </svg>
         </div>
 
         {/* Hero content */}
         <div className="max-w-[58rem] text-center relative z-10">
-          {/* Badge — bold and proud */}
+          {/* Badge */}
           <div className="anim-fade-up anim-d1 mb-10 inline-flex items-center gap-3">
-            <svg width="15" height="15" viewBox="0 0 14 14" fill="none" className="text-brand-400">
-              <rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="currentColor" />
-              <rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="currentColor" />
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+              <rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="rgba(232,118,75,0.6)" />
+              <rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="rgba(232,118,75,0.6)" />
             </svg>
             <span
-              className="text-sm font-bold tracking-[0.25em] uppercase text-brand-600"
+              className="text-sm font-bold tracking-[0.25em] uppercase text-brand-300"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               Prompt management for creatives
             </span>
-            <svg width="15" height="15" viewBox="0 0 14 14" fill="none" className="text-brand-400">
-              <rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="currentColor" />
-              <rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="currentColor" />
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+              <rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="rgba(232,118,75,0.6)" />
+              <rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="rgba(232,118,75,0.6)" />
             </svg>
           </div>
 
-          {/* Headline — Instrument Serif, confident, with vivid accent */}
+          {/* Headline — DM Sans Bold, huge, with glowing coral accent */}
           <h1
-            className="anim-fade-up anim-d2 font-display leading-[0.98] mb-8"
-            style={{ fontSize: "clamp(3.4rem, 10vw, 7.5rem)" }}
+            className="anim-fade-up anim-d2 font-extrabold leading-[0.95] mb-8 tracking-tight"
+            style={{ fontSize: "clamp(3.2rem, 10vw, 7rem)" }}
           >
             Never Lose a Great{" "}
             <span
-              className="italic"
               style={{
-                background: "linear-gradient(135deg, #d97757 0%, #e8956f 40%, #c46a4b 80%)",
+                background: "linear-gradient(135deg, #f09070 0%, #e8764b 40%, #d06840 80%)",
                 backgroundSize: "200% auto",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
                 animation: "shimmer 4s linear infinite",
+                filter: "drop-shadow(0 0 30px rgba(232,118,75,0.3))",
               }}
             >
               Prompt
@@ -113,18 +125,21 @@ export default function Hero() {
             Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
-          {/* Model ticker */}
+          {/* Model ticker — glass pills */}
           <div className="anim-fade-up anim-d3 flex flex-wrap justify-center gap-2 mb-12">
             {models.map((model) => (
               <span
                 key={model}
-                className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full bg-white text-foreground/70 border border-surface-300 transition-all duration-300 hover:border-brand-400 hover:text-brand-600 hover:bg-brand-50 hover:scale-105"
-                style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+                className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full text-foreground/70 border border-white/[0.08] transition-all duration-300 hover:border-brand-400/40 hover:text-brand-300 hover:bg-brand-50 hover:scale-105"
+                style={{ background: "rgba(17,17,22,0.5)" }}
               >
                 {model}
               </span>
             ))}
-            <span className="text-sm font-bold tracking-wide px-4 py-1.5 rounded-full bg-brand-50 text-brand-600 border border-brand-200">
+            <span
+              className="text-sm font-bold tracking-wide px-4 py-1.5 rounded-full text-brand-300 border border-brand-200"
+              style={{ background: "rgba(232,118,75,0.06)" }}
+            >
               +20 more
             </span>
           </div>

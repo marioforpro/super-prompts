@@ -1,73 +1,73 @@
 const sidebarItems = [
-  { name: "All Prompts", color: "#d97757", active: true, count: 127 },
+  { name: "All Prompts", color: "#e8764b", active: true, count: 127 },
   { name: "Video FX", color: "#e84373", active: false, count: 43 },
   { name: "Portraits", color: "#6a9bcc", active: false, count: 31 },
-  { name: "Sound Design", color: "#788c5d", active: false, count: 18 },
-  { name: "Product Shots", color: "#e8956f", active: false, count: 24 },
+  { name: "Sound Design", color: "#7ac77a", active: false, count: 18 },
+  { name: "Product Shots", color: "#f09070", active: false, count: 24 },
 ];
 
 const cards = [
   {
     title: "Cinematic sunset aerial",
     badge: "Sora",
-    badgeBg: "rgba(217,119,87,0.1)",
-    badgeColor: "#c46a4b",
-    gradient: "linear-gradient(135deg, #f5c4aa, #d97757, #c46a4b, #a4573d)",
+    badgeBg: "rgba(232,118,75,0.15)",
+    badgeColor: "#f09070",
+    gradient: "linear-gradient(135deg, #f5c4aa, #e8764b, #d06840, #a4573d)",
     fav: true,
   },
   {
     title: "Neon portrait cyberpunk",
     badge: "Midjourney",
-    badgeBg: "rgba(106,155,204,0.1)",
-    badgeColor: "#5585b0",
+    badgeBg: "rgba(106,155,204,0.15)",
+    badgeColor: "#89b8e8",
     gradient: "linear-gradient(135deg, #a8cee8, #6a9bcc, #4a7fb0, #335f88)",
     fav: false,
   },
   {
     title: "Ambient forest texture",
     badge: "Suno",
-    badgeBg: "rgba(120,140,93,0.1)",
-    badgeColor: "#607048",
-    gradient: "linear-gradient(135deg, #b8cca0, #788c5d, #607048, #4a5838)",
+    badgeBg: "rgba(122,199,122,0.12)",
+    badgeColor: "#7ac77a",
+    gradient: "linear-gradient(135deg, #b8e8a0, #6ab86a, #508a50, #3a6838)",
     fav: true,
   },
   {
     title: "Slow motion liquid pour",
     badge: "Kling",
-    badgeBg: "rgba(232,67,115,0.1)",
-    badgeColor: "#c83060",
+    badgeBg: "rgba(232,67,115,0.15)",
+    badgeColor: "#f06090",
     gradient: "linear-gradient(135deg, #fba4c4, #e84373, #c83060, #9b2550)",
     fav: false,
   },
   {
     title: "Minimal product flat lay",
     badge: "FLUX",
-    badgeBg: "rgba(240,160,80,0.1)",
-    badgeColor: "#c47828",
+    badgeBg: "rgba(100,160,240,0.12)",
+    badgeColor: "#80b8f0",
     gradient: "linear-gradient(135deg, #bde0fe, #89c2f5, #5fa3e6, #3d87d4)",
     fav: false,
   },
   {
     title: "Abstract motion trails",
     badge: "Runway",
-    badgeBg: "rgba(217,119,87,0.1)",
-    badgeColor: "#c46a4b",
+    badgeBg: "rgba(232,118,75,0.12)",
+    badgeColor: "#f09070",
     gradient: "linear-gradient(135deg, #fba4c4, #e06888, #c84b6b, #a83858)",
     fav: true,
   },
   {
     title: "Drone through clouds",
     badge: "VEO",
-    badgeBg: "rgba(130,90,210,0.1)",
-    badgeColor: "#7b55c0",
+    badgeBg: "rgba(160,130,230,0.12)",
+    badgeColor: "#b8a0e8",
     gradient: "linear-gradient(135deg, #c4b0e8, #9b7ed8, #7b55c0, #5d3ea0)",
     fav: false,
   },
   {
     title: "Vintage film grain style",
     badge: "Seedream",
-    badgeBg: "rgba(200,168,120,0.12)",
-    badgeColor: "#9a7848",
+    badgeBg: "rgba(220,188,140,0.12)",
+    badgeColor: "#d4b88a",
     gradient: "linear-gradient(135deg, #f0dfc8, #d4b88a, #b89868, #9a7848)",
     fav: false,
   },
@@ -77,14 +77,16 @@ export default function MockPreview() {
   return (
     <section className="px-6 md:px-8 pb-24 relative">
       <div
-        className="max-w-6xl mx-auto rounded-2xl overflow-hidden border border-surface-200 bg-white relative"
+        className="max-w-6xl mx-auto rounded-2xl overflow-hidden relative"
         style={{
           animation: "fadeUp 1s ease-out 0.8s both",
-          boxShadow: "0 8px 40px rgba(42,37,34,0.06), 0 1px 3px rgba(42,37,34,0.04)",
+          background: "rgba(17,17,22,0.7)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "0 8px 60px rgba(0,0,0,0.4), 0 0 80px rgba(232,118,75,0.05)",
         }}
       >
         {/* Window chrome with search */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-surface-50 border-b border-surface-200">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06]" style={{ background: "rgba(22,22,32,0.8)" }}>
           <div className="flex items-center gap-2.5">
             <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
             <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
@@ -94,7 +96,7 @@ export default function MockPreview() {
             </span>
           </div>
           {/* Search bar */}
-          <div className="hidden sm:flex items-center gap-2 bg-white border border-surface-200 rounded-lg px-4 py-2 min-w-[200px]">
+          <div className="hidden sm:flex items-center gap-2 rounded-lg px-4 py-2 min-w-[200px] border border-white/[0.06]" style={{ background: "rgba(8,8,12,0.5)" }}>
             <svg
               width="14"
               height="14"
@@ -116,16 +118,17 @@ export default function MockPreview() {
         {/* Body */}
         <div className="flex min-h-[400px]">
           {/* Sidebar with counts */}
-          <div className="w-[220px] shrink-0 p-5 border-r border-surface-200 bg-surface-50/50 hidden md:flex flex-col">
+          <div className="w-[220px] shrink-0 p-5 border-r border-white/[0.06] hidden md:flex flex-col" style={{ background: "rgba(16,16,22,0.5)" }}>
             <div className="flex-1">
               {sidebarItems.map((item) => (
                 <div
                   key={item.name}
                   className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all duration-200 ${
                     item.active
-                      ? "bg-brand-50 text-brand-600 font-medium"
-                      : "text-text-muted hover:bg-surface-100"
+                      ? "text-brand-300 font-medium"
+                      : "text-text-muted hover:text-foreground/80"
                   }`}
+                  style={item.active ? { background: "rgba(232,118,75,0.08)" } : {}}
                 >
                   <div
                     className="w-2.5 h-2.5 rounded-[3px] shrink-0"
@@ -143,8 +146,8 @@ export default function MockPreview() {
               ))}
             </div>
             {/* Sidebar bottom */}
-            <div className="pt-4 border-t border-surface-200 mt-4">
-              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-brand-500 font-semibold">
+            <div className="pt-4 border-t border-white/[0.06] mt-4">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-brand-400 font-semibold">
                 <svg
                   width="12"
                   height="12"
@@ -166,8 +169,11 @@ export default function MockPreview() {
             {cards.map((card) => (
               <div
                 key={card.title}
-                className="group rounded-xl overflow-hidden border border-surface-200 bg-white transition-all duration-300 hover:border-brand-300 hover:-translate-y-0.5"
-                style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+                className="group rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
+                style={{
+                  background: "rgba(22,22,32,0.6)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
               >
                 {/* Card image with optional favorite */}
                 <div
@@ -175,12 +181,12 @@ export default function MockPreview() {
                   style={{ background: card.gradient }}
                 >
                   {card.fav && (
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
                       <svg
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
-                        fill="#d97757"
+                        fill="#e8764b"
                         stroke="none"
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -189,7 +195,7 @@ export default function MockPreview() {
                   )}
                 </div>
                 <div className="px-3 py-2.5">
-                  <div className="text-xs font-semibold text-foreground mb-1.5 truncate">
+                  <div className="text-xs font-semibold text-foreground/90 mb-1.5 truncate">
                     {card.title}
                   </div>
                   <span

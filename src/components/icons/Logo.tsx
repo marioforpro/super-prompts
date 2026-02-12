@@ -19,7 +19,7 @@ export default function Logo({
 
   return (
     <div className={`flex items-center ${s.gap} ${className}`}>
-      {/* The + icon — warm terracotta plus sign */}
+      {/* The + icon — glowing coral on dark */}
       <div
         className="relative flex items-center justify-center shrink-0"
         style={{ width: s.icon, height: s.icon }}
@@ -52,8 +52,8 @@ export default function Logo({
               y2="40"
               gradientUnits="userSpaceOnUse"
             >
-              <stop stopColor="#d97757" />
-              <stop offset="1" stopColor="#c46a4b" />
+              <stop stopColor="#f09070" />
+              <stop offset="1" stopColor="#d06840" />
             </linearGradient>
           </defs>
         </svg>
@@ -64,7 +64,7 @@ export default function Logo({
           style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.06em" }}
         >
           SUPER
-          <span className="text-brand-500">PROMPTS</span>
+          <span className="text-brand-400">PROMPTS</span>
         </span>
       )}
     </div>
@@ -107,8 +107,8 @@ export function PlusIcon({
           y2="40"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stopColor="#d97757" />
-          <stop offset="1" stopColor="#c46a4b" />
+          <stop stopColor="#f09070" />
+          <stop offset="1" stopColor="#d06840" />
         </linearGradient>
       </defs>
     </svg>
