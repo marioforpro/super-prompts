@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X } from "lucide-react";
+import { X, ImagePlus, Trash2 } from "lucide-react";
+import Image from "next/image";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import {
   createPrompt,
@@ -9,6 +10,8 @@ import {
   deletePrompt,
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
+import { createPromptMedia, removePromptMedia } from "@/lib/actions/media";
+import { createClient } from "@/lib/supabase/client";
 
 interface CreatePromptModalProps {
   isOpen: boolean;
@@ -46,6 +49,13 @@ export function CreatePromptModal({
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
+  // Thumbnail state
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [existingMediaId, setExistingMediaId] = useState<string | null>(null);
+  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Initialize form with existing prompt data
   useEffect(() => {
     if (prompt) {
@@ -56,6 +66,15 @@ export function CreatePromptModal({
       setNotes(prompt.notes || "");
       setSourceUrl(prompt.source_url || "");
       setSelectedTags(prompt.tags?.map((t) => t.id) || []);
+      // Set existing thumbnail
+      if (prompt.primary_media?.original_url) {
+        setThumbnailPreview(prompt.primary_media.original_url);
+        setExistingMediaId(prompt.primary_media.id);
+      } else {
+        setThumbnailPreview(null);
+        setExistingMediaId(null);
+      }
+      setThumbnailFile(null);
     } else {
       resetForm();
     }
@@ -83,6 +102,98 @@ export function CreatePromptModal({
     setSourceUrl("");
     setSelectedTags([]);
     setTagInput("");
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    setExistingMediaId(null);
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      setError("Please upload a JPG, PNG, WebP, or GIF image");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5MB");
+      return;
+    }
+
+    setThumbnailFile(file);
+    setError("");
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setThumbnailPreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove thumbnail
+  const handleRemoveThumbnail = () => {
+    setThumbnailFile(null);
+    setThumbnailPreview(null);
+    // Mark existing media for removal (will be handled on save)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Upload thumbnail to Supabase Storage (client-side)
+  const uploadThumbnail = async (promptId: string): Promise<void> => {
+    if (!thumbnailFile) return;
+
+    setIsUploadingThumbnail(true);
+    try {
+      const supabase = createClient();
+
+      // Generate unique file path
+      const ext = thumbnailFile.name.split(".").pop() || "jpg";
+      const timestamp = Date.now();
+      const storagePath = `${promptId}/${timestamp}.${ext}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("prompt-media")
+        .upload(storagePath, thumbnailFile, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Determine media type from model category
+      const selectedModel = models.find((m) => m.id === modelId);
+      const mediaType: "image" | "video" =
+        selectedModel?.category === "video" ? "video" : "image";
+
+      // If there's an existing media, remove it first
+      if (existingMediaId) {
+        try {
+          await removePromptMedia(promptId, existingMediaId);
+        } catch {
+          // Non-fatal: continue even if old media cleanup fails
+        }
+      }
+
+      // Create DB record and set as primary
+      await createPromptMedia(
+        promptId,
+        storagePath,
+        mediaType,
+        thumbnailFile.size,
+        true
+      );
+    } finally {
+      setIsUploadingThumbnail(false);
+    }
   };
 
   const handleAddTag = useCallback(
@@ -156,6 +267,25 @@ export function CreatePromptModal({
         result = await createPrompt(input);
       }
 
+      // Upload thumbnail if a new file was selected
+      if (thumbnailFile && result?.id) {
+        try {
+          await uploadThumbnail(result.id);
+        } catch (err) {
+          console.error("Thumbnail upload failed:", err);
+          // Non-fatal — prompt was saved, just thumbnail failed
+        }
+      }
+
+      // If user removed thumbnail (preview is null but there was an existing media)
+      if (!thumbnailPreview && existingMediaId && prompt) {
+        try {
+          await removePromptMedia(prompt.id, existingMediaId);
+        } catch {
+          // Non-fatal
+        }
+      }
+
       onSuccess?.(result);
       onClose();
       resetForm();
@@ -218,6 +348,78 @@ export function CreatePromptModal({
               {error}
             </div>
           )}
+
+          {/* Thumbnail Upload */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Thumbnail
+            </label>
+            <div className="relative">
+              {thumbnailPreview ? (
+                <div className="relative group rounded-lg overflow-hidden border border-surface-200">
+                  <div className="relative w-full aspect-video bg-surface-100">
+                    <Image
+                      src={thumbnailPreview}
+                      alt="Thumbnail preview"
+                      fill
+                      className="object-cover"
+                      unoptimized={thumbnailPreview.startsWith("data:")}
+                    />
+                  </div>
+                  {/* Overlay actions */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-2.5 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white transition-colors"
+                      title="Change thumbnail"
+                      disabled={isLoading}
+                    >
+                      <ImagePlus size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveThumbnail}
+                      className="p-2.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm border border-red-400/30 text-red-300 transition-colors"
+                      title="Remove thumbnail"
+                      disabled={isLoading}
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex flex-col items-center justify-center gap-3 py-8 border-2 border-dashed border-surface-300 hover:border-brand-400/50 rounded-lg bg-surface-100/50 hover:bg-surface-100 transition-all duration-200 cursor-pointer group"
+                  disabled={isLoading}
+                >
+                  <div className="w-12 h-12 rounded-full bg-surface-200 group-hover:bg-brand-500/10 flex items-center justify-center transition-colors">
+                    <ImagePlus
+                      size={22}
+                      className="text-text-dim group-hover:text-brand-400 transition-colors"
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-text-muted font-medium">
+                      Click to upload thumbnail
+                    </p>
+                    <p className="text-xs text-text-dim mt-1">
+                      JPG, PNG, WebP or GIF — max 5MB
+                    </p>
+                  </div>
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+          </div>
 
           {/* Title */}
           <div className="mb-6">
@@ -389,7 +591,13 @@ export function CreatePromptModal({
               disabled={isLoading}
               className="px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 disabled:from-brand-500/50 disabled:to-brand-500/50 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 disabled:shadow-brand-500/10 font-medium text-sm"
             >
-              {isLoading ? "Saving..." : prompt ? "Update" : "Create"}
+              {isLoading
+                ? isUploadingThumbnail
+                  ? "Uploading..."
+                  : "Saving..."
+                : prompt
+                  ? "Update"
+                  : "Create"}
             </button>
           </div>
         </div>
@@ -409,7 +617,8 @@ export function CreatePromptModal({
                   Delete Prompt?
                 </h3>
                 <p className="text-sm text-text-muted mb-6">
-                  This action cannot be undone. The prompt and all its associated data will be permanently deleted.
+                  This action cannot be undone. The prompt and all its associated
+                  data will be permanently deleted.
                 </p>
                 <div className="flex items-center gap-3">
                   <button
