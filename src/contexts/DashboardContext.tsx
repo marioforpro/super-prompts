@@ -23,8 +23,10 @@ interface DashboardState {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
-  // Reference data
+  // Reference data (mutable)
   folders: Folder[];
+  addFolder: (folder: Folder) => void;
+  removeFolder: (id: string) => void;
   models: AiModel[];
   tags: Tag[];
   // User
@@ -36,7 +38,7 @@ const DashboardContext = createContext<DashboardState | null>(null);
 
 export function DashboardProvider({
   children,
-  folders,
+  folders: initialFolders,
   models,
   tags,
   userEmail,
@@ -54,9 +56,18 @@ export function DashboardProvider({
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [folders, setFolders] = useState<Folder[]>(initialFolders);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";
+
+  const addFolder = (folder: Folder) => {
+    setFolders((prev) => [...prev, folder]);
+  };
+
+  const removeFolder = (id: string) => {
+    setFolders((prev) => prev.filter((f) => f.id !== id));
+  };
 
   return (
     <DashboardContext.Provider
@@ -77,6 +88,8 @@ export function DashboardProvider({
         setSidebarOpen,
         toggleSidebar,
         folders,
+        addFolder,
+        removeFolder,
         models,
         tags,
         userEmail,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ImagePlus, Trash2 } from "lucide-react";
+import { X, ImagePlus, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import {
@@ -54,7 +54,9 @@ export function CreatePromptModal({
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [existingMediaId, setExistingMediaId] = useState<string | null>(null);
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   // Initialize form with existing prompt data
   useEffect(() => {
@@ -107,21 +109,22 @@ export function CreatePromptModal({
     setExistingMediaId(null);
   };
 
-  // Handle file selection
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Validate and process a file (shared by input and drag-drop)
+  const processFile = (file: File) => {
+    const validImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const validVideoTypes = ["video/mp4", "video/webm", "video/quicktime"];
+    const allValidTypes = [...validImageTypes, ...validVideoTypes];
 
-    // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!validTypes.includes(file.type)) {
-      setError("Please upload a JPG, PNG, WebP, or GIF image");
+    if (!allValidTypes.includes(file.type)) {
+      setError("Please upload an image (JPG, PNG, WebP, GIF) or video (MP4, WebM, MOV)");
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be under 5MB");
+    // Max 5MB for images, 50MB for videos
+    const isVideo = validVideoTypes.includes(file.type);
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError(isVideo ? "Video must be under 50MB" : "Image must be under 5MB");
       return;
     }
 
@@ -129,18 +132,59 @@ export function CreatePromptModal({
     setError("");
 
     // Create preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setThumbnailPreview(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    if (isVideo) {
+      // For video, create a blob URL for preview
+      const url = URL.createObjectURL(file);
+      setThumbnailPreview(url);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setThumbnailPreview(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Handle file selection from input
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
+  // Drag-and-drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set false if we're leaving the drop zone entirely
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) processFile(file);
   };
 
   // Remove thumbnail
   const handleRemoveThumbnail = () => {
+    // Revoke any object URL to prevent memory leaks
+    if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(thumbnailPreview);
+    }
     setThumbnailFile(null);
     setThumbnailPreview(null);
-    // Mark existing media for removal (will be handled on save)
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -169,10 +213,9 @@ export function CreatePromptModal({
 
       if (uploadError) throw uploadError;
 
-      // Determine media type from model category
-      const selectedModel = models.find((m) => m.id === modelId);
-      const mediaType: "image" | "video" =
-        selectedModel?.category === "video" ? "video" : "image";
+      // Determine media type from the actual file type
+      const isVideoFile = thumbnailFile.type.startsWith("video/");
+      const mediaType: "image" | "video" = isVideoFile ? "video" : "image";
 
       // If there's an existing media, remove it first
       if (existingMediaId) {
@@ -354,17 +397,35 @@ export function CreatePromptModal({
             <label className="block text-sm font-medium text-foreground mb-2">
               Thumbnail
             </label>
-            <div className="relative">
+            <div
+              ref={dropZoneRef}
+              className="relative"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               {thumbnailPreview ? (
                 <div className="relative group rounded-lg overflow-hidden border border-surface-200">
                   <div className="relative w-full aspect-video bg-surface-100">
-                    <Image
-                      src={thumbnailPreview}
-                      alt="Thumbnail preview"
-                      fill
-                      className="object-cover"
-                      unoptimized={thumbnailPreview.startsWith("data:")}
-                    />
+                    {thumbnailFile?.type.startsWith("video/") ||
+                    (thumbnailPreview.startsWith("blob:") && !thumbnailFile?.type.startsWith("image/")) ? (
+                      <video
+                        src={thumbnailPreview}
+                        className="w-full h-full object-cover"
+                        muted
+                        loop
+                        autoPlay
+                        playsInline
+                      />
+                    ) : (
+                      <Image
+                        src={thumbnailPreview}
+                        alt="Thumbnail preview"
+                        fill
+                        className="object-cover"
+                        unoptimized={thumbnailPreview.startsWith("data:") || thumbnailPreview.startsWith("blob:")}
+                      />
+                    )}
                   </div>
                   {/* Overlay actions */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
@@ -392,21 +453,33 @@ export function CreatePromptModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center justify-center gap-3 py-8 border-2 border-dashed border-surface-300 hover:border-brand-400/50 rounded-lg bg-surface-100/50 hover:bg-surface-100 transition-all duration-200 cursor-pointer group"
+                  className={`w-full flex flex-col items-center justify-center gap-3 py-8 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer group ${
+                    isDragging
+                      ? "border-brand-400 bg-brand-500/10"
+                      : "border-surface-300 hover:border-brand-400/50 bg-surface-100/50 hover:bg-surface-100"
+                  }`}
                   disabled={isLoading}
                 >
-                  <div className="w-12 h-12 rounded-full bg-surface-200 group-hover:bg-brand-500/10 flex items-center justify-center transition-colors">
-                    <ImagePlus
-                      size={22}
-                      className="text-text-dim group-hover:text-brand-400 transition-colors"
-                    />
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                    isDragging
+                      ? "bg-brand-500/20"
+                      : "bg-surface-200 group-hover:bg-brand-500/10"
+                  }`}>
+                    {isDragging ? (
+                      <Upload size={22} className="text-brand-400" />
+                    ) : (
+                      <ImagePlus
+                        size={22}
+                        className="text-text-dim group-hover:text-brand-400 transition-colors"
+                      />
+                    )}
                   </div>
                   <div className="text-center">
                     <p className="text-sm text-text-muted font-medium">
-                      Click to upload thumbnail
+                      {isDragging ? "Drop file here" : "Click or drag to upload"}
                     </p>
                     <p className="text-xs text-text-dim mt-1">
-                      JPG, PNG, WebP or GIF — max 5MB
+                      Images or videos — max 50MB
                     </p>
                   </div>
                 </button>
@@ -414,7 +487,7 @@ export function CreatePromptModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
+                accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
                 onChange={handleFileSelect}
                 className="hidden"
               />

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
+import { createFolder } from "@/lib/actions/folders";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ const SIDEBAR_MODELS: { slug: string; name: string; color: string }[] = [
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const {
     folders,
+    addFolder,
     models: _models,
     tags,
     selectedFolderId,
@@ -38,6 +41,46 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     showFavoritesOnly,
     setShowFavoritesOnly,
   } = useDashboard();
+
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderError, setFolderError] = useState("");
+  const folderInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when creating folder
+  useEffect(() => {
+    if (isCreatingFolder && folderInputRef.current) {
+      folderInputRef.current.focus();
+    }
+  }, [isCreatingFolder]);
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      setIsCreatingFolder(false);
+      setNewFolderName("");
+      return;
+    }
+    setFolderError("");
+    try {
+      const folder = await createFolder(newFolderName.trim());
+      addFolder(folder);
+      setNewFolderName("");
+      setIsCreatingFolder(false);
+    } catch (err) {
+      setFolderError(err instanceof Error ? err.message : "Failed to create folder");
+    }
+  };
+
+  const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCreateFolder();
+    } else if (e.key === "Escape") {
+      setIsCreatingFolder(false);
+      setNewFolderName("");
+      setFolderError("");
+    }
+  };
 
   const handleNavClick = (action: () => void) => {
     action();
@@ -135,14 +178,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
                   Folders
                 </span>
-                <button className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer" title="Create folder">
+                <button
+                  onClick={() => {
+                    setIsCreatingFolder(true);
+                    setFolderError("");
+                  }}
+                  className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
+                  title="Create folder"
+                >
                   <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
+
+              {/* Inline folder creation */}
+              {isCreatingFolder && (
+                <div className="px-4 mt-1 mb-1">
+                  <input
+                    ref={folderInputRef}
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={handleFolderKeyDown}
+                    onBlur={handleCreateFolder}
+                    placeholder="Folder name..."
+                    className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                  />
+                  {folderError && (
+                    <p className="text-xs text-red-400 mt-1">{folderError}</p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-1 space-y-0.5 pl-2">
-                {folders.length === 0 ? (
+                {folders.length === 0 && !isCreatingFolder ? (
                   <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
                 ) : (
                   folders.map((folder) => (
