@@ -9,7 +9,7 @@ const models = [
   "FLUX",
   "VEO",
   "Suno",
-  "Banana Pro",
+  "Nano Banana Pro",
 ];
 
 export default function Hero() {
@@ -174,7 +174,7 @@ export default function Hero() {
           </h1>
 
           {/* Subheadline */}
-          <p className="anim-fade-up anim-d3 text-xl leading-relaxed text-text-muted max-w-[48rem] mx-auto mb-12">
+          <p className="anim-fade-up anim-d3 text-xl leading-relaxed text-text-muted mx-auto mb-12 whitespace-nowrap">
             Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
