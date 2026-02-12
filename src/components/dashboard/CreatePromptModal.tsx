@@ -1,17 +1,27 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ImagePlus, Trash2, Upload } from "lucide-react";
+import { X, ImagePlus, Upload, Maximize, Minimize, Square } from "lucide-react";
 import Image from "next/image";
-import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
+import type { Prompt, AiModel, Folder, Tag, FrameFit } from "@/lib/types";
 import {
   createPrompt,
   updatePrompt,
   deletePrompt,
+  getPrompt,
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
-import { createPromptMedia, removePromptMedia } from "@/lib/actions/media";
+import { createPromptMedia, removePromptMedia, updateMediaFrameFit } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
+
+interface LocalMediaItem {
+  id?: string; // Existing DB media ID
+  file?: File; // New file to upload
+  preview: string; // Preview URL
+  type: 'image' | 'video';
+  frameFit: FrameFit;
+  sortOrder: number;
+}
 
 interface CreatePromptModalProps {
   isOpen: boolean;
@@ -49,11 +59,10 @@ export function CreatePromptModal({
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  // Thumbnail state
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [existingMediaId, setExistingMediaId] = useState<string | null>(null);
-  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+  // Media gallery state
+  const [mediaItems, setMediaItems] = useState<LocalMediaItem[]>([]);
+  const [removedMediaIds, setRemovedMediaIds] = useState<string[]>([]);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -68,15 +77,30 @@ export function CreatePromptModal({
       setNotes(prompt.notes || "");
       setSourceUrl(prompt.source_url || "");
       setSelectedTags(prompt.tags?.map((t) => t.id) || []);
-      // Set existing thumbnail
-      if (prompt.primary_media?.original_url) {
-        setThumbnailPreview(prompt.primary_media.original_url);
-        setExistingMediaId(prompt.primary_media.id);
+
+      // Load media items
+      if (prompt.media && prompt.media.length > 0) {
+        const sorted = [...prompt.media].sort((a, b) => a.sort_order - b.sort_order);
+        setMediaItems(sorted.map((m, i) => ({
+          id: m.id,
+          preview: m.original_url || '',
+          type: m.type,
+          frameFit: m.frame_fit,
+          sortOrder: i,
+        })));
+      } else if (prompt.primary_media?.original_url) {
+        // Fallback to primary_media
+        setMediaItems([{
+          id: prompt.primary_media.id,
+          preview: prompt.primary_media.original_url,
+          type: prompt.primary_media.type,
+          frameFit: prompt.primary_media.frame_fit || 'cover',
+          sortOrder: 0,
+        }]);
       } else {
-        setThumbnailPreview(null);
-        setExistingMediaId(null);
+        setMediaItems([]);
       }
-      setThumbnailFile(null);
+      setRemovedMediaIds([]);
     } else {
       resetForm();
     }
@@ -99,8 +123,10 @@ export function CreatePromptModal({
 
   // Cleanup blob URLs when modal closes
   useEffect(() => {
-    if (!isOpen && thumbnailPreview?.startsWith("blob:")) {
-      URL.revokeObjectURL(thumbnailPreview);
+    if (!isOpen) {
+      mediaItems.forEach(m => {
+        if (m.preview.startsWith("blob:")) URL.revokeObjectURL(m.preview);
+      });
     }
   }, [isOpen]);
 
@@ -125,52 +151,55 @@ export function CreatePromptModal({
     setSourceUrl("");
     setSelectedTags([]);
     setTagInput("");
-    setThumbnailFile(null);
-    setThumbnailPreview(null);
-    setExistingMediaId(null);
+    setMediaItems([]);
+    setRemovedMediaIds([]);
   };
 
-  // Validate and process a file (shared by input and drag-drop)
-  const processFile = (file: File) => {
+  // Validate and process multiple files
+  const processFiles = (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
     const validImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     const validVideoTypes = ["video/mp4", "video/webm", "video/quicktime"];
     const allValidTypes = [...validImageTypes, ...validVideoTypes];
 
-    if (!allValidTypes.includes(file.type)) {
-      setError("Please upload an image (JPG, PNG, WebP, GIF) or video (MP4, WebM, MOV)");
-      return;
+    const newItems: LocalMediaItem[] = [];
+    let currentMaxOrder = mediaItems.length > 0 ? Math.max(...mediaItems.map(m => m.sortOrder)) + 1 : 0;
+
+    for (const file of fileArray) {
+      if (!allValidTypes.includes(file.type)) {
+        setError("Unsupported file type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.");
+        continue;
+      }
+      const isVideo = validVideoTypes.includes(file.type);
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        setError(isVideo ? "Video must be under 50MB" : "Image must be under 5MB");
+        continue;
+      }
+
+      const preview = URL.createObjectURL(file);
+      newItems.push({
+        file,
+        preview,
+        type: isVideo ? 'video' : 'image',
+        frameFit: 'cover',
+        sortOrder: currentMaxOrder++,
+      });
     }
 
-    // Max 5MB for images, 50MB for videos
-    const isVideo = validVideoTypes.includes(file.type);
-    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setError(isVideo ? "Video must be under 50MB" : "Image must be under 5MB");
-      return;
-    }
-
-    setThumbnailFile(file);
-    setError("");
-
-    // Create preview
-    if (isVideo) {
-      // For video, create a blob URL for preview
-      const url = URL.createObjectURL(file);
-      setThumbnailPreview(url);
-    } else {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setThumbnailPreview(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (newItems.length > 0) {
+      setMediaItems(prev => [...prev, ...newItems]);
+      setError("");
     }
   };
 
   // Handle file selection from input
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    processFile(file);
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    processFiles(files);
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Drag-and-drop handlers
@@ -193,70 +222,95 @@ export function CreatePromptModal({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) processFiles(files);
   };
 
-  // Remove thumbnail
-  const handleRemoveThumbnail = () => {
-    // Revoke any object URL to prevent memory leaks
-    if (thumbnailPreview && thumbnailPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(thumbnailPreview);
+  // Remove media at index
+  const handleRemoveMedia = (index: number) => {
+    const item = mediaItems[index];
+    // Track removed existing items
+    if (item.id) {
+      setRemovedMediaIds(prev => [...prev, item.id!]);
     }
-    setThumbnailFile(null);
-    setThumbnailPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    // Revoke blob URL
+    if (item.preview.startsWith("blob:")) {
+      URL.revokeObjectURL(item.preview);
     }
+    setMediaItems(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      // Re-index sort orders
+      return updated.map((m, i) => ({ ...m, sortOrder: i }));
+    });
   };
 
-  // Upload thumbnail to Supabase Storage (client-side)
-  const uploadThumbnail = async (promptId: string): Promise<void> => {
-    if (!thumbnailFile) return;
+  // Update frame fit for a media item
+  const handleFrameFitChange = (index: number, fit: FrameFit) => {
+    setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, frameFit: fit } : m));
+  };
 
-    setIsUploadingThumbnail(true);
+  // Upload all media (new files and updates)
+  const uploadAllMedia = async (promptId: string): Promise<void> => {
+    setIsUploadingMedia(true);
     try {
       const supabase = createClient();
 
-      // Generate unique file path
-      const ext = thumbnailFile.name.split(".").pop() || "jpg";
-      const timestamp = Date.now();
-      const storagePath = `${promptId}/${timestamp}.${ext}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from("prompt-media")
-        .upload(storagePath, thumbnailFile, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Determine media type from the actual file type
-      const isVideoFile = thumbnailFile.type.startsWith("video/");
-      const mediaType: "image" | "video" = isVideoFile ? "video" : "image";
-
-      // If there's an existing media, remove it first
-      if (existingMediaId) {
+      // 1. Remove deleted existing media
+      for (const mediaId of removedMediaIds) {
         try {
-          await removePromptMedia(promptId, existingMediaId);
+          await removePromptMedia(promptId, mediaId);
         } catch {
-          // Non-fatal: continue even if old media cleanup fails
+          // Non-fatal
         }
       }
 
-      // Create DB record and set as primary
-      await createPromptMedia(
-        promptId,
-        storagePath,
-        mediaType,
-        thumbnailFile.size,
-        true
-      );
+      // 2. Update frame_fit for existing items that changed
+      for (const item of mediaItems) {
+        if (item.id && !item.file) {
+          // Check if frame_fit changed — always update to be safe
+          try {
+            await updateMediaFrameFit(item.id, item.frameFit);
+          } catch {
+            // Non-fatal
+          }
+        }
+      }
+
+      // 3. Upload new files
+      for (let i = 0; i < mediaItems.length; i++) {
+        const item = mediaItems[i];
+        if (!item.file) continue; // Skip existing items
+
+        const ext = item.file.name.split(".").pop() || "jpg";
+        const timestamp = Date.now();
+        const storagePath = `${promptId}/${timestamp}_${i}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("prompt-media")
+          .upload(storagePath, item.file, {
+            cacheControl: "3600",
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Upload failed for file:", item.file.name, uploadError);
+          continue;
+        }
+
+        // Create DB record — first item is primary
+        const isFirst = i === 0 && !mediaItems.some((m, j) => j < i && m.id);
+        await createPromptMedia(
+          promptId,
+          storagePath,
+          item.type,
+          item.file.size,
+          isFirst && !mediaItems.some(m => m.id), // Only set as primary if no existing items
+          item.sortOrder,
+          item.frameFit
+        );
+      }
     } finally {
-      setIsUploadingThumbnail(false);
+      setIsUploadingMedia(false);
     }
   };
 
@@ -331,22 +385,14 @@ export function CreatePromptModal({
         result = await createPrompt(input);
       }
 
-      // Upload thumbnail if a new file was selected
-      if (thumbnailFile && result?.id) {
+      // Upload/manage media
+      if (result?.id && (mediaItems.some(m => m.file) || removedMediaIds.length > 0 || mediaItems.some(m => m.id))) {
         try {
-          await uploadThumbnail(result.id);
+          await uploadAllMedia(result.id);
+          // Re-fetch to get updated media relations
+          result = await getPrompt(result.id);
         } catch (err) {
-          console.error("Thumbnail upload failed:", err);
-          // Non-fatal — prompt was saved, just thumbnail failed
-        }
-      }
-
-      // If user removed thumbnail (preview is null but there was an existing media)
-      if (!thumbnailPreview && existingMediaId && prompt) {
-        try {
-          await removePromptMedia(prompt.id, existingMediaId);
-        } catch {
-          // Non-fatal
+          console.error("Media upload failed:", err);
         }
       }
 
@@ -413,103 +459,136 @@ export function CreatePromptModal({
             </div>
           )}
 
-          {/* Thumbnail Upload */}
+          {/* Media Gallery */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
-              Cover Media
+              Media
+              {mediaItems.length > 0 && (
+                <span className="ml-2 text-xs text-text-dim font-normal">
+                  {mediaItems.length} file{mediaItems.length !== 1 ? 's' : ''} · first = cover
+                </span>
+              )}
             </label>
+
+            {mediaItems.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {mediaItems.map((item, index) => (
+                  <div key={`${item.id || ''}-${item.preview}-${index}`} className="relative group">
+                    {/* Thumbnail */}
+                    <div className="relative aspect-square rounded-lg overflow-hidden border border-surface-200 bg-surface-100">
+                      {item.type === 'video' ? (
+                        <video
+                          src={item.preview}
+                          className={`w-full h-full ${
+                            item.frameFit === 'cover' ? 'object-cover' :
+                            item.frameFit === 'contain' ? 'object-contain' : 'object-fill'
+                          }`}
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <Image
+                          src={item.preview}
+                          alt={`Media ${index + 1}`}
+                          fill
+                          className={
+                            item.frameFit === 'cover' ? 'object-cover' :
+                            item.frameFit === 'contain' ? 'object-contain' : 'object-fill'
+                          }
+                          unoptimized={item.preview.startsWith("data:") || item.preview.startsWith("blob:")}
+                        />
+                      )}
+
+                      {/* Primary badge */}
+                      {index === 0 && (
+                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-brand-500/80 text-white">
+                          Cover
+                        </div>
+                      )}
+
+                      {/* Remove button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMedia(index)}
+                        className="absolute top-1 right-1 p-1 rounded-md bg-black/50 hover:bg-red-500/70 text-white opacity-0 group-hover:opacity-100 transition-all"
+                        disabled={isLoading}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+
+                    {/* Frame fit selector */}
+                    <div className="flex items-center gap-0.5 mt-1.5">
+                      {([
+                        { value: 'cover' as FrameFit, icon: Maximize, label: 'Cover' },
+                        { value: 'contain' as FrameFit, icon: Minimize, label: 'Contain' },
+                        { value: 'fill' as FrameFit, icon: Square, label: 'Fill' },
+                      ]).map(({ value, icon: Icon, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => handleFrameFitChange(index, value)}
+                          className={`flex-1 flex items-center justify-center gap-1 py-1 rounded text-[10px] transition-colors ${
+                            item.frameFit === value
+                              ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                              : 'bg-surface-100 text-text-dim hover:text-text-muted border border-transparent'
+                          }`}
+                          title={label}
+                        >
+                          <Icon size={10} />
+                          <span className="hidden sm:inline">{label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Upload zone */}
             <div
               ref={dropZoneRef}
-              className="relative"
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              {thumbnailPreview ? (
-                <div className="relative group rounded-lg overflow-hidden border border-surface-200">
-                  <div className="relative w-full aspect-video bg-surface-100">
-                    {thumbnailFile?.type.startsWith("video/") ? (
-                      <video
-                        src={thumbnailPreview}
-                        className="w-full h-full object-cover"
-                        muted
-                        loop
-                        autoPlay
-                        playsInline
-                      />
-                    ) : (
-                      <Image
-                        src={thumbnailPreview}
-                        alt="Thumbnail preview"
-                        fill
-                        className="object-cover"
-                        unoptimized={thumbnailPreview.startsWith("data:") || thumbnailPreview.startsWith("blob:")}
-                      />
-                    )}
-                  </div>
-                  {/* Overlay actions */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2.5 rounded-lg bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white transition-colors"
-                      title="Change thumbnail"
-                      disabled={isLoading}
-                    >
-                      <ImagePlus size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveThumbnail}
-                      className="p-2.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm border border-red-400/30 text-red-300 transition-colors"
-                      title="Remove thumbnail"
-                      disabled={isLoading}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full flex flex-col items-center justify-center gap-2 ${
+                  mediaItems.length > 0 ? 'py-4' : 'py-8'
+                } border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer group ${
+                  isDragging
+                    ? "border-brand-400 bg-brand-500/15 scale-[1.01]"
+                    : "border-surface-300 hover:border-brand-400/60 bg-surface-100/50 hover:bg-surface-100"
+                }`}
+                disabled={isLoading}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                  isDragging ? "bg-brand-500/20" : "bg-surface-200 group-hover:bg-brand-500/10"
+                }`}>
+                  {isDragging ? (
+                    <Upload size={18} className="text-brand-400" />
+                  ) : (
+                    <ImagePlus size={18} className="text-text-dim group-hover:text-brand-400 transition-colors" />
+                  )}
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`w-full flex flex-col items-center justify-center gap-3 py-8 border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer group ${
-                    isDragging
-                      ? "border-brand-400 bg-brand-500/15 scale-[1.01]"
-                      : "border-surface-300 hover:border-brand-400/60 bg-surface-100/50 hover:bg-surface-100"
-                  }`}
-                  disabled={isLoading}
-                >
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                    isDragging
-                      ? "bg-brand-500/20"
-                      : "bg-surface-200 group-hover:bg-brand-500/10"
-                  }`}>
-                    {isDragging ? (
-                      <Upload size={22} className="text-brand-400" />
-                    ) : (
-                      <ImagePlus
-                        size={22}
-                        className="text-text-dim group-hover:text-brand-400 transition-colors"
-                      />
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-text-muted font-medium">
-                      {isDragging ? "Drop file here" : "Click or drag to upload"}
-                    </p>
-                    <p className="text-xs text-text-dim mt-1">
-                      JPG, PNG, WebP, GIF (5MB) or MP4, WebM, MOV (50MB)
-                    </p>
-                  </div>
-                </button>
-              )}
+                <div className="text-center">
+                  <p className="text-sm text-text-muted font-medium">
+                    {isDragging ? "Drop files here" : mediaItems.length > 0 ? "Add more media" : "Click or drag to upload"}
+                  </p>
+                  <p className="text-xs text-text-dim mt-0.5">
+                    JPG, PNG, WebP, GIF (5MB) or MP4, WebM, MOV (50MB)
+                  </p>
+                </div>
+              </button>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
                 onChange={handleFileSelect}
                 className="hidden"
+                multiple
               />
             </div>
           </div>
@@ -685,7 +764,7 @@ export function CreatePromptModal({
               className="px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 disabled:from-brand-500/50 disabled:to-brand-500/50 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 disabled:shadow-brand-500/10 font-medium text-sm"
             >
               {isLoading
-                ? isUploadingThumbnail
+                ? isUploadingMedia
                   ? "Uploading..."
                   : "Saving..."
                 : prompt

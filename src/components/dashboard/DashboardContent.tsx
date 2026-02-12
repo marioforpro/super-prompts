@@ -78,6 +78,14 @@ export function DashboardContent({
   };
 
   const handleSuccessModal = (updatedPrompt: Prompt) => {
+    if (!updatedPrompt) {
+      // Prompt was deleted from modal
+      if (editingPrompt) {
+        setPrompts(prompts.filter((p) => p.id !== editingPrompt.id));
+        showToast("Prompt deleted successfully");
+      }
+      return;
+    }
     if (editingPrompt) {
       // Update existing prompt
       setPrompts(
@@ -194,6 +202,13 @@ export function DashboardContent({
     content: p.content,
     coverUrl: p.primary_media?.original_url || null,
     coverType: (p.primary_media?.type as "image" | "video" | undefined) || "image",
+    mediaItems: (p.media || [])
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((m) => ({
+        url: m.original_url || "",
+        type: m.type,
+        frameFit: m.frame_fit as "cover" | "contain" | "fill",
+      })),
     modelName: p.ai_model?.name || null,
     modelSlug: p.ai_model?.slug || null,
     modelCategory: p.ai_model?.category || null,

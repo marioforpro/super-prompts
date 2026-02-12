@@ -51,6 +51,8 @@ export interface Tag {
   created_at: string;
 }
 
+export type FrameFit = "cover" | "contain" | "fill";
+
 export interface PromptMedia {
   id: string;
   prompt_id: string;
@@ -60,6 +62,7 @@ export interface PromptMedia {
   original_url: string | null;
   file_size: number | null;
   sort_order: number;
+  frame_fit: FrameFit;
   created_at: string;
 }
 

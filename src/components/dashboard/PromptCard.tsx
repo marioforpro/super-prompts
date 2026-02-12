@@ -2,8 +2,14 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, Play } from 'lucide-react';
+import { Copy, Heart, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+export interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
+  frameFit: 'cover' | 'contain' | 'fill';
+}
 
 export interface PromptCardProps {
   id: string;
@@ -11,6 +17,7 @@ export interface PromptCardProps {
   content: string;
   coverUrl?: string | null;
   coverType?: 'image' | 'video';
+  mediaItems?: MediaItem[];
   modelName?: string | null;
   modelSlug?: string | null;
   modelCategory?: string | null;
@@ -58,6 +65,7 @@ export function PromptCard({
   content,
   coverUrl,
   coverType = 'image',
+  mediaItems,
   modelName,
   modelSlug,
   modelCategory,
@@ -69,6 +77,15 @@ export function PromptCard({
 }: PromptCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isFavoritedLocally, setIsFavoritedLocally] = useState(isFavorite);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+
+  // Use mediaItems if provided, otherwise fall back to coverUrl/coverType
+  const displayMedia = mediaItems && mediaItems.length > 0
+    ? mediaItems
+    : (coverUrl ? [{ url: coverUrl, type: coverType, frameFit: 'cover' as const }] : []);
+
+  const currentMedia = displayMedia[currentMediaIndex];
+  const hasMultipleMedia = displayMedia.length > 1;
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -79,6 +96,21 @@ export function PromptCard({
   const handleCopyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onCopy?.();
+  };
+
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentMediaIndex((prev) => (prev === 0 ? displayMedia.length - 1 : prev - 1));
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentMediaIndex((prev) => (prev === displayMedia.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleDotClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentMediaIndex(index);
   };
 
   const firstLine = content.split('\n')[0] || content.substring(0, 60);
@@ -96,19 +128,79 @@ export function PromptCard({
     >
       {/* Cover Image/Video or Gradient Placeholder */}
       <div className={cn('relative w-full bg-background overflow-hidden', aspectClass)}>
-        {coverUrl ? (
+        {currentMedia ? (
           <>
+            {/* Media background for contain mode */}
+            {currentMedia.frameFit === 'contain' && (
+              <div className="absolute inset-0 bg-gray-900" />
+            )}
+
+            {/* Media Image/Video */}
             <Image
-              src={coverUrl}
+              src={currentMedia.url}
               alt={title}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              className={cn(
+                'transition-transform duration-300 group-hover:scale-110',
+                currentMedia.frameFit === 'cover' && 'object-cover',
+                currentMedia.frameFit === 'contain' && 'object-contain',
+                currentMedia.frameFit === 'fill' && 'object-fill'
+              )}
               sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
             />
-            {coverType === 'video' && !isHovered && (
+
+            {/* Play Icon for Videos */}
+            {currentMedia.type === 'video' && !isHovered && (
               <div className="absolute bottom-3 left-3 flex items-center justify-center w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200">
                 <Play size={18} className="text-white fill-white" />
               </div>
+            )}
+
+            {/* Navigation Arrows (visible only on hover when multiple media items exist) */}
+            {hasMultipleMedia && (
+              <>
+                <button
+                  onClick={handlePrevious}
+                  className={cn(
+                    'absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    isHovered ? 'opacity-100' : 'opacity-0'
+                  )}
+                  aria-label="Previous media"
+                  title="Previous media"
+                >
+                  <ChevronLeft size={16} className="text-white" />
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  className={cn(
+                    'absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    isHovered ? 'opacity-100' : 'opacity-0'
+                  )}
+                  aria-label="Next media"
+                  title="Next media"
+                >
+                  <ChevronRight size={16} className="text-white" />
+                </button>
+
+                {/* Navigation Dots */}
+                <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                  {displayMedia.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={(e) => handleDotClick(index, e)}
+                      className={cn(
+                        'rounded-full transition-all duration-200',
+                        currentMediaIndex === index
+                          ? 'w-1.5 h-1.5 bg-brand-400'
+                          : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/70'
+                      )}
+                      aria-label={`Go to media ${index + 1}`}
+                      title={`Go to media ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </>
         ) : (

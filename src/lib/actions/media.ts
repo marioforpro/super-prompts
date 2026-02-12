@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { PromptMedia } from "@/lib/types";
+import type { PromptMedia, FrameFit } from "@/lib/types";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
@@ -14,7 +14,9 @@ export async function createPromptMedia(
   storagePath: string,
   type: "image" | "video",
   fileSize: number | null,
-  setAsPrimary: boolean = true
+  setAsPrimary: boolean = true,
+  sortOrder: number = 0,
+  frameFit: FrameFit = "cover"
 ): Promise<PromptMedia> {
   const supabase = await createClient();
 
@@ -46,7 +48,8 @@ export async function createPromptMedia(
       storage_path: storagePath,
       original_url: originalUrl,
       file_size: fileSize,
-      sort_order: 0,
+      sort_order: sortOrder,
+      frame_fit: frameFit,
     })
     .select()
     .single();
@@ -71,7 +74,7 @@ export async function createPromptMedia(
 }
 
 /**
- * Removes a prompt's primary media (deletes from storage and DB).
+ * Removes a prompt media item (deletes from storage and DB).
  */
 export async function removePromptMedia(
   promptId: string,
@@ -104,10 +107,20 @@ export async function removePromptMedia(
 
   // Clear primary_media_id if this was the primary
   if (prompt.primary_media_id === mediaId) {
+    // Try to promote the next media item as primary
+    const { data: nextMedia } = await supabase
+      .from("prompt_media")
+      .select("id")
+      .eq("prompt_id", promptId)
+      .neq("id", mediaId)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .single();
+
     await supabase
       .from("prompts")
       .update({
-        primary_media_id: null,
+        primary_media_id: nextMedia?.id || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", promptId);
@@ -122,4 +135,39 @@ export async function removePromptMedia(
 
   // Delete the media record
   await supabase.from("prompt_media").delete().eq("id", mediaId);
+}
+
+/**
+ * Updates a media item's frame_fit property.
+ */
+export async function updateMediaFrameFit(
+  mediaId: string,
+  frameFit: FrameFit
+): Promise<PromptMedia> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Verify ownership through prompt
+  const { data: media, error: fetchError } = await supabase
+    .from("prompt_media")
+    .select("prompt_id, prompts!prompt_media_prompt_id_fkey(user_id)")
+    .eq("id", mediaId)
+    .single();
+
+  if (fetchError || !media) throw new Error("Media not found");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ownerUserId = (media as any).prompts?.user_id;
+  if (ownerUserId !== user.id) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("prompt_media")
+    .update({ frame_fit: frameFit })
+    .eq("id", mediaId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as PromptMedia;
 }

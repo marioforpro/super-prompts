@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PromptCard } from './PromptCard';
+import { PromptCard, type MediaItem } from './PromptCard';
 import { cn } from '@/lib/utils';
 
 export interface PromptGridProps {
@@ -11,6 +11,7 @@ export interface PromptGridProps {
     content: string;
     coverUrl?: string | null;
     coverType?: 'image' | 'video';
+    mediaItems?: MediaItem[];
     modelName?: string | null;
     modelSlug?: string | null;
     modelCategory?: string | null;
@@ -70,6 +71,7 @@ export function PromptGrid({
               content={prompt.content}
               coverUrl={prompt.coverUrl}
               coverType={prompt.coverType}
+              mediaItems={prompt.mediaItems}
               modelName={prompt.modelName}
               modelSlug={prompt.modelSlug}
               modelCategory={prompt.modelCategory}
