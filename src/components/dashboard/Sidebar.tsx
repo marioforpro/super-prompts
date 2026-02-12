@@ -5,6 +5,7 @@ import Link from "next/link";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
+import { createModel as createModelAction, updateModel as updateModelAction, deleteModel as deleteModelAction } from "@/lib/actions/models";
 import { deleteTag } from "@/lib/actions/tags";
 import { signOut } from "@/lib/actions/auth";
 import ThemeToggle from "./ThemeToggle";
@@ -14,21 +15,6 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-// Curated model list with unique colors, in display order
-const SIDEBAR_MODELS: { slug: string; name: string; color: string }[] = [
-  { slug: "nano-banana-pro", name: "Nano Banana Pro", color: "#facc15" },
-  { slug: "flux",            name: "FLUX",            color: "#38bdf8" },
-  { slug: "kling",           name: "Kling",           color: "#a78bfa" },
-  { slug: "midjourney",      name: "Midjourney",      color: "#f87171" },
-  { slug: "sora",            name: "Sora",            color: "#34d399" },
-  { slug: "veo",             name: "VEO",             color: "#60a5fa" },
-  { slug: "seedance",        name: "Seedance",        color: "#fb923c" },
-  { slug: "seedream",        name: "Seedream",        color: "#e879f9" },
-  { slug: "suno",            name: "Suno",            color: "#2dd4bf" },
-  { slug: "chatgpt",         name: "ChatGPT",         color: "#4ade80" },
-  { slug: "claude",          name: "Claude",          color: "#d4a574" },
-];
-
 // Preset folder colors
 const FOLDER_COLORS = [
   '#e8764b', '#f87171', '#facc15', '#34d399',
@@ -36,13 +22,27 @@ const FOLDER_COLORS = [
   '#2dd4bf', '#f0eff2'
 ];
 
+// Model color palette — deterministic from name hash
+const MODEL_COLORS = [
+  '#facc15', '#38bdf8', '#a78bfa', '#f87171', '#34d399',
+  '#60a5fa', '#fb923c', '#e879f9', '#2dd4bf', '#4ade80', '#d4a574',
+];
+
+function getModelColor(name: string): string {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return MODEL_COLORS[hash % MODEL_COLORS.length];
+}
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const {
     folders,
     addFolder,
     removeFolder,
     updateFolder,
-    models: _models,
+    models,
+    addModel,
+    removeModel,
+    updateModelCtx,
     tags,
     selectedFolderId,
     setSelectedFolderId,
@@ -54,6 +54,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setShowFavoritesOnly,
     removeTag: removeTagFromContext,
   } = useDashboard();
+
+  // Collapsible sections
+  const [foldersOpen, setFoldersOpen] = useState(true);
+  const [modelsOpen, setModelsOpen] = useState(true);
+  const [tagsOpen, setTagsOpen] = useState(true);
 
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -67,9 +72,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // Drag-to-reorder state
+  // Model management
+  const [isCreatingModel, setIsCreatingModel] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
+  const [modelError, setModelError] = useState("");
+  const modelInputRef = useRef<HTMLInputElement>(null);
+  const [modelMenuId, setModelMenuId] = useState<string | null>(null);
+  const [editingModelId, setEditingModelId] = useState<string | null>(null);
+  const [editingModelName, setEditingModelName] = useState("");
+  const editModelInputRef = useRef<HTMLInputElement>(null);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
+
+  // Drag-to-reorder state (indicator position is now managed via dragAfterIndex state)
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragAfterIndex, setDragAfterIndex] = useState<number | null>(null);
   const folderListRef = useRef<HTMLDivElement>(null);
 
   // Focus input when creating folder
@@ -87,17 +104,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [editingFolderId]);
 
+  // Focus model input
+  useEffect(() => {
+    if (isCreatingModel && modelInputRef.current) {
+      modelInputRef.current.focus();
+    }
+  }, [isCreatingModel]);
+
+  // Focus model rename input
+  useEffect(() => {
+    if (editingModelId && editModelInputRef.current) {
+      editModelInputRef.current.focus();
+      editModelInputRef.current.select();
+    }
+  }, [editingModelId]);
+
   // Close folder context menu on outside click
   const folderMenuRef = useRef<HTMLDivElement>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!folderMenuId && !colorPickerId) return;
+    if (!folderMenuId && !colorPickerId && !modelMenuId) return;
     const handleClick = (e: MouseEvent) => {
       if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
       if (colorPickerRef.current && colorPickerRef.current.contains(e.target as Node)) return;
+      if (modelMenuRef.current && modelMenuRef.current.contains(e.target as Node)) return;
       setFolderMenuId(null);
       setColorPickerId(null);
+      setModelMenuId(null);
     };
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
@@ -106,7 +140,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       clearTimeout(timer);
       document.removeEventListener("click", handleClick);
     };
-  }, [folderMenuId, colorPickerId]);
+  }, [folderMenuId, colorPickerId, modelMenuId]);
 
   const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
@@ -119,14 +153,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     isCreatingRef.current = true;
     setFolderError("");
-    // Optimistic: close input immediately, show temp folder
     const tempId = `temp-${Date.now()}`;
     setNewFolderName("");
     setIsCreatingFolder(false);
     addFolder({ id: tempId, name, color: '#e8764b', sort_order: folders.length, user_id: '', created_at: new Date().toISOString() } as any);
     try {
       const folder = await createFolder(name);
-      // Replace temp folder with real one
       removeFolder(tempId);
       addFolder(folder);
     } catch (err) {
@@ -155,7 +187,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleDeleteFolderAction = async (folderId: string) => {
-    // Optimistic: close menu and remove from UI immediately
     setFolderMenuId(null);
     if (selectedFolderId === folderId) setSelectedFolderId(null);
     removeFolder(folderId);
@@ -177,7 +208,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  // Reorder folders helper — updates context + DB
+  // Reorder folders helper
   const reorderFolders = (newOrder: typeof folders) => {
     newOrder.forEach((f, i) => updateFolder(f.id, { sort_order: i }));
     for (let i = 0; i < newOrder.length; i++) {
@@ -185,7 +216,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  // Move folder up/down in the list (uses sorted order)
   const handleMoveFolder = (folderId: string, direction: 'up' | 'down') => {
     const sorted = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     const idx = sorted.findIndex(f => f.id === folderId);
@@ -197,7 +227,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setFolderMenuId(null);
   };
 
-  // Drag-to-reorder via pointer capture — improved for smooth operation
+  // Drag-to-reorder via pointer capture
   const dragStartY = useRef(0);
   const isDragging = useRef(false);
 
@@ -210,29 +240,38 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
-  const dragInsertAfter = useRef(false);
-
   const handleDragMove = (e: React.PointerEvent) => {
     if (!dragId || !folderListRef.current) return;
-    // Only start visual dragging after 3px threshold to avoid accidental drags
     if (!isDragging.current && Math.abs(e.clientY - dragStartY.current) < 3) return;
     isDragging.current = true;
 
+    const sorted = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     const els = folderListRef.current.querySelectorAll<HTMLElement>('[data-folder-drag]');
     let closestId: string | null = null;
     let closestDist = Infinity;
     let closestCy = 0;
-    els.forEach(el => {
+    let closestIndex = -1;
+    
+    els.forEach((el, idx) => {
       const fid = el.dataset.folderDrag || null;
-      if (fid === dragId) return; // Skip the dragged element itself
+      if (fid === dragId) return;
       const rect = el.getBoundingClientRect();
       const cy = rect.top + rect.height / 2;
       const dist = Math.abs(e.clientY - cy);
-      if (dist < closestDist) { closestDist = dist; closestId = fid; closestCy = cy; }
+      if (dist < closestDist) { 
+        closestDist = dist; 
+        closestId = fid; 
+        closestCy = cy; 
+        closestIndex = idx;
+      }
     });
-    // Track whether cursor is above or below the closest item's center
-    dragInsertAfter.current = e.clientY > closestCy;
+
+    // Determine if we're inserting after or before based on cursor position
+    const insertAfter = e.clientY > closestCy;
+    const finalIndex = insertAfter ? closestIndex + 1 : closestIndex;
+    
     setDragOverId(closestId);
+    setDragAfterIndex(insertAfter ? closestIndex + 1 : closestIndex);
   };
 
   const handleDragEnd = () => {
@@ -242,21 +281,77 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       const toIdx = sorted.findIndex(f => f.id === dragOverId);
       if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
         const [moved] = sorted.splice(fromIdx, 1);
-        // If cursor was below center, insert after the target
         const adjustedIdx = sorted.findIndex(f => f.id === dragOverId);
-        const insertIdx = dragInsertAfter.current ? adjustedIdx + 1 : adjustedIdx;
+        const insertIdx = dragAfterIndex !== null ? Math.min(dragAfterIndex, sorted.length) : adjustedIdx;
         sorted.splice(insertIdx, 0, moved);
         reorderFolders(sorted);
       }
     }
     setDragId(null);
     setDragOverId(null);
+    setDragAfterIndex(null);
     isDragging.current = false;
+  };
+
+  // Model CRUD
+  const isCreatingModelRef = useRef(false);
+  const handleCreateModel = async () => {
+    if (isCreatingModelRef.current) return;
+    const name = newModelName.trim();
+    if (!name) {
+      setIsCreatingModel(false);
+      setNewModelName("");
+      return;
+    }
+    isCreatingModelRef.current = true;
+    setModelError("");
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
+    setNewModelName("");
+    setIsCreatingModel(false);
+    try {
+      const model = await createModelAction(name, slug);
+      addModel(model);
+    } catch (err) {
+      setModelError(err instanceof Error ? err.message : "Failed to create model");
+    } finally {
+      isCreatingModelRef.current = false;
+    }
+  };
+
+  const handleRenameModel = async () => {
+    if (!editingModelId || !editingModelName.trim()) {
+      setEditingModelId(null);
+      setEditingModelName("");
+      return;
+    }
+    try {
+      const slug = editingModelName.trim().toLowerCase().replace(/\s+/g, "-");
+      const updated = await updateModelAction(editingModelId, { name: editingModelName.trim(), slug });
+      updateModelCtx(editingModelId, { name: updated.name, slug: updated.slug });
+      setEditingModelId(null);
+      setEditingModelName("");
+    } catch (err) {
+      setModelError(err instanceof Error ? err.message : "Failed to rename model");
+      setEditingModelId(null);
+    }
+  };
+
+  const handleDeleteModel = async (modelId: string) => {
+    setModelMenuId(null);
+    if (selectedModelSlug) {
+      const m = models.find(mm => mm.id === modelId);
+      if (m && m.slug === selectedModelSlug) setSelectedModelSlug(null);
+    }
+    removeModel(modelId);
+    try {
+      await deleteModelAction(modelId);
+    } catch (err) {
+      setModelError(err instanceof Error ? err.message : "Failed to delete model");
+    }
   };
 
   // Delete tag handler
   const handleDeleteTag = async (tagId: string) => {
-    // Optimistic: clear selection if deleting the selected tag
     if (selectedTag) {
       const tagObj = tags.find(t => t.id === tagId);
       if (tagObj && tagObj.name === selectedTag) {
@@ -267,7 +362,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     try {
       await deleteTag(tagId);
     } catch (err) {
-      // Non-fatal — tag already removed from UI
       console.error("Failed to delete tag:", err);
     }
   };
@@ -283,6 +377,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
+  const handleModelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCreateModel();
+    } else if (e.key === "Escape") {
+      setIsCreatingModel(false);
+      setNewModelName("");
+      setModelError("");
+    }
+  };
+
   const handleNavClick = (action: () => void) => {
     action();
     if (window.innerWidth < 768) onClose();
@@ -291,8 +396,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isAllActive =
     !selectedFolderId && !selectedModelSlug && !selectedTag && !showFavoritesOnly;
 
-  // Sort folders by sort_order so Move Up/Down is reflected instantly
   const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const sortedModels = [...models].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Chevron component for collapsible sections
+  const SectionChevron = ({ open }: { open: boolean }) => (
+    <svg className={`w-3 h-3 text-text-dim transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  );
 
   return (
     <>
@@ -320,7 +432,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
 
         <div className="flex flex-col h-full">
-          {/* Logo — height matches Topbar exactly */}
+          {/* Logo */}
           <div className="px-4 h-[57px] flex items-center border-b border-surface-200">
             <Link href="/dashboard">
               <Logo size="sm" showText={true} />
@@ -376,17 +488,23 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Divider */}
             <div className="h-px bg-surface-200 my-4" />
 
-            {/* FOLDERS */}
+            {/* FOLDERS — collapsible */}
             <div>
-              {/* Folders header with sort and add buttons */}
               <div className="flex items-center justify-between px-4 py-2 gap-2">
-                <span className="text-xs font-bold tracking-widest text-text-dim uppercase flex-1" style={{ fontFamily: "var(--font-mono)" }}>
-                  Folders
-                </span>
+                <button
+                  onClick={() => setFoldersOpen(!foldersOpen)}
+                  className="flex items-center gap-1.5 flex-1 cursor-pointer"
+                >
+                  <SectionChevron open={foldersOpen} />
+                  <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+                    Folders
+                  </span>
+                </button>
                 <button
                   onClick={() => {
                     setIsCreatingFolder(true);
                     setFolderError("");
+                    if (!foldersOpen) setFoldersOpen(true);
                   }}
                   className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
                   title="Create folder"
@@ -397,326 +515,434 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </button>
               </div>
 
-              {/* Inline folder creation */}
-              {isCreatingFolder && (
-                <div className="px-4 mt-1 mb-1">
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      ref={folderInputRef}
-                      type="text"
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      onKeyDown={handleFolderKeyDown}
-                      placeholder="Folder name..."
-                      className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                    />
-                    <button
-                      onClick={handleCreateFolder}
-                      className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
-                      title="Create folder"
-                    >
-                      <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderError(""); }}
-                      className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
-                      title="Cancel"
-                    >
-                      <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  {folderError && (
-                    <p className="text-xs text-red-400 mt-1">{folderError}</p>
-                  )}
-                </div>
-              )}
-
-              <div ref={folderListRef} className="mt-1 space-y-0.5">
-                {sortedFolders.length === 0 && !isCreatingFolder ? (
-                  <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
-                ) : (
-                  sortedFolders.map((folder) => (
-                    <div
-                      key={folder.id}
-                      data-folder-drag={folder.id}
-                      className={`relative group transition-all duration-100 ${
-                        dragId === folder.id && isDragging.current ? 'opacity-30 scale-[0.97]' : ''
-                      }`}
-                    >
-                      {/* Drop indicator line — above or below depending on cursor position */}
-                      {dragOverId === folder.id && dragId !== folder.id && isDragging.current && (
-                        <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${dragInsertAfter.current ? '-bottom-px' : '-top-px'}`} />
+              {foldersOpen && (
+                <>
+                  {/* Inline folder creation */}
+                  {isCreatingFolder && (
+                    <div className="px-4 mt-1 mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          ref={folderInputRef}
+                          type="text"
+                          value={newFolderName}
+                          onChange={(e) => setNewFolderName(e.target.value)}
+                          onKeyDown={handleFolderKeyDown}
+                          placeholder="Folder name..."
+                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                        />
+                        <button
+                          onClick={handleCreateFolder}
+                          className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
+                          title="Create folder"
+                        >
+                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderError(""); }}
+                          className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
+                          title="Cancel"
+                        >
+                          <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      {folderError && (
+                        <p className="text-xs text-red-400 mt-1">{folderError}</p>
                       )}
-                      {editingFolderId === folder.id ? (
-                        <div className="px-4 py-1">
-                          <input
-                            ref={editFolderInputRef}
-                            type="text"
-                            value={editingFolderName}
-                            onChange={(e) => setEditingFolderName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") { e.preventDefault(); handleRenameFolder(); }
-                              else if (e.key === "Escape") { setEditingFolderId(null); setEditingFolderName(""); }
-                            }}
-                            onBlur={handleRenameFolder}
-                            className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                          />
-                        </div>
-                      ) : (
+                    </div>
+                  )}
+
+                  <div ref={folderListRef} className="mt-1 space-y-0.5">
+                    {sortedFolders.length === 0 && !isCreatingFolder ? (
+                      <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
+                    ) : (
+                      sortedFolders.map((folder, idx) => (
                         <div
+                          key={folder.id}
+                          data-folder-drag={folder.id}
+                          className={`relative group transition-all duration-100 ${
+                            dragId === folder.id && isDragging.current ? 'opacity-30 scale-[0.97]' : ''
+                          }`}
+                        >
+                          {/* Drop indicator line */}
+                          {dragOverId === folder.id && dragId !== folder.id && isDragging.current && (
+                            <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${dragAfterIndex === idx + 1 ? '-bottom-px' : '-top-px'}`} />
+                          )}
+                          {editingFolderId === folder.id ? (
+                            <div className="px-4 py-1">
+                              <input
+                                ref={editFolderInputRef}
+                                type="text"
+                                value={editingFolderName}
+                                onChange={(e) => setEditingFolderName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") { e.preventDefault(); handleRenameFolder(); }
+                                  else if (e.key === "Escape") { setEditingFolderId(null); setEditingFolderName(""); }
+                                }}
+                                onBlur={handleRenameFolder}
+                                className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              onClick={() =>
+                                handleNavClick(() => {
+                                  setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
+                                  setShowFavoritesOnly(false);
+                                })
+                              }
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
+                              }}
+                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
+                                selectedFolderId === folder.id
+                                  ? "bg-surface-200 text-foreground"
+                                  : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                              }`}
+                            >
+                              {/* Drag handle */}
+                              <div
+                                onPointerDown={(e) => handleDragStart(e, folder.id)}
+                                onPointerMove={handleDragMove}
+                                onPointerUp={handleDragEnd}
+                                onPointerCancel={handleDragEnd}
+                                className="absolute left-0 top-0 bottom-0 w-4 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
+                              >
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
+                                  <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
+                                  <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
+                                  <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
+                                </svg>
+                              </div>
+                              <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
+                                <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
+                              </svg>
+                              <span className="truncate flex-1 text-left">{folder.name}</span>
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
+                              >
+                                <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Context menu */}
+                          {folderMenuId === folder.id && (
+                            <div
+                              ref={folderMenuRef}
+                              className="absolute left-8 top-full z-50 mt-1 w-40 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              {sortedFolders.indexOf(folder) > 0 && (
+                                <button
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleMoveFolder(folder.id, 'up'); }}
+                                  className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer flex items-center gap-2"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                                  Move up
+                                </button>
+                              )}
+                              {sortedFolders.indexOf(folder) < sortedFolders.length - 1 && (
+                                <button
+                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleMoveFolder(folder.id, 'down'); }}
+                                  className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer flex items-center gap-2"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                  Move down
+                                </button>
+                              )}
+                              <div className="h-px bg-surface-200 my-0.5" />
+                              <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setEditingFolderId(folder.id); setEditingFolderName(folder.name); setFolderMenuId(null); }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
+                              >
+                                Rename
+                              </button>
+                              <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setColorPickerId(folder.id); }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
+                              >
+                                Change color
+                              </button>
+                              <div className="h-px bg-surface-200 my-0.5" />
+                              <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleDeleteFolderAction(folder.id); }}
+                                className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Color picker */}
+                          {colorPickerId === folder.id && (
+                            <div
+                              ref={colorPickerRef}
+                              className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              <div className="grid grid-cols-5 gap-2">
+                                {FOLDER_COLORS.map((color) => (
+                                  <button
+                                    key={color}
+                                    onClick={(e) => { e.stopPropagation(); handleFolderColorChange(folder.id, color); }}
+                                    className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
+                                    style={{
+                                      backgroundColor: color,
+                                      borderColor: folder.color === color ? '#ffffff' : 'transparent'
+                                    }}
+                                    title={color}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-surface-200 my-4" />
+
+            {/* AI MODELS — collapsible with CRUD */}
+            <div>
+              <div className="flex items-center justify-between px-4 py-2 gap-2">
+                <button
+                  onClick={() => setModelsOpen(!modelsOpen)}
+                  className="flex items-center gap-1.5 flex-1 cursor-pointer"
+                >
+                  <SectionChevron open={modelsOpen} />
+                  <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+                    AI Models
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsCreatingModel(true);
+                    setModelError("");
+                    if (!modelsOpen) setModelsOpen(true);
+                  }}
+                  className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
+                  title="Add AI model"
+                >
+                  <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </div>
+
+              {modelsOpen && (
+                <>
+                  {/* Inline model creation */}
+                  {isCreatingModel && (
+                    <div className="px-4 mt-1 mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          ref={modelInputRef}
+                          type="text"
+                          value={newModelName}
+                          onChange={(e) => setNewModelName(e.target.value)}
+                          onKeyDown={handleModelKeyDown}
+                          placeholder="Model name..."
+                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                        />
+                        <button
+                          onClick={handleCreateModel}
+                          className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
+                          title="Add model"
+                        >
+                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => { setIsCreatingModel(false); setNewModelName(""); setModelError(""); }}
+                          className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
+                          title="Cancel"
+                        >
+                          <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      {modelError && (
+                        <p className="text-xs text-red-400 mt-1">{modelError}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-1 space-y-0.5 pl-2">
+                    {sortedModels.length === 0 && !isCreatingModel ? (
+                      <p className="px-4 py-2 text-xs text-text-dim">No models yet</p>
+                    ) : (
+                      sortedModels.map((model) => (
+                        <div key={model.id} className="relative group">
+                          {editingModelId === model.id ? (
+                            <div className="px-4 py-1">
+                              <input
+                                ref={editModelInputRef}
+                                type="text"
+                                value={editingModelName}
+                                onChange={(e) => setEditingModelName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") { e.preventDefault(); handleRenameModel(); }
+                                  else if (e.key === "Escape") { setEditingModelId(null); setEditingModelName(""); }
+                                }}
+                                onBlur={handleRenameModel}
+                                className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              onClick={() =>
+                                handleNavClick(() => {
+                                  setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
+                                  setShowFavoritesOnly(false);
+                                })
+                              }
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                setModelMenuId(modelMenuId === model.id ? null : model.id);
+                              }}
+                              className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
+                                selectedModelSlug === model.slug
+                                  ? "bg-surface-200 text-foreground"
+                                  : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                              }`}
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: getModelColor(model.name) }}
+                              />
+                              <span className="truncate flex-1">{model.name}</span>
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setModelMenuId(modelMenuId === model.id ? null : model.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
+                              >
+                                <svg className="w-3.5 h-3.5 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
+                                </svg>
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Model context menu */}
+                          {modelMenuId === model.id && (
+                            <div
+                              ref={modelMenuRef}
+                              className="absolute left-8 top-full z-50 mt-1 w-36 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setEditingModelId(model.id); setEditingModelName(model.name); setModelMenuId(null); }}
+                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
+                              >
+                                Rename
+                              </button>
+                              <div className="h-px bg-surface-200 my-0.5" />
+                              <button
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleDeleteModel(model.id); }}
+                                className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-surface-200 my-4" />
+
+            {/* TAGS — collapsible */}
+            <div>
+              <div className="flex items-center justify-between px-4 py-2 gap-2">
+                <button
+                  onClick={() => setTagsOpen(!tagsOpen)}
+                  className="flex items-center gap-1.5 flex-1 cursor-pointer"
+                >
+                  <SectionChevron open={tagsOpen} />
+                  <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+                    Tags
+                  </span>
+                </button>
+              </div>
+
+              {tagsOpen && (
+                <div className="mt-1 flex flex-wrap gap-2 px-2">
+                  {tags.length === 0 ? (
+                    <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
+                  ) : (
+                    tags.map((tag) => (
+                      <div key={tag.id} className="relative group/tag inline-flex">
+                        <button
                           onClick={() =>
                             handleNavClick(() => {
-                              setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
+                              setSelectedTag(selectedTag === tag.name ? null : tag.name);
                               setShowFavoritesOnly(false);
                             })
                           }
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
-                          }}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
-                            selectedFolderId === folder.id
-                              ? "bg-surface-200 text-foreground"
-                              : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
+                            selectedTag === tag.name
+                              ? "bg-brand-500/15 border border-brand-400/50 text-brand-300 pr-6"
+                              : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground group-hover/tag:pr-6"
                           }`}
                         >
-                          {/* Drag handle — pointer capture for reorder, flush left edge */}
-                          <div
-                            onPointerDown={(e) => handleDragStart(e, folder.id)}
-                            onPointerMove={handleDragMove}
-                            onPointerUp={handleDragEnd}
-                            onPointerCancel={handleDragEnd}
-                            className="absolute left-0 top-0 bottom-0 w-4 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
-                          >
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
-                              <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
-                              <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
-                              <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
-                            </svg>
-                          </div>
-                          {/* Folder SVG icon with dynamic color — aligned with nav icons */}
-                          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
-                            <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
+                          #{tag.name}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTag(tag.id);
+                          }}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300 transition-all cursor-pointer"
+                          title="Delete tag"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                          <span className="truncate flex-1 text-left">{folder.name}</span>
-                          {/* Three-dot menu button - visible on hover */}
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
-                          >
-                            <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-                            </svg>
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Context menu */}
-                      {folderMenuId === folder.id && (
-                        <div
-                          ref={folderMenuRef}
-                          className="absolute left-8 top-full z-50 mt-1 w-40 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        >
-                          {/* Move Up — hidden if first */}
-                          {sortedFolders.indexOf(folder) > 0 && (
-                            <button
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.nativeEvent.stopImmediatePropagation();
-                                handleMoveFolder(folder.id, 'up');
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer flex items-center gap-2"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-                              Move up
-                            </button>
-                          )}
-                          {/* Move Down — hidden if last */}
-                          {sortedFolders.indexOf(folder) < sortedFolders.length - 1 && (
-                            <button
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.nativeEvent.stopImmediatePropagation();
-                                handleMoveFolder(folder.id, 'down');
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer flex items-center gap-2"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                              Move down
-                            </button>
-                          )}
-                          <div className="h-px bg-surface-200 my-0.5" />
-                          <button
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-                              setEditingFolderId(folder.id);
-                              setEditingFolderName(folder.name);
-                              setFolderMenuId(null);
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
-                          >
-                            Rename
-                          </button>
-                          <button
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-                              setColorPickerId(folder.id);
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
-                          >
-                            Change color
-                          </button>
-                          <div className="h-px bg-surface-200 my-0.5" />
-                          <button
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-                              handleDeleteFolderAction(folder.id);
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Color picker */}
-                      {colorPickerId === folder.id && (
-                        <div
-                          ref={colorPickerRef}
-                          className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        >
-                          <div className="grid grid-cols-5 gap-2">
-                            {FOLDER_COLORS.map((color) => (
-                              <button
-                                key={color}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleFolderColorChange(folder.id, color);
-                                }}
-                                className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
-                                style={{
-                                  backgroundColor: color,
-                                  borderColor: folder.color === color ? '#ffffff' : 'transparent'
-                                }}
-                                title={color}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-surface-200 my-4" />
-
-            {/* AI MODELS */}
-            <div>
-              <div className="px-4 py-2">
-                <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
-                  AI Models
-                </span>
-              </div>
-              <div className="mt-1 space-y-0.5 pl-2">
-                {SIDEBAR_MODELS.map((model) => (
-                  <button
-                    key={model.slug}
-                    onClick={() =>
-                      handleNavClick(() => {
-                        setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
-                        setShowFavoritesOnly(false);
-                      })
-                    }
-                    className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
-                      selectedModelSlug === model.slug
-                        ? "bg-surface-200 text-foreground"
-                        : "text-text-muted hover:text-foreground hover:bg-surface-100"
-                    }`}
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: model.color }}
-                    />
-                    <span className="truncate">{model.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-surface-200 my-4" />
-
-            {/* TAGS */}
-            <div>
-              <div className="px-4 py-2">
-                <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
-                  Tags
-                </span>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-2 px-2">
-                {tags.length === 0 ? (
-                  <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
-                ) : (
-                  tags.map((tag) => (
-                    <div key={tag.id} className="relative group/tag inline-flex">
-                      <button
-                        onClick={() =>
-                          handleNavClick(() => {
-                            setSelectedTag(selectedTag === tag.name ? null : tag.name);
-                            setShowFavoritesOnly(false);
-                          })
-                        }
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
-                          selectedTag === tag.name
-                            ? "bg-brand-500/15 border border-brand-400/50 text-brand-300 pr-6"
-                            : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground group-hover/tag:pr-6"
-                        }`}
-                      >
-                        #{tag.name}
-                      </button>
-                      {/* Delete tag button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteTag(tag.id);
-                        }}
-                        className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300 transition-all cursor-pointer"
-                        title="Delete tag"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </nav>
 
-          {/* Settings + Sign Out — side by side */}
+          {/* Settings + Sign Out */}
           <div className="border-t border-surface-200 px-3 py-3 flex items-center justify-between">
             <ThemeToggle />
             <form action={signOut}>

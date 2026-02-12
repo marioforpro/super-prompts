@@ -29,6 +29,9 @@ interface DashboardState {
   removeFolder: (id: string) => void;
   updateFolder: (id: string, updates: Partial<Folder>) => void;
   models: AiModel[];
+  addModel: (model: AiModel) => void;
+  removeModel: (id: string) => void;
+  updateModelCtx: (id: string, updates: Partial<AiModel>) => void;
   tags: Tag[];
   removeTag: (id: string) => void;
   // User
@@ -41,7 +44,7 @@ const DashboardContext = createContext<DashboardState | null>(null);
 export function DashboardProvider({
   children,
   folders: initialFolders,
-  models,
+  models: initialModels,
   tags,
   userEmail,
 }: {
@@ -59,6 +62,7 @@ export function DashboardProvider({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
+  const [modelsState, setModelsState] = useState<AiModel[]>(initialModels);
   const [tagsState, setTagsState] = useState<Tag[]>(tags);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
@@ -75,6 +79,20 @@ export function DashboardProvider({
   const updateFolder = (id: string, updates: Partial<Folder>) => {
     setFolders((prev) =>
       prev.map((f) => (f.id === id ? { ...f, ...updates } : f))
+    );
+  };
+
+  const addModel = (model: AiModel) => {
+    setModelsState((prev) => [...prev, model]);
+  };
+
+  const removeModel = (id: string) => {
+    setModelsState((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const updateModelCtx = (id: string, updates: Partial<AiModel>) => {
+    setModelsState((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, ...updates } : m))
     );
   };
 
@@ -104,7 +122,10 @@ export function DashboardProvider({
         addFolder,
         removeFolder,
         updateFolder,
-        models,
+        models: modelsState,
+        addModel,
+        removeModel,
+        updateModelCtx,
         tags: tagsState,
         removeTag,
         userEmail,

@@ -605,51 +605,55 @@ export function CreatePromptModal({
                         </div>
                       )}
 
-                      {/* Set as cover button — only on non-cover items */}
-                      {index !== 0 && mediaItems.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleSetCover(index)}
-                          className="absolute bottom-1 left-1 z-20 px-1.5 py-0.5 rounded text-[10px] font-medium bg-black/60 hover:bg-brand-500/80 text-white/80 hover:text-white opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                          title="Set as cover image"
-                        >
-                          Set cover
-                        </button>
-                      )}
-
                       {/* Remove button */}
                       <button
                         type="button"
                         onClick={() => handleRemoveMedia(index)}
-                        className="absolute top-1 right-1 z-20 p-1 rounded-md bg-black/50 hover:bg-red-500/70 text-white opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute top-1 right-1 z-20 w-5 h-5 flex items-center justify-center rounded-md bg-black/60 hover:bg-red-500/70 text-white opacity-0 group-hover:opacity-100 transition-all"
                         disabled={isLoading}
                       >
-                        <X size={12} />
+                        <X size={10} />
                       </button>
 
-                      {/* Move left/right buttons for reordering */}
+                      {/* Bottom bar — consistent design: set cover left, arrows right */}
                       {mediaItems.length > 1 && (
-                        <div className="absolute bottom-1 right-1 z-20 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
-                          {index > 0 && (
+                        <div className="absolute bottom-0 inset-x-0 z-20 flex items-center justify-between px-1 py-1 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-all">
+                          {/* Set cover button — only on non-cover items */}
+                          {index !== 0 ? (
                             <button
                               type="button"
-                              onClick={() => handleMoveMedia(index, 'left')}
-                              className="p-0.5 rounded bg-black/60 hover:bg-white/30 text-white transition-colors cursor-pointer"
-                              title="Move left"
+                              onClick={() => handleSetCover(index)}
+                              className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-white/15 hover:bg-brand-500/60 text-white/80 hover:text-white backdrop-blur-sm transition-all cursor-pointer"
+                              title="Set as cover image"
                             >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                              Set cover
                             </button>
+                          ) : (
+                            <div />
                           )}
-                          {index < mediaItems.length - 1 && (
-                            <button
-                              type="button"
-                              onClick={() => handleMoveMedia(index, 'right')}
-                              className="p-0.5 rounded bg-black/60 hover:bg-white/30 text-white transition-colors cursor-pointer"
-                              title="Move right"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                            </button>
-                          )}
+                          {/* Move arrows */}
+                          <div className="flex items-center gap-0.5">
+                            {index > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveMedia(index, 'left')}
+                                className="w-5 h-5 flex items-center justify-center rounded bg-white/15 hover:bg-white/30 text-white backdrop-blur-sm transition-colors cursor-pointer"
+                                title="Move left"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                              </button>
+                            )}
+                            {index < mediaItems.length - 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleMoveMedia(index, 'right')}
+                                className="w-5 h-5 flex items-center justify-center rounded bg-white/15 hover:bg-white/30 text-white backdrop-blur-sm transition-colors cursor-pointer"
+                                title="Move right"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
