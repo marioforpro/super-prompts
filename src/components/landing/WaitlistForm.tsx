@@ -68,22 +68,22 @@ export default function WaitlistForm() {
           if (status === "error") setStatus("idle");
         }}
         required
-        className="flex-1 bg-white border border-surface-300 rounded-xl px-5 py-3.5 text-foreground text-base font-sans placeholder:text-text-dim outline-none transition-all duration-250 focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(200,120,78,0.1)]"
-        style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+        className="flex-1 bg-white border border-surface-300 rounded-xl px-5 py-3.5 text-foreground text-base font-sans placeholder:text-text-dim outline-none transition-all duration-250 focus:border-brand-400 focus:shadow-[0_0_0_3px_rgba(232,118,75,0.12)]"
+        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}
       />
       <button
         type="submit"
         disabled={status === "loading"}
         className="group font-sans font-bold text-base tracking-wide px-8 py-3.5 rounded-xl border-none cursor-pointer text-white whitespace-nowrap transition-all duration-300 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2.5"
         style={{
-          background: "linear-gradient(135deg, #d08860 0%, #c8784e 50%, #b06840 100%)",
-          boxShadow: "0 4px 16px rgba(200,120,78,0.25), inset 0 1px 0 rgba(255,255,255,0.15)",
+          background: "linear-gradient(135deg, #f5a07a 0%, #e8764b 40%, #d4663e 100%)",
+          boxShadow: "0 4px 20px rgba(232,118,75,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = "0 6px 24px rgba(200,120,78,0.35), inset 0 1px 0 rgba(255,255,255,0.15)";
+          e.currentTarget.style.boxShadow = "0 8px 32px rgba(232,118,75,0.4), inset 0 1px 0 rgba(255,255,255,0.2)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = "0 4px 16px rgba(200,120,78,0.25), inset 0 1px 0 rgba(255,255,255,0.15)";
+          e.currentTarget.style.boxShadow = "0 4px 20px rgba(232,118,75,0.3), inset 0 1px 0 rgba(255,255,255,0.2)";
         }}
       >
         {status === "loading" ? (

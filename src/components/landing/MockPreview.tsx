@@ -1,74 +1,74 @@
 const sidebarItems = [
-  { name: "All Prompts", color: "#c8784e", active: true, count: 127 },
-  { name: "Video FX", color: "#e43f5a", active: false, count: 43 },
-  { name: "Portraits", color: "#38b6ff", active: false, count: 31 },
-  { name: "Sound Design", color: "#28c840", active: false, count: 18 },
-  { name: "Product Shots", color: "#e8a87a", active: false, count: 24 },
+  { name: "All Prompts", color: "#e8764b", active: true, count: 127 },
+  { name: "Video FX", color: "#e84373", active: false, count: 43 },
+  { name: "Portraits", color: "#3ba0d8", active: false, count: 31 },
+  { name: "Sound Design", color: "#2ebb4e", active: false, count: 18 },
+  { name: "Product Shots", color: "#f0a050", active: false, count: 24 },
 ];
 
 const cards = [
   {
     title: "Cinematic sunset aerial",
     badge: "Sora",
-    badgeBg: "rgba(200,120,78,0.1)",
-    badgeColor: "#b06840",
-    gradient: "linear-gradient(135deg, #f5cba7, #f0a06e, #e07a5f, #c8784e)",
+    badgeBg: "rgba(232,118,75,0.1)",
+    badgeColor: "#d4663e",
+    gradient: "linear-gradient(135deg, #fdb99b, #e8764b, #cf5c36, #a84a2e)",
     fav: true,
   },
   {
     title: "Neon portrait cyberpunk",
     badge: "Midjourney",
-    badgeBg: "rgba(56,182,255,0.1)",
-    badgeColor: "#2a8fd4",
-    gradient: "linear-gradient(135deg, #a8d8ea, #3d7ea6, #1b4965, #5fa8d3)",
+    badgeBg: "rgba(59,160,216,0.1)",
+    badgeColor: "#2a7fb8",
+    gradient: "linear-gradient(135deg, #89cff0, #3ba0d8, #1b6fa0, #0d4f7a)",
     fav: false,
   },
   {
     title: "Ambient forest texture",
     badge: "Suno",
-    badgeBg: "rgba(40,200,64,0.1)",
+    badgeBg: "rgba(46,187,78,0.1)",
     badgeColor: "#1e8a3a",
-    gradient: "linear-gradient(135deg, #b5e8b5, #56ab6b, #2d6a4f, #40916c)",
+    gradient: "linear-gradient(135deg, #95e8a8, #40c463, #2d8f4e, #1a6b35)",
     fav: true,
   },
   {
     title: "Slow motion liquid pour",
     badge: "Kling",
-    badgeBg: "rgba(228,63,90,0.1)",
-    badgeColor: "#c4304f",
-    gradient: "linear-gradient(135deg, #f8b4b4, #ef6f6f, #c84b65, #a83257)",
+    badgeBg: "rgba(232,67,115,0.1)",
+    badgeColor: "#c83060",
+    gradient: "linear-gradient(135deg, #fba4c4, #e84373, #c83060, #9b2550)",
     fav: false,
   },
   {
     title: "Minimal product flat lay",
     badge: "FLUX",
-    badgeBg: "rgba(232,168,122,0.12)",
-    badgeColor: "#b06840",
-    gradient: "linear-gradient(135deg, #d4e4f7, #a3c4e7, #7baad4, #5b8fb9)",
+    badgeBg: "rgba(240,160,80,0.1)",
+    badgeColor: "#c47828",
+    gradient: "linear-gradient(135deg, #bde0fe, #89c2f5, #5fa3e6, #3d87d4)",
     fav: false,
   },
   {
     title: "Abstract motion trails",
     badge: "Runway",
-    badgeBg: "rgba(200,120,78,0.1)",
-    badgeColor: "#b06840",
-    gradient: "linear-gradient(135deg, #f8c4c4, #e87e7e, #d45b7a, #b8466e)",
+    badgeBg: "rgba(232,118,75,0.1)",
+    badgeColor: "#d4663e",
+    gradient: "linear-gradient(135deg, #fba4c4, #e06888, #c84b6b, #a83858)",
     fav: true,
   },
   {
     title: "Drone through clouds",
     badge: "VEO",
-    badgeBg: "rgba(120,80,200,0.1)",
-    badgeColor: "#6b4fb5",
-    gradient: "linear-gradient(135deg, #c9b8e8, #9b8ec4, #7a6fad, #5d4e97)",
+    badgeBg: "rgba(130,90,210,0.1)",
+    badgeColor: "#7b55c0",
+    gradient: "linear-gradient(135deg, #c4b0e8, #9b7ed8, #7b55c0, #5d3ea0)",
     fav: false,
   },
   {
     title: "Vintage film grain style",
     badge: "Seedream",
-    badgeBg: "rgba(56,182,255,0.1)",
-    badgeColor: "#2a8fd4",
-    gradient: "linear-gradient(135deg, #e8d5b7, #c9a87c, #a38160, #856b4d)",
+    badgeBg: "rgba(200,168,120,0.12)",
+    badgeColor: "#9a7848",
+    gradient: "linear-gradient(135deg, #f0dfc8, #d4b88a, #b89868, #9a7848)",
     fav: false,
   },
 ];
@@ -180,7 +180,7 @@ export default function MockPreview() {
                         width="12"
                         height="12"
                         viewBox="0 0 24 24"
-                        fill="#c8784e"
+                        fill="#e8764b"
                         stroke="none"
                       >
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
