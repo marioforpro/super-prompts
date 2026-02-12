@@ -334,10 +334,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                       {/* Context menu */}
                       {folderMenuId === folder.id && (
-                        <div ref={folderMenuRef} className="absolute left-8 top-full z-50 mt-1 w-32 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden">
+                        <div
+                          ref={folderMenuRef}
+                          className="absolute left-8 top-full z-50 mt-1 w-32 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
                           <button
+                            onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
                               setEditingFolderId(folder.id);
                               setEditingFolderName(folder.name);
                               setFolderMenuId(null);
@@ -347,8 +354,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             Rename
                           </button>
                           <button
+                            onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                               e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
                               handleDeleteFolderAction(folder.id);
                             }}
                             className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
