@@ -83,20 +83,20 @@ export default function MockPreview() {
         }}
       >
         {/* Window chrome with search */}
-        <div className="flex items-center justify-between px-4 py-3 bg-surface-100 border-b border-surface-300">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-            <span className="ml-3 text-xs text-text-dim font-medium">
+        <div className="flex items-center justify-between px-5 py-3.5 bg-surface-100 border-b border-surface-300">
+          <div className="flex items-center gap-2.5">
+            <span className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+            <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+            <span className="w-3 h-3 rounded-full bg-[#28c840]" />
+            <span className="ml-3 text-sm text-text-dim font-medium">
               Super Prompts — My Library
             </span>
           </div>
           {/* Search bar */}
-          <div className="hidden sm:flex items-center gap-2 bg-surface-200 border border-surface-300 rounded-lg px-3 py-1.5 min-w-[180px]">
+          <div className="hidden sm:flex items-center gap-2 bg-surface-200 border border-surface-300 rounded-lg px-4 py-2 min-w-[200px]">
             <svg
-              width="12"
-              height="12"
+              width="14"
+              height="14"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -106,33 +106,33 @@ export default function MockPreview() {
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
-            <span className="text-[0.65rem] text-text-dim cursor-blink">
+            <span className="text-xs text-text-dim cursor-blink">
               Search prompts...
             </span>
           </div>
         </div>
 
         {/* Body */}
-        <div className="flex min-h-[340px]">
+        <div className="flex min-h-[400px]">
           {/* Sidebar with counts */}
-          <div className="w-[200px] shrink-0 p-4 border-r border-surface-300 bg-surface-100 hidden md:flex flex-col">
+          <div className="w-[220px] shrink-0 p-5 border-r border-surface-300 bg-surface-100 hidden md:flex flex-col">
             <div className="flex-1">
               {sidebarItems.map((item) => (
                 <div
                   key={item.name}
-                  className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs mb-0.5 transition-all duration-200 ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all duration-200 ${
                     item.active
                       ? "bg-brand-500/8 text-brand-400"
                       : "text-text-muted"
                   }`}
                 >
                   <div
-                    className="w-2 h-2 rounded-[3px] shrink-0"
+                    className="w-2.5 h-2.5 rounded-[3px] shrink-0"
                     style={{ background: item.color }}
                   />
                   <span className="flex-1">{item.name}</span>
                   <span
-                    className={`text-[0.6rem] ${
+                    className={`text-xs ${
                       item.active ? "text-brand-400/60" : "text-text-dim"
                     }`}
                   >
@@ -143,10 +143,10 @@ export default function MockPreview() {
             </div>
             {/* Sidebar bottom */}
             <div className="pt-4 border-t border-surface-300 mt-4">
-              <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-brand-400 font-semibold">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-brand-400 font-semibold">
                 <svg
-                  width="10"
-                  height="10"
+                  width="12"
+                  height="12"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -161,22 +161,22 @@ export default function MockPreview() {
           </div>
 
           {/* Card grid */}
-          <div className="flex-1 p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 content-start">
+          <div className="flex-1 p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 content-start">
             {cards.map((card) => (
               <div
                 key={card.title}
-                className="group rounded-[10px] overflow-hidden border border-surface-300 bg-surface-200 transition-all duration-300 hover:border-brand-500/30 hover:-translate-y-0.5"
+                className="group rounded-xl overflow-hidden border border-surface-300 bg-surface-200 transition-all duration-300 hover:border-brand-500/30 hover:-translate-y-0.5"
               >
                 {/* Card image with optional favorite */}
                 <div
-                  className="h-[90px] w-full relative"
+                  className="h-[110px] w-full relative"
                   style={{ background: card.gradient }}
                 >
                   {card.fav && (
-                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
                       <svg
-                        width="10"
-                        height="10"
+                        width="12"
+                        height="12"
                         viewBox="0 0 24 24"
                         fill="#ff6b2b"
                         stroke="none"
@@ -186,12 +186,12 @@ export default function MockPreview() {
                     </div>
                   )}
                 </div>
-                <div className="px-2.5 py-2">
-                  <div className="text-[0.65rem] font-semibold text-foreground mb-1 truncate">
+                <div className="px-3 py-2.5">
+                  <div className="text-xs font-semibold text-foreground mb-1.5 truncate">
                     {card.title}
                   </div>
                   <span
-                    className="text-[0.55rem] font-semibold px-1.5 py-0.5 rounded"
+                    className="text-[0.65rem] font-semibold px-2 py-0.5 rounded"
                     style={{
                       background: card.badgeBg,
                       color: card.badgeColor,
@@ -208,7 +208,7 @@ export default function MockPreview() {
 
       {/* Caption below preview */}
       <p
-        className="text-center text-text-dim text-xs mt-6 tracking-wide"
+        className="text-center text-text-dim text-sm mt-8 tracking-wide"
         style={{ animation: "fadeIn 1s ease-out 1.5s both" }}
       >
         Your prompt library, beautifully organized

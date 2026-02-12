@@ -58,7 +58,7 @@ export default function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2.5 w-full max-w-md">
+    <form onSubmit={handleSubmit} className="flex gap-3 w-full max-w-lg">
       <input
         type="email"
         placeholder="your@email.com"
@@ -68,12 +68,12 @@ export default function WaitlistForm() {
           if (status === "error") setStatus("idle");
         }}
         required
-        className="flex-1 bg-surface-100 border border-surface-300 rounded-[10px] px-4 py-3 text-white text-sm font-sans placeholder:text-text-dim outline-none transition-all duration-250 focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(255,107,43,0.1),0_0_30px_rgba(255,107,43,0.05)]"
+        className="flex-1 bg-surface-100 border border-surface-300 rounded-xl px-5 py-3.5 text-white text-base font-sans placeholder:text-text-dim outline-none transition-all duration-250 focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(255,107,43,0.1),0_0_30px_rgba(255,107,43,0.05)]"
       />
       <button
         type="submit"
         disabled={status === "loading"}
-        className="font-sans font-bold text-sm tracking-wide px-7 py-3 rounded-[10px] border-none cursor-pointer bg-brand-500 text-white whitespace-nowrap transition-all duration-250 shadow-[0_4px_20px_rgba(255,107,43,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-brand-600 hover:-translate-y-px hover:shadow-[0_6px_30px_rgba(255,107,43,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="font-sans font-bold text-base tracking-wide px-8 py-3.5 rounded-xl border-none cursor-pointer bg-brand-500 text-white whitespace-nowrap transition-all duration-250 shadow-[0_4px_20px_rgba(255,107,43,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:bg-brand-600 hover:-translate-y-px hover:shadow-[0_6px_30px_rgba(255,107,43,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {status === "loading" ? "Joining..." : "Get Early Access"}
       </button>

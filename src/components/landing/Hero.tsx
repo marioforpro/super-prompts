@@ -27,7 +27,7 @@ export default function Hero() {
             />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-brand-400" />
           </span>
-          <span className="text-[0.7rem] font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/15">
+          <span className="text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/15">
             Coming Soon
           </span>
         </div>
@@ -72,11 +72,11 @@ export default function Hero() {
         {/* Hero content */}
         <div className="max-w-[60rem] text-center relative z-10">
           {/* Creative "Prompt Management for Creatives" badge */}
-          <div className="anim-fade-up anim-d1 mb-10 inline-flex items-center gap-3">
+          <div className="anim-fade-up anim-d1 mb-12 inline-flex items-center gap-3">
             {/* Decorative plus */}
             <svg
-              width="14"
-              height="14"
+              width="16"
+              height="16"
               viewBox="0 0 14 14"
               fill="none"
               className="text-brand-400"
@@ -99,14 +99,14 @@ export default function Hero() {
               />
             </svg>
             <span
-              className="text-[0.7rem] font-bold tracking-[0.25em] uppercase text-brand-400"
+              className="text-sm font-bold tracking-[0.25em] uppercase text-brand-400"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               Prompt management for creatives
             </span>
             <svg
-              width="14"
-              height="14"
+              width="16"
+              height="16"
               viewBox="0 0 14 14"
               fill="none"
               className="text-brand-400"
@@ -131,9 +131,9 @@ export default function Hero() {
           </div>
 
           {/* Headline — Bebas Neue, cinematic, horizontal */}
-          <h1 className="anim-fade-up anim-d2 font-display leading-[0.95] mb-6 tracking-[0.02em]"
+          <h1 className="anim-fade-up anim-d2 font-display leading-[0.9] mb-8 tracking-[0.02em]"
             style={{
-              fontSize: "clamp(3.5rem, 10vw, 7.5rem)",
+              fontSize: "clamp(4rem, 12vw, 9rem)",
             }}
           >
             NEVER LOSE A GREAT{" "}
@@ -154,23 +154,23 @@ export default function Hero() {
           </h1>
 
           {/* Subheadline */}
-          <p className="anim-fade-up anim-d3 text-lg leading-relaxed text-text-muted max-w-[36rem] mx-auto mb-10">
+          <p className="anim-fade-up anim-d3 text-xl leading-relaxed text-text-muted max-w-[40rem] mx-auto mb-12">
             The visual prompt library for creatives. Save prompts from anywhere,
             organize with previews, and discover what&apos;s trending — for
             image, video, and sound generation.
           </p>
 
           {/* Model ticker */}
-          <div className="anim-fade-up anim-d3 flex flex-wrap justify-center gap-1.5 mb-10">
+          <div className="anim-fade-up anim-d3 flex flex-wrap justify-center gap-2 mb-12">
             {models.map((model) => (
               <span
                 key={model}
-                className="text-[0.7rem] font-semibold tracking-wide px-3 py-1 rounded-full bg-surface-100 text-text-dim border border-surface-300 transition-all duration-300 hover:border-brand-500 hover:text-brand-400 hover:bg-brand-500/5 hover:scale-105"
+                className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full bg-surface-100 text-text-dim border border-surface-300 transition-all duration-300 hover:border-brand-500 hover:text-brand-400 hover:bg-brand-500/5 hover:scale-105"
               >
                 {model}
               </span>
             ))}
-            <span className="text-[0.7rem] font-semibold tracking-wide px-3 py-1 rounded-full bg-brand-500/8 text-brand-400 border border-brand-500/20">
+            <span className="text-sm font-semibold tracking-wide px-4 py-1.5 rounded-full bg-brand-500/8 text-brand-400 border border-brand-500/20">
               +20 more
             </span>
           </div>
@@ -179,7 +179,7 @@ export default function Hero() {
           <div className="anim-fade-up anim-d4 flex justify-center mb-4">
             <WaitlistForm />
           </div>
-          <p className="anim-fade-up anim-d5 text-[0.8rem] text-text-dim">
+          <p className="anim-fade-up anim-d5 text-sm text-text-dim mt-1">
             Join creatives on the waitlist. No spam, ever.
           </p>
         </div>
@@ -189,7 +189,7 @@ export default function Hero() {
           className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-text-dim"
           style={{ animation: "float 3s ease-in-out infinite" }}
         >
-          <span className="text-[0.65rem] tracking-widest uppercase">
+          <span className="text-xs tracking-widest uppercase">
             Scroll
           </span>
           <svg
