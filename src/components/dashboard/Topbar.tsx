@@ -120,11 +120,9 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="h-[38px] w-[38px] flex items-center justify-center hover:bg-surface-100 rounded-lg transition-colors cursor-pointer"
+              className="h-[38px] w-[38px] rounded-full bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all cursor-pointer"
             >
-              <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold">
-                {userInitial}
-              </div>
+              {userInitial}
             </button>
 
             {userMenuOpen && (
