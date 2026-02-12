@@ -22,10 +22,10 @@ export default function Home() {
       <section className="px-6 md:px-8 py-36 text-center relative overflow-hidden">
         {/* Atmospheric glow behind CTA */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(232,118,75,0.08) 0%, transparent 60%)",
+              "radial-gradient(circle, rgba(232,118,75,0.12) 0%, rgba(232,118,75,0.04) 40%, transparent 65%)",
           }}
         />
 
@@ -34,12 +34,13 @@ export default function Home() {
             Get Started
           </div>
           <h2
-            className="font-extrabold leading-[1] mb-6 tracking-tight"
+            className="font-extrabold leading-[1.05] mb-6 tracking-tight"
             style={{
-              fontSize: "clamp(2.4rem, 6vw, 4.8rem)",
+              fontSize: "clamp(2.2rem, 5vw, 3.8rem)",
             }}
           >
-            Ready to Organize Your{" "}
+            Ready to Organize<br />
+            Your{" "}
             <span
               style={{
                 background: "linear-gradient(135deg, #f09070 0%, #e8764b 50%, #d06840 100%)",

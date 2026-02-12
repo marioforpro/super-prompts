@@ -64,7 +64,15 @@ export default function Logo({
           style={{ fontFamily: "var(--font-sans)", letterSpacing: "0.06em" }}
         >
           SUPER
-          <span className="text-brand-400">PROMPTS</span>
+          <span
+            style={{
+              background: "linear-gradient(135deg, #f09070, #d06840)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            PROMPTS
+          </span>
         </span>
       )}
     </div>

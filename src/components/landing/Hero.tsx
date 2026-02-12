@@ -31,30 +31,39 @@ export default function Hero() {
         id="top"
         className="relative min-h-screen flex flex-col items-center justify-center px-6 md:px-8 pt-32 pb-16 overflow-hidden"
       >
-        {/* Atmospheric gradient orbs */}
+        {/* Atmospheric gradient orbs — punchy */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
-          {/* Primary warm glow — top center */}
+          {/* Primary warm glow — top center, intense */}
           <div
-            className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[900px] h-[600px]"
+            className="absolute top-[-15%] left-1/2 -translate-x-1/2 w-[1100px] h-[700px]"
             style={{
-              background: "radial-gradient(ellipse, rgba(232,118,75,0.12) 0%, rgba(232,118,75,0.04) 40%, transparent 70%)",
+              background: "radial-gradient(ellipse, rgba(232,118,75,0.18) 0%, rgba(232,118,75,0.06) 35%, transparent 65%)",
               animation: "orbFloat 20s ease-in-out infinite",
             }}
           />
           {/* Secondary cool glow — bottom left */}
           <div
-            className="absolute bottom-[5%] left-[-5%] w-[500px] h-[500px]"
+            className="absolute bottom-[0%] left-[-10%] w-[600px] h-[600px]"
             style={{
-              background: "radial-gradient(circle, rgba(100,140,200,0.06) 0%, transparent 65%)",
+              background: "radial-gradient(circle, rgba(80,120,200,0.10) 0%, transparent 60%)",
               animation: "orbFloat 25s ease-in-out infinite 5s",
             }}
           />
           {/* Accent warm glow — right side */}
           <div
-            className="absolute top-[40%] right-[-8%] w-[400px] h-[400px]"
+            className="absolute top-[35%] right-[-10%] w-[500px] h-[500px]"
             style={{
-              background: "radial-gradient(circle, rgba(232,118,75,0.06) 0%, transparent 65%)",
+              background: "radial-gradient(circle, rgba(232,118,75,0.10) 0%, transparent 60%)",
               animation: "orbFloat 18s ease-in-out infinite 3s",
+            }}
+          />
+          {/* Film grain overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+              backgroundRepeat: "repeat",
+              backgroundSize: "128px 128px",
             }}
           />
         </div>
@@ -101,10 +110,10 @@ export default function Hero() {
 
           {/* Headline — DM Sans Bold, huge, with glowing coral accent */}
           <h1
-            className="anim-fade-up anim-d2 font-extrabold leading-[0.95] mb-8 tracking-tight"
-            style={{ fontSize: "clamp(3.2rem, 10vw, 7rem)" }}
+            className="anim-fade-up anim-d2 font-extrabold leading-[0.93] mb-8 tracking-tight"
+            style={{ fontSize: "clamp(3rem, 9vw, 6.5rem)" }}
           >
-            Never Lose a Great{" "}
+            Never Lose a Great<br />
             <span
               style={{
                 background: "linear-gradient(135deg, #f09070 0%, #e8764b 40%, #d06840 80%)",
