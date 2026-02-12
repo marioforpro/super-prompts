@@ -170,6 +170,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleDragStart = (e: React.DragEvent, folderId: string) => {
     setDraggedFolderId(folderId);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', folderId);
     // Make drag image semi-transparent
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.style.opacity = '0.5';
@@ -272,7 +273,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="px-5 h-[73px] flex items-center border-b border-surface-200">
+          <div className="px-5 h-[74px] flex items-center border-b border-surface-200">
             <Link href="/dashboard">
               <Logo size="sm" showText={true} />
             </Link>
@@ -367,7 +368,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </div>
               )}
 
-              <div className="mt-1 space-y-0.5 pl-2">
+              <div className="mt-1 space-y-0.5">
                 {sortedFolders.length === 0 && !isCreatingFolder ? (
                   <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
                 ) : (
@@ -402,7 +403,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           />
                         </div>
                       ) : (
-                        <button
+                        <div
                           onClick={() =>
                             handleNavClick(() => {
                               setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
@@ -413,7 +414,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             e.preventDefault();
                             setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer ${
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
                             selectedFolderId === folder.id
                               ? "bg-surface-200 text-foreground"
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
@@ -426,7 +427,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
                           </svg>
                           {/* Folder SVG icon with dynamic color - macOS style */}
-                          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
+                          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
                             <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
                           </svg>
                           <span className="truncate flex-1 text-left">{folder.name}</span>
@@ -436,13 +437,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               e.stopPropagation();
                               setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                             }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
                           >
                             <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
                             </svg>
                           </span>
-                        </button>
+                        </div>
                       )}
 
                       {/* Context menu */}

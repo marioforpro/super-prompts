@@ -146,7 +146,7 @@ export function PromptCard({
                 style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
               >
                 {displayMedia.map((media, idx) => (
-                  <div key={idx} className="relative w-full h-full flex-shrink-0">
+                  <div key={idx} className="relative min-w-full h-full flex-shrink-0 overflow-hidden">
                     {media.frameFit === 'contain' && (
                       <div className="absolute inset-0 bg-gray-900" />
                     )}
@@ -206,7 +206,7 @@ export function PromptCard({
                 </button>
 
                 {/* Navigation Dots */}
-                <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5">
+                <div className="absolute bottom-3 right-3 z-30 flex items-center gap-1.5">
                   {displayMedia.map((_, index) => (
                     <button
                       key={index}
@@ -272,7 +272,7 @@ export function PromptCard({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={handleCopyClick}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-colors duration-200"
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-110 active:scale-95 hover:border-white/40 hover:shadow-lg hover:shadow-black/20"
               aria-label="Copy prompt"
               title="Copy prompt"
             >
@@ -281,10 +281,10 @@ export function PromptCard({
             <button
               onClick={handleFavoriteClick}
               className={cn(
-                'p-2 rounded-lg backdrop-blur-sm border transition-all duration-200',
+                'p-2 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-lg hover:shadow-black/20',
                 isFavoritedLocally
-                  ? 'bg-red-500/30 border-red-400/50 text-red-300'
-                  : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
+                  ? 'bg-red-500/30 border-red-400/50 text-red-300 hover:bg-red-500/50 hover:border-red-400/70'
+                  : 'bg-white/10 hover:bg-white/25 border-white/20 text-white hover:border-white/40'
               )}
               aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
               title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}

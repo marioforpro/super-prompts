@@ -11,6 +11,7 @@ import {
   getPrompt,
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
+import { createFolder } from "@/lib/actions/folders";
 import { createPromptMedia, removePromptMedia, updateMediaFrameFit } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
 
@@ -35,6 +36,7 @@ interface CreatePromptModalProps {
   folders: Folder[];
   tags: Tag[];
   onTagsChange?: (tags: Tag[]) => void;
+  onFolderCreate?: (folder: Folder) => void;
 }
 
 export function CreatePromptModal({
@@ -46,6 +48,7 @@ export function CreatePromptModal({
   folders,
   tags,
   onTagsChange,
+  onFolderCreate,
 }: CreatePromptModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -61,6 +64,12 @@ export function CreatePromptModal({
   const [isSearchingModels, setIsSearchingModels] = useState(false);
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Inline folder creation
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [folderCreateError, setFolderCreateError] = useState("");
+  const newFolderInputRef = useRef<HTMLInputElement>(null);
 
   // Media gallery state
   const [mediaItems, setMediaItems] = useState<LocalMediaItem[]>([]);
@@ -259,6 +268,43 @@ export function CreatePromptModal({
   // Update frame fit for a media item
   const handleFrameFitChange = (index: number, fit: FrameFit) => {
     setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, frameFit: fit } : m));
+  };
+
+  // Focus inline folder input when creating
+  useEffect(() => {
+    if (isCreatingFolder && newFolderInputRef.current) {
+      newFolderInputRef.current.focus();
+    }
+  }, [isCreatingFolder]);
+
+  // Handle inline folder creation
+  const handleInlineFolderCreate = async () => {
+    if (!newFolderName.trim()) {
+      setIsCreatingFolder(false);
+      setNewFolderName("");
+      return;
+    }
+    setFolderCreateError("");
+    try {
+      const folder = await createFolder(newFolderName.trim());
+      onFolderCreate?.(folder);
+      setFolderId(folder.id);
+      setIsCreatingFolder(false);
+      setNewFolderName("");
+    } catch (err) {
+      setFolderCreateError(err instanceof Error ? err.message : "Failed to create folder");
+    }
+  };
+
+  // Set a media item as the cover (move to index 0)
+  const handleSetCover = (index: number) => {
+    if (index === 0) return; // Already the cover
+    setMediaItems(prev => {
+      const items = [...prev];
+      const [item] = items.splice(index, 1);
+      items.unshift(item);
+      return items.map((m, i) => ({ ...m, sortOrder: i }));
+    });
   };
 
   // Upload all media (new files and updates)
@@ -477,7 +523,7 @@ export function CreatePromptModal({
               Media
               {mediaItems.length > 0 && (
                 <span className="ml-2 text-xs text-text-dim font-normal">
-                  {mediaItems.length} file{mediaItems.length !== 1 ? 's' : ''} · first = cover
+                  {mediaItems.length} file{mediaItems.length !== 1 ? 's' : ''} · drag image to reposition
                 </span>
               )}
             </label>
@@ -486,7 +532,7 @@ export function CreatePromptModal({
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {mediaItems.map((item, index) => (
                   <div key={`${item.id || ''}-${item.preview}-${index}`} className="relative group">
-                    {/* Thumbnail */}
+                    {/* Thumbnail — draggable for crop repositioning in crop mode */}
                     <div className="relative aspect-square rounded-lg overflow-hidden border border-surface-200 bg-surface-100">
                       {item.type === 'video' ? (
                         <video
@@ -502,9 +548,9 @@ export function CreatePromptModal({
                           src={item.preview}
                           alt={`Media ${index + 1}`}
                           fill
-                          className={
+                          className={`${
                             item.frameFit === 'contain' ? 'object-contain' : 'object-cover'
-                          }
+                          } pointer-events-none`}
                           style={item.frameFit === 'cover' || item.frameFit === 'fill' ? {
                             objectPosition: `${item.cropX}% ${item.cropY}%`,
                             transform: `scale(${item.cropScale})`,
@@ -513,18 +559,60 @@ export function CreatePromptModal({
                         />
                       )}
 
-                      {/* Primary badge */}
+                      {/* Drag-to-reposition overlay for crop mode */}
+                      {item.type === 'image' && (item.frameFit === 'cover' || item.frameFit === 'fill') && (
+                        <div
+                          className="absolute inset-0 cursor-move z-10"
+                          title="Drag to reposition image"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const startX = e.clientX;
+                            const startY = e.clientY;
+                            const startCropX = item.cropX;
+                            const startCropY = item.cropY;
+                            const onMove = (ev: MouseEvent) => {
+                              // Move sensitivity: ~0.5% per pixel
+                              const dx = (ev.clientX - startX) * -0.5;
+                              const dy = (ev.clientY - startY) * -0.5;
+                              const newX = Math.max(0, Math.min(100, startCropX + dx));
+                              const newY = Math.max(0, Math.min(100, startCropY + dy));
+                              setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: newX, cropY: newY } : m));
+                            };
+                            const onUp = () => {
+                              document.removeEventListener('mousemove', onMove);
+                              document.removeEventListener('mouseup', onUp);
+                            };
+                            document.addEventListener('mousemove', onMove);
+                            document.addEventListener('mouseup', onUp);
+                          }}
+                        />
+                      )}
+
+                      {/* Cover badge */}
                       {index === 0 && (
-                        <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-brand-500/80 text-white">
+                        <div className="absolute top-1 left-1 z-20 px-1.5 py-0.5 rounded text-[10px] font-medium bg-brand-500/80 text-white pointer-events-none">
                           Cover
                         </div>
+                      )}
+
+                      {/* Set as cover button — only on non-cover items */}
+                      {index !== 0 && mediaItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleSetCover(index)}
+                          className="absolute bottom-1 left-1 z-20 px-1.5 py-0.5 rounded text-[10px] font-medium bg-black/60 hover:bg-brand-500/80 text-white/80 hover:text-white opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                          title="Set as cover image"
+                        >
+                          Set cover
+                        </button>
                       )}
 
                       {/* Remove button */}
                       <button
                         type="button"
                         onClick={() => handleRemoveMedia(index)}
-                        className="absolute top-1 right-1 p-1 rounded-md bg-black/50 hover:bg-red-500/70 text-white opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute top-1 right-1 z-20 p-1 rounded-md bg-black/50 hover:bg-red-500/70 text-white opacity-0 group-hover:opacity-100 transition-all"
                         disabled={isLoading}
                       >
                         <X size={12} />
@@ -557,10 +645,9 @@ export function CreatePromptModal({
                       </button>
                     </div>
 
-                    {/* Crop position controls - only for cover/fill mode */}
+                    {/* Scale slider — only for crop mode */}
                     {(item.frameFit === 'cover' || item.frameFit === 'fill') && (
-                      <div className="mt-1.5 space-y-1">
-                        {/* Scale slider */}
+                      <div className="mt-1.5">
                         <div className="flex items-center gap-1.5">
                           <svg className="w-3 h-3 text-text-dim flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
@@ -576,34 +663,6 @@ export function CreatePromptModal({
                             }}
                             className="flex-1 h-1 accent-brand-400 cursor-pointer"
                             title={`Zoom: ${Math.round(item.cropScale * 100)}%`}
-                          />
-                        </div>
-                        {/* Position: draggable mini preview */}
-                        <div
-                          className="relative w-full h-6 bg-surface-200 rounded cursor-move overflow-hidden"
-                          title="Drag to reposition"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                            const updatePos = (clientX: number, clientY: number) => {
-                              const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-                              const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
-                              setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: x, cropY: y } : m));
-                            };
-                            updatePos(e.clientX, e.clientY);
-                            const onMove = (ev: MouseEvent) => updatePos(ev.clientX, ev.clientY);
-                            const onUp = () => {
-                              document.removeEventListener('mousemove', onMove);
-                              document.removeEventListener('mouseup', onUp);
-                            };
-                            document.addEventListener('mousemove', onMove);
-                            document.addEventListener('mouseup', onUp);
-                          }}
-                        >
-                          {/* Position indicator dot */}
-                          <div
-                            className="absolute w-2 h-2 bg-brand-400 rounded-full -translate-x-1/2 -translate-y-1/2 shadow-sm pointer-events-none"
-                            style={{ left: `${item.cropX}%`, top: `${item.cropY}%` }}
                           />
                         </div>
                       </div>
@@ -724,7 +783,14 @@ export function CreatePromptModal({
             </label>
             <select
               value={folderId || ""}
-              onChange={(e) => setFolderId(e.target.value || null)}
+              onChange={(e) => {
+                if (e.target.value === "__new__") {
+                  setIsCreatingFolder(true);
+                  e.target.value = folderId || "";
+                } else {
+                  setFolderId(e.target.value || null);
+                }
+              }}
               className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
               disabled={isLoading}
             >
@@ -734,7 +800,43 @@ export function CreatePromptModal({
                   {folder.name}
                 </option>
               ))}
+              <option value="__new__">+ Create new folder...</option>
             </select>
+
+            {/* Inline folder creation */}
+            {isCreatingFolder && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  ref={newFolderInputRef}
+                  type="text"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); handleInlineFolderCreate(); }
+                    else if (e.key === "Escape") { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }
+                  }}
+                  placeholder="Folder name..."
+                  className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={handleInlineFolderCreate}
+                  className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }}
+                  className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            {folderCreateError && (
+              <p className="text-xs text-red-400 mt-1">{folderCreateError}</p>
+            )}
           </div>
 
           {/* Tags */}

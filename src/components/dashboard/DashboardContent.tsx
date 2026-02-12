@@ -33,6 +33,7 @@ export function DashboardContent({
     selectedTag,
     showFavoritesOnly,
     folders: contextFolders,
+    addFolder,
   } = useDashboard();
 
   const [prompts, setPrompts] = useState<Prompt[]>(initialPrompts);
@@ -231,6 +232,7 @@ export function DashboardContent({
         folders={contextFolders}
         tags={tags}
         onTagsChange={setTags}
+        onFolderCreate={addFolder}
       />
 
       {/* Main Content */}
