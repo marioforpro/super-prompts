@@ -67,7 +67,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // (drag state removed — using Move Up/Down menu instead)
+  // Drag-to-reorder state
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const folderListRef = useRef<HTMLDivElement>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -108,19 +111,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
     if (isCreatingRef.current) return;
-    if (!newFolderName.trim()) {
+    const name = newFolderName.trim();
+    if (!name) {
       setIsCreatingFolder(false);
       setNewFolderName("");
       return;
     }
     isCreatingRef.current = true;
     setFolderError("");
+    // Optimistic: close input immediately, show temp folder
+    const tempId = `temp-${Date.now()}`;
+    setNewFolderName("");
+    setIsCreatingFolder(false);
+    addFolder({ id: tempId, name, color: '#e8764b', sort_order: folders.length, user_id: '', created_at: new Date().toISOString() } as any);
     try {
-      const folder = await createFolder(newFolderName.trim());
+      const folder = await createFolder(name);
+      // Replace temp folder with real one
+      removeFolder(tempId);
       addFolder(folder);
-      setNewFolderName("");
-      setIsCreatingFolder(false);
     } catch (err) {
+      removeFolder(tempId);
       setFolderError(err instanceof Error ? err.message : "Failed to create folder");
     } finally {
       isCreatingRef.current = false;
@@ -167,22 +177,65 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  // Move folder up/down in the list
-  const handleMoveFolder = async (folderId: string, direction: 'up' | 'down') => {
-    const currentFolders = [...folders];
-    const idx = currentFolders.findIndex(f => f.id === folderId);
+  // Reorder folders helper — updates context + DB
+  const reorderFolders = (newOrder: typeof folders) => {
+    newOrder.forEach((f, i) => updateFolder(f.id, { sort_order: i }));
+    for (let i = 0; i < newOrder.length; i++) {
+      updateFolderAction(newOrder[i].id, { sort_order: i }).catch(() => {});
+    }
+  };
+
+  // Move folder up/down in the list (uses sorted order)
+  const handleMoveFolder = (folderId: string, direction: 'up' | 'down') => {
+    const sorted = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const idx = sorted.findIndex(f => f.id === folderId);
     if (idx === -1) return;
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (targetIdx < 0 || targetIdx >= currentFolders.length) return;
-    // Swap
-    [currentFolders[idx], currentFolders[targetIdx]] = [currentFolders[targetIdx], currentFolders[idx]];
-    // Update sort_order in context
-    currentFolders.forEach((f, i) => updateFolder(f.id, { sort_order: i }));
-    // Persist to DB
-    for (let i = 0; i < currentFolders.length; i++) {
-      updateFolderAction(currentFolders[i].id, { sort_order: i }).catch(() => {});
-    }
+    if (targetIdx < 0 || targetIdx >= sorted.length) return;
+    [sorted[idx], sorted[targetIdx]] = [sorted[targetIdx], sorted[idx]];
+    reorderFolders(sorted);
     setFolderMenuId(null);
+  };
+
+  // Drag-to-reorder via pointer capture
+  const handleDragStart = (e: React.PointerEvent, folderId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragId(folderId);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!dragId || !folderListRef.current) return;
+    const els = folderListRef.current.querySelectorAll<HTMLElement>('[data-folder-drag]');
+    let closestId: string | null = null;
+    let closestDist = Infinity;
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const cy = rect.top + rect.height / 2;
+      const dist = Math.abs(e.clientY - cy);
+      if (dist < closestDist) { closestDist = dist; closestId = el.dataset.folderDrag || null; }
+    });
+    if (closestId && closestId !== dragId) {
+      setDragOverId(closestId);
+    } else {
+      setDragOverId(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (dragId && dragOverId) {
+      const sorted = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+      const fromIdx = sorted.findIndex(f => f.id === dragId);
+      const toIdx = sorted.findIndex(f => f.id === dragOverId);
+      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+        const [moved] = sorted.splice(fromIdx, 1);
+        sorted.splice(toIdx, 0, moved);
+        reorderFolders(sorted);
+      }
+    }
+    setDragId(null);
+    setDragOverId(null);
   };
 
   // Delete tag handler
@@ -366,14 +419,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </div>
               )}
 
-              <div className="mt-1 space-y-0.5">
+              <div ref={folderListRef} className="mt-1 space-y-0.5">
                 {sortedFolders.length === 0 && !isCreatingFolder ? (
                   <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
                 ) : (
                   sortedFolders.map((folder) => (
                     <div
                       key={folder.id}
-                      className="relative group transition-all duration-150"
+                      data-folder-drag={folder.id}
+                      className={`relative group transition-all duration-150 ${
+                        dragOverId === folder.id && dragId !== folder.id
+                          ? 'border-t-2 border-brand-400'
+                          : 'border-t-2 border-transparent'
+                      } ${dragId === folder.id ? 'opacity-40' : ''}`}
                     >
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
@@ -408,6 +466,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
                           }`}
                         >
+                          {/* Drag handle — pointer capture for reorder */}
+                          <svg
+                            onPointerDown={(e) => handleDragStart(e, folder.id)}
+                            onPointerMove={handleDragMove}
+                            onPointerUp={handleDragEnd}
+                            onPointerCancel={handleDragEnd}
+                            className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
+                            fill="currentColor"
+                            viewBox="0 0 16 16"
+                          >
+                            <circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" />
+                            <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
+                            <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
+                          </svg>
                           {/* Folder SVG icon with dynamic color — aligned with nav icons */}
                           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
                             <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />

@@ -523,7 +523,7 @@ export function CreatePromptModal({
               Media
               {mediaItems.length > 0 && (
                 <span className="ml-2 text-xs text-text-dim font-normal">
-                  {mediaItems.length} file{mediaItems.length !== 1 ? 's' : ''} · drag image to reposition
+                  {mediaItems.length} file{mediaItems.length !== 1 ? 's' : ''} · drag on image to reposition, use slider to zoom
                 </span>
               )}
             </label>
@@ -556,20 +556,21 @@ export function CreatePromptModal({
                         />
                       )}
 
-                      {/* Drag-to-reposition overlay for all modes */}
+                      {/* Drag-to-reposition overlay — uses pointer capture for reliable drag */}
                       {item.type === 'image' && (
                         <div
-                          className="absolute inset-0 cursor-move z-10"
+                          className="absolute inset-0 cursor-move z-10 touch-none"
                           title="Drag to reposition image"
-                          onMouseDown={(e) => {
+                          onPointerDown={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            (e.target as HTMLElement).setPointerCapture(e.pointerId);
                             const startX = e.clientX;
                             const startY = e.clientY;
                             const startCropX = item.cropX;
                             const startCropY = item.cropY;
-                            const onMove = (ev: MouseEvent) => {
-                              // Move sensitivity: ~0.5% per pixel
+                            const el = e.target as HTMLElement;
+                            const onMove = (ev: PointerEvent) => {
                               const dx = (ev.clientX - startX) * -0.5;
                               const dy = (ev.clientY - startY) * -0.5;
                               const newX = Math.max(0, Math.min(100, startCropX + dx));
@@ -577,11 +578,11 @@ export function CreatePromptModal({
                               setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: newX, cropY: newY } : m));
                             };
                             const onUp = () => {
-                              document.removeEventListener('mousemove', onMove);
-                              document.removeEventListener('mouseup', onUp);
+                              el.removeEventListener('pointermove', onMove);
+                              el.removeEventListener('pointerup', onUp);
                             };
-                            document.addEventListener('mousemove', onMove);
-                            document.addEventListener('mouseup', onUp);
+                            el.addEventListener('pointermove', onMove);
+                            el.addEventListener('pointerup', onUp);
                           }}
                         />
                       )}
@@ -618,34 +619,31 @@ export function CreatePromptModal({
 
                     {/* Zoom slider + Reset */}
                     {item.type === 'image' && (
-                      <div className="mt-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3 h-3 text-text-dim flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                          </svg>
-                          <input
-                            type="range"
-                            min="100"
-                            max="200"
-                            value={item.cropScale * 100}
-                            onChange={(e) => {
-                              const newScale = parseInt(e.target.value) / 100;
-                              setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropScale: newScale } : m));
-                            }}
-                            className="flex-1 h-1 accent-brand-400 cursor-pointer"
-                            title={`Zoom: ${Math.round(item.cropScale * 100)}%`}
-                          />
+                      <div className="mt-1.5 space-y-1">
+                        <input
+                          type="range"
+                          min="100"
+                          max="200"
+                          value={item.cropScale * 100}
+                          onChange={(e) => {
+                            const newScale = parseInt(e.target.value) / 100;
+                            setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropScale: newScale } : m));
+                          }}
+                          className="w-full h-1 accent-brand-400 cursor-pointer"
+                          title={`Zoom: ${Math.round(item.cropScale * 100)}%`}
+                        />
+                        {(item.cropScale !== 1 || item.cropX !== 50 || item.cropY !== 50) && (
                           <button
                             type="button"
                             onClick={() => {
                               setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: 50, cropY: 50, cropScale: 1 } : m));
                             }}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-text-dim hover:text-foreground bg-surface-100 hover:bg-surface-200 transition-colors cursor-pointer"
+                            className="w-full py-0.5 rounded text-[10px] font-medium text-text-dim hover:text-foreground bg-surface-100 hover:bg-surface-200 transition-colors cursor-pointer text-center"
                             title="Reset zoom and position"
                           >
                             Reset
                           </button>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>

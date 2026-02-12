@@ -176,28 +176,28 @@ export function PromptCard({
                   onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === 0 ? displayMedia.length - 1 : prev - 1)); }}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute left-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20 pointer-events-auto',
-                    'transition-[background-color,border-color,box-shadow,transform] duration-200 hover:scale-110 active:scale-95',
-                    isHovered ? 'opacity-100 transition-opacity duration-200' : 'opacity-0 transition-opacity duration-200'
+                    'absolute left-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm border border-white/20 hover:border-white/40 pointer-events-auto',
+                    'transition-all duration-200 hover:scale-110 active:scale-95',
+                    isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Previous media"
                   title="Previous media"
                 >
-                  <ChevronLeft size={16} className="text-white" />
+                  <ChevronLeft size={14} className="text-white" />
                 </button>
 
                 <button
                   onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === displayMedia.length - 1 ? 0 : prev + 1)); }}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute right-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 hover:border-white/50 hover:shadow-lg hover:shadow-black/20 pointer-events-auto',
-                    'transition-[background-color,border-color,box-shadow,transform] duration-200 hover:scale-110 active:scale-95',
-                    isHovered ? 'opacity-100 transition-opacity duration-200' : 'opacity-0 transition-opacity duration-200'
+                    'absolute right-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm border border-white/20 hover:border-white/40 pointer-events-auto',
+                    'transition-all duration-200 hover:scale-110 active:scale-95',
+                    isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Next media"
                   title="Next media"
                 >
-                  <ChevronRight size={16} className="text-white" />
+                  <ChevronRight size={14} className="text-white" />
                 </button>
 
                 {/* Navigation Dots — centered */}
@@ -259,33 +259,33 @@ export function PromptCard({
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >
-          <h3 className="text-sm font-semibold text-white line-clamp-2 mb-3">
+          <h3 className="text-sm font-semibold text-white line-clamp-2 mb-2 text-center">
             {title}
           </h3>
 
-          {/* Action Icons — copy + favorite centered */}
-          <div className="flex items-center justify-center gap-2 pointer-events-auto">
+          {/* Action Icons — copy + favorite centered, smaller */}
+          <div className="flex items-center justify-center gap-1.5 pointer-events-auto">
             <button
               onClick={handleCopyClick}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-110 active:scale-95 hover:border-white/40 hover:shadow-lg hover:shadow-black/20"
+              className="p-1.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm border border-white/20 hover:border-white/40 transition-all duration-200 hover:scale-110 active:scale-95"
               aria-label="Copy prompt"
               title="Copy prompt"
             >
-              <Copy size={16} className="text-white" />
+              <Copy size={14} className="text-white" />
             </button>
             <button
               onClick={handleFavoriteClick}
               className={cn(
-                'p-2 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 active:scale-95 hover:shadow-lg hover:shadow-black/20',
+                'p-1.5 rounded-full backdrop-blur-sm border transition-all duration-200 hover:scale-110 active:scale-95',
                 isFavoritedLocally
                   ? 'bg-red-500/30 border-red-400/50 text-red-300 hover:bg-red-500/50 hover:border-red-400/70'
-                  : 'bg-white/10 hover:bg-white/25 border-white/20 text-white hover:border-white/40'
+                  : 'bg-white/15 hover:bg-white/30 border-white/20 text-white hover:border-white/40'
               )}
               aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
               title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
             >
               <Heart
-                size={16}
+                size={14}
                 className={isFavoritedLocally ? 'fill-current' : ''}
               />
             </button>
