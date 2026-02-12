@@ -81,21 +81,13 @@ export default function Hero() {
           }}
         >
           {/* Badge */}
-          <div className="anim-fade-up anim-d1 mb-10 inline-flex items-center gap-2 sm:gap-3 flex-wrap justify-center px-2">
-            <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
-              <rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="rgba(232,118,75,0.6)" />
-              <rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="rgba(232,118,75,0.6)" />
-            </svg>
+          <div className="anim-fade-up anim-d1 mb-10 inline-flex items-center justify-center px-2">
             <span
               className="text-sm sm:text-lg font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase text-brand-300"
               style={{ fontFamily: "var(--font-mono)" }}
             >
               Prompt management for creatives
             </span>
-            <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
-              <rect x="5.5" y="0" width="3" height="14" rx="1.5" fill="rgba(232,118,75,0.6)" />
-              <rect x="0" y="5.5" width="14" height="3" rx="1.5" fill="rgba(232,118,75,0.6)" />
-            </svg>
           </div>
 
           {/* Headline — DM Sans Bold, huge, with glowing coral accent */}
