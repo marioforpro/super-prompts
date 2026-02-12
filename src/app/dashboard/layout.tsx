@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { getModels } from "@/lib/actions/models";
+import { getFolders } from "@/lib/actions/folders";
+import { getTags } from "@/lib/actions/tags";
+import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export const metadata = {
   title: "Dashboard — Super Prompts",
@@ -13,11 +16,29 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  return <DashboardLayout user={user}>{children}</DashboardLayout>;
+  // Fetch reference data for sidebar
+  const [models, folders, tags] = await Promise.all([
+    getModels(),
+    getFolders(),
+    getTags(),
+  ]);
+
+  return (
+    <DashboardShell
+      userEmail={user.email || ""}
+      models={models}
+      folders={folders}
+      tags={tags}
+    >
+      {children}
+    </DashboardShell>
+  );
 }
