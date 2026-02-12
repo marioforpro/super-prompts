@@ -218,6 +218,7 @@ export function DashboardContent({
     modelCategory: p.ai_model?.category || null,
     isFavorite: p.is_favorite,
     tags: p.tags?.map((t) => t.name) || [],
+    createdAt: p.created_at,
   }));
 
   return (

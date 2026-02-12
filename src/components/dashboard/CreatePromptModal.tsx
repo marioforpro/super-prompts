@@ -307,6 +307,17 @@ export function CreatePromptModal({
     });
   };
 
+  // Move media item left/right to reorder
+  const handleMoveMedia = (index: number, direction: 'left' | 'right') => {
+    setMediaItems(prev => {
+      const items = [...prev];
+      const targetIdx = direction === 'left' ? index - 1 : index + 1;
+      if (targetIdx < 0 || targetIdx >= items.length) return prev;
+      [items[index], items[targetIdx]] = [items[targetIdx], items[index]];
+      return items.map((m, i) => ({ ...m, sortOrder: i }));
+    });
+  };
+
   // Upload all media (new files and updates)
   const uploadAllMedia = async (promptId: string): Promise<void> => {
     setIsUploadingMedia(true);
@@ -615,6 +626,32 @@ export function CreatePromptModal({
                       >
                         <X size={12} />
                       </button>
+
+                      {/* Move left/right buttons for reordering */}
+                      {mediaItems.length > 1 && (
+                        <div className="absolute bottom-1 right-1 z-20 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                          {index > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleMoveMedia(index, 'left')}
+                              className="p-0.5 rounded bg-black/60 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                              title="Move left"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                          )}
+                          {index < mediaItems.length - 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleMoveMedia(index, 'right')}
+                              className="p-0.5 rounded bg-black/60 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                              title="Move right"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Zoom slider + Reset */}

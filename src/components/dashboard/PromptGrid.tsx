@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { PromptCard, type MediaItem } from './PromptCard';
 import { cn } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
+
+export type GridSortField = 'newest' | 'oldest' | 'title_az' | 'title_za';
 
 export interface PromptGridProps {
   prompts: Array<{
@@ -17,6 +20,7 @@ export interface PromptGridProps {
     modelCategory?: string | null;
     isFavorite?: boolean;
     tags?: string[];
+    createdAt?: string;
   }>;
   onCopyPrompt?: (id: string, content: string) => void;
   onFavoritePrompt?: (id: string) => void;
@@ -30,6 +34,7 @@ export function PromptGrid({
   onClickPrompt,
 }: PromptGridProps) {
   const [mounted, setMounted] = useState(false);
+  const [sortBy, setSortBy] = useState<GridSortField>('newest');
 
   // Trigger fade-in shortly after mount using setTimeout for reliability
   useEffect(() => {
@@ -41,21 +46,47 @@ export function PromptGrid({
     return null;
   }
 
+  // Sort prompts
+  const sortedPrompts = [...prompts].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      case 'oldest':
+        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      case 'title_az':
+        return a.title.localeCompare(b.title);
+      case 'title_za':
+        return b.title.localeCompare(a.title);
+      default:
+        return 0;
+    }
+  });
+
   return (
-    <div
-      className={cn(
-        'w-full gap-1.5',
-        'columns-1 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5'
-      )}
-      style={{
-        columnGap: '0.375rem', // 6px
-      }}
-    >
-      {prompts.map((prompt, index) => (
+    <div className="w-full">
+      {/* Sort controls */}
+      <div className="flex items-center justify-end mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-dim">Sort:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as GridSortField)}
+            className="text-xs bg-surface-100 border border-surface-200 rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:border-brand-400 cursor-pointer"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="title_az">Title A→Z</option>
+            <option value="title_za">Title Z→A</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Grid — row-based layout (left to right) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5">
+        {sortedPrompts.map((prompt, index) => (
           <div
             key={prompt.id}
             className={cn(
-              'break-inside-avoid mb-1.5 inline-block w-full',
               'transition-all duration-700 ease-out',
               mounted
                 ? 'opacity-100 translate-y-0'
@@ -83,6 +114,7 @@ export function PromptGrid({
             />
           </div>
         ))}
+      </div>
     </div>
   );
 }

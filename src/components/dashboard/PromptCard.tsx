@@ -169,39 +169,39 @@ export function PromptCard({
               </div>
             </div>
 
-            {/* Navigation Arrows (visible only on hover when multiple media items exist) */}
+            {/* Navigation Arrows — smaller, visible on hover */}
             {hasMultipleMedia && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === 0 ? displayMedia.length - 1 : prev - 1)); }}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute left-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm border border-white/20 hover:border-white/40 pointer-events-auto',
+                    'absolute left-1.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm pointer-events-auto',
                     'transition-all duration-200 hover:scale-110 active:scale-95',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Previous media"
                   title="Previous media"
                 >
-                  <ChevronLeft size={14} className="text-white" />
+                  <ChevronLeft size={12} className="text-white" />
                 </button>
 
                 <button
                   onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); e.preventDefault(); setCurrentMediaIndex((prev) => (prev === displayMedia.length - 1 ? 0 : prev + 1)); }}
                   onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                   className={cn(
-                    'absolute right-2 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm border border-white/20 hover:border-white/40 pointer-events-auto',
+                    'absolute right-1.5 top-1/2 -translate-y-1/2 z-30 p-1 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm pointer-events-auto',
                     'transition-all duration-200 hover:scale-110 active:scale-95',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Next media"
                   title="Next media"
                 >
-                  <ChevronRight size={14} className="text-white" />
+                  <ChevronRight size={12} className="text-white" />
                 </button>
 
                 {/* Navigation Dots — centered */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5">
                   {displayMedia.map((_, index) => (
                     <button
                       key={index}
@@ -252,44 +252,49 @@ export function PromptCard({
           )}
         />
 
-        {/* Hover Content — title + actions only, pointer-events-none so arrows below work */}
+        {/* Action Icons — top-right corner, visible on hover */}
         <div
           className={cn(
-            'absolute inset-x-0 bottom-0 z-20 p-4 pb-8 transition-all duration-200 pointer-events-none',
+            'absolute top-2.5 right-2.5 z-20 flex items-center gap-1 pointer-events-auto transition-all duration-200',
+            isHovered ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <button
+            onClick={handleCopyClick}
+            className="p-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
+            aria-label="Copy prompt"
+            title="Copy prompt"
+          >
+            <Copy size={12} className="text-white" />
+          </button>
+          <button
+            onClick={handleFavoriteClick}
+            className={cn(
+              'p-1.5 rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
+              isFavoritedLocally
+                ? 'bg-red-500/40 text-red-300 hover:bg-red-500/60'
+                : 'bg-black/40 hover:bg-black/60 text-white'
+            )}
+            aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
+            title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Heart
+              size={12}
+              className={isFavoritedLocally ? 'fill-current' : ''}
+            />
+          </button>
+        </div>
+
+        {/* Hover Content — title at bottom with more space */}
+        <div
+          className={cn(
+            'absolute inset-x-0 bottom-0 z-20 px-3 pb-4 pt-8 transition-all duration-200 pointer-events-none',
             isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
           )}
         >
-          <h3 className="text-sm font-semibold text-white line-clamp-2 mb-2 text-center">
+          <h3 className="text-sm font-semibold text-white line-clamp-2 text-center">
             {title}
           </h3>
-
-          {/* Action Icons — copy + favorite centered, smaller */}
-          <div className="flex items-center justify-center gap-1.5 pointer-events-auto">
-            <button
-              onClick={handleCopyClick}
-              className="p-1.5 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm border border-white/20 hover:border-white/40 transition-all duration-200 hover:scale-110 active:scale-95"
-              aria-label="Copy prompt"
-              title="Copy prompt"
-            >
-              <Copy size={14} className="text-white" />
-            </button>
-            <button
-              onClick={handleFavoriteClick}
-              className={cn(
-                'p-1.5 rounded-full backdrop-blur-sm border transition-all duration-200 hover:scale-110 active:scale-95',
-                isFavoritedLocally
-                  ? 'bg-red-500/30 border-red-400/50 text-red-300 hover:bg-red-500/50 hover:border-red-400/70'
-                  : 'bg-white/15 hover:bg-white/30 border-white/20 text-white hover:border-white/40'
-              )}
-              aria-label={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
-              title={isFavoritedLocally ? 'Remove from favorites' : 'Add to favorites'}
-            >
-              <Heart
-                size={14}
-                className={isFavoritedLocally ? 'fill-current' : ''}
-              />
-            </button>
-          </div>
         </div>
       </div>
     </div>

@@ -197,34 +197,41 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setFolderMenuId(null);
   };
 
-  // Drag-to-reorder via pointer capture
+  // Drag-to-reorder via pointer capture — improved for smooth operation
+  const dragStartY = useRef(0);
+  const isDragging = useRef(false);
+
   const handleDragStart = (e: React.PointerEvent, folderId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setDragId(folderId);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragStartY.current = e.clientY;
+    isDragging.current = false;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handleDragMove = (e: React.PointerEvent) => {
     if (!dragId || !folderListRef.current) return;
+    // Only start visual dragging after 3px threshold to avoid accidental drags
+    if (!isDragging.current && Math.abs(e.clientY - dragStartY.current) < 3) return;
+    isDragging.current = true;
+
     const els = folderListRef.current.querySelectorAll<HTMLElement>('[data-folder-drag]');
     let closestId: string | null = null;
     let closestDist = Infinity;
     els.forEach(el => {
+      const fid = el.dataset.folderDrag || null;
+      if (fid === dragId) return; // Skip the dragged element itself
       const rect = el.getBoundingClientRect();
       const cy = rect.top + rect.height / 2;
       const dist = Math.abs(e.clientY - cy);
-      if (dist < closestDist) { closestDist = dist; closestId = el.dataset.folderDrag || null; }
+      if (dist < closestDist) { closestDist = dist; closestId = fid; }
     });
-    if (closestId && closestId !== dragId) {
-      setDragOverId(closestId);
-    } else {
-      setDragOverId(null);
-    }
+    setDragOverId(closestId);
   };
 
   const handleDragEnd = () => {
-    if (dragId && dragOverId) {
+    if (dragId && dragOverId && isDragging.current) {
       const sorted = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
       const fromIdx = sorted.findIndex(f => f.id === dragId);
       const toIdx = sorted.findIndex(f => f.id === dragOverId);
@@ -236,6 +243,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     setDragId(null);
     setDragOverId(null);
+    isDragging.current = false;
   };
 
   // Delete tag handler
@@ -304,8 +312,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
 
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="px-5 h-[74px] flex items-center border-b border-surface-200">
+          {/* Logo — height matches Topbar exactly */}
+          <div className="px-4 h-[57px] flex items-center border-b border-surface-200">
             <Link href="/dashboard">
               <Logo size="sm" showText={true} />
             </Link>
@@ -427,12 +435,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <div
                       key={folder.id}
                       data-folder-drag={folder.id}
-                      className={`relative group transition-all duration-150 ${
-                        dragOverId === folder.id && dragId !== folder.id
-                          ? 'border-t-2 border-brand-400'
-                          : 'border-t-2 border-transparent'
-                      } ${dragId === folder.id ? 'opacity-40' : ''}`}
+                      className={`relative group transition-all duration-100 ${
+                        dragId === folder.id && isDragging.current ? 'opacity-30 scale-[0.97]' : ''
+                      }`}
                     >
+                      {/* Drop indicator line */}
+                      {dragOverId === folder.id && dragId !== folder.id && isDragging.current && (
+                        <div className="absolute -top-px left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20" />
+                      )}
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
                           <input
@@ -467,19 +477,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           }`}
                         >
                           {/* Drag handle — pointer capture for reorder */}
-                          <svg
+                          <div
                             onPointerDown={(e) => handleDragStart(e, folder.id)}
                             onPointerMove={handleDragMove}
                             onPointerUp={handleDragEnd}
                             onPointerCancel={handleDragEnd}
-                            className="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
+                            className="absolute left-0 top-0 bottom-0 w-6 flex items-center justify-center opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
                           >
-                            <circle cx="5" cy="4" r="1.5" /><circle cx="11" cy="4" r="1.5" />
-                            <circle cx="5" cy="8" r="1.5" /><circle cx="11" cy="8" r="1.5" />
-                            <circle cx="5" cy="12" r="1.5" /><circle cx="11" cy="12" r="1.5" />
-                          </svg>
+                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16">
+                              <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
+                              <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
+                              <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
+                            </svg>
+                          </div>
                           {/* Folder SVG icon with dynamic color — aligned with nav icons */}
                           <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
                             <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />

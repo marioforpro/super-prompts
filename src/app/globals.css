@@ -39,16 +39,16 @@
   --brand-900: #3a1810;
 
   --surface-base: #ffffff;
-  --surface-50: #f8f8fa;
-  --surface-100: #f0f0f4;
-  --surface-200: #e4e4ec;
-  --surface-300: #d0d0dc;
-  --surface-400: #b0b0c0;
+  --surface-50: #f8f8f8;
+  --surface-100: #f0f0f0;
+  --surface-200: #e4e4e4;
+  --surface-300: #d0d0d0;
+  --surface-400: #b0b0b0;
 
-  --bg: #f5f5f8;
-  --fg: #1a1a2e;
-  --text-muted-val: #6a6a7c;
-  --text-dim-val: #9a9aac;
+  --bg: #f4f4f4;
+  --fg: #1a1a1e;
+  --text-muted-val: #6a6a70;
+  --text-dim-val: #9a9a9e;
 }
 
 @theme inline {
