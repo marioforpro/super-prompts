@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
-import { createFolder, deleteFolder, renameFolder } from "@/lib/actions/folders";
+import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { signOut } from "@/lib/actions/auth";
+import ThemeToggle from "./ThemeToggle";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,6 +26,13 @@ const SIDEBAR_MODELS: { slug: string; name: string; color: string }[] = [
   { slug: "suno",            name: "Suno",            color: "#2dd4bf" },
   { slug: "chatgpt",         name: "ChatGPT",         color: "#4ade80" },
   { slug: "claude",          name: "Claude",          color: "#d4a574" },
+];
+
+// Preset folder colors
+const FOLDER_COLORS = [
+  '#e8764b', '#f87171', '#facc15', '#34d399',
+  '#38bdf8', '#a78bfa', '#e879f9', '#fb923c',
+  '#2dd4bf', '#f0eff2'
 ];
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -54,7 +62,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState("");
   const [folderMenuId, setFolderMenuId] = useState<string | null>(null);
+  const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
+
+  // Folder sort mode
+  const [folderSortMode, setFolderSortMode] = useState<'custom' | 'name'>('custom');
 
   // Focus input when creating folder
   useEffect(() => {
@@ -73,14 +85,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   // Close folder context menu on outside click
   const folderMenuRef = useRef<HTMLDivElement>(null);
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (!folderMenuId) return;
+    if (!folderMenuId && !colorPickerId) return;
     const handleClick = (e: MouseEvent) => {
-      // Don't close if clicking inside the menu itself
       if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
+      if (colorPickerRef.current && colorPickerRef.current.contains(e.target as Node)) return;
       setFolderMenuId(null);
+      setColorPickerId(null);
     };
-    // Use setTimeout to avoid immediately closing from the same click that opened it
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
     }, 0);
@@ -88,7 +102,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       clearTimeout(timer);
       document.removeEventListener("click", handleClick);
     };
-  }, [folderMenuId]);
+  }, [folderMenuId, colorPickerId]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
@@ -115,7 +129,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
     try {
       const updated = await renameFolder(editingFolderId, editingFolderName.trim());
-      // Update in context — in-place update preserves sort order
       updateFolder(editingFolderId, { name: updated.name });
       setEditingFolderId(null);
       setEditingFolderName("");
@@ -136,6 +149,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setFolderMenuId(null);
   };
 
+  const handleFolderColorChange = async (folderId: string, newColor: string) => {
+    try {
+      updateFolder(folderId, { color: newColor });
+      await updateFolderAction(folderId, { color: newColor });
+      setColorPickerId(null);
+      setFolderMenuId(null);
+    } catch (err) {
+      setFolderError(err instanceof Error ? err.message : "Failed to update folder color");
+    }
+  };
+
   const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -154,6 +178,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const isAllActive =
     !selectedFolderId && !selectedModelSlug && !selectedTag && !showFavoritesOnly;
+
+  // Sort folders based on mode
+  const sortedFolders = [...folders].sort((a, b) => {
+    if (folderSortMode === 'name') {
+      return a.name.localeCompare(b.name);
+    }
+    // custom mode: keep original order (sort_order from DB)
+    return 0;
+  });
 
   return (
     <>
@@ -182,7 +215,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="px-5 py-6 border-b border-surface-200">
+          <div className="px-5 py-4 border-b border-surface-200">
             <Link href="/dashboard">
               <Logo size="sm" showText={true} />
             </Link>
@@ -239,10 +272,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* FOLDERS */}
             <div>
-              <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+              {/* Folders header with sort and add buttons */}
+              <div className="flex items-center justify-between px-4 py-2 gap-2">
+                <span className="text-xs font-bold tracking-widest text-text-dim uppercase flex-1" style={{ fontFamily: "var(--font-mono)" }}>
                   Folders
                 </span>
+                <button
+                  onClick={() => setFolderSortMode(folderSortMode === 'custom' ? 'name' : 'custom')}
+                  className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
+                  title={`Sort: ${folderSortMode === 'custom' ? 'Custom' : 'Name'}`}
+                >
+                  <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm10-13a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1V4zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1v-2zm0 8a1 1 0 011-1h5a1 1 0 011 1v2a1 1 0 01-1 1h-5a1 1 0 01-1-1v-2z" />
+                  </svg>
+                </button>
                 <button
                   onClick={() => {
                     setIsCreatingFolder(true);
@@ -277,10 +320,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
 
               <div className="mt-1 space-y-0.5 pl-2">
-                {folders.length === 0 && !isCreatingFolder ? (
+                {sortedFolders.length === 0 && !isCreatingFolder ? (
                   <p className="px-4 py-2 text-xs text-text-dim">No folders yet</p>
                 ) : (
-                  folders.map((folder) => (
+                  sortedFolders.map((folder) => (
                     <div key={folder.id} className="relative group">
                       {editingFolderId === folder.id ? (
                         <div className="px-4 py-1">
@@ -309,13 +352,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             e.preventDefault();
                             setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                           }}
-                          className={`w-full flex items-center gap-2.5 px-4 py-2 text-sm rounded-lg transition-all duration-150 cursor-pointer ${
+                          className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer ${
                             selectedFolderId === folder.id
                               ? "bg-surface-200 text-foreground"
                               : "text-text-muted hover:text-foreground hover:bg-surface-100"
                           }`}
                         >
-                          <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: folder.color || "#e8764b" }} />
+                          {/* Folder SVG icon with dynamic color */}
+                          <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" style={{ color: folder.color || "#e8764b" }}>
+                            <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2h-6L9.172 1.172A2 2 0 007.757 1H4z" />
+                          </svg>
                           <span className="truncate flex-1 text-left">{folder.name}</span>
                           {/* Three-dot menu button - visible on hover */}
                           <span
@@ -325,7 +371,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             }}
                             className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded"
                           >
-                            <svg className="w-3.5 h-3.5 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
                             </svg>
                           </span>
@@ -336,7 +382,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       {folderMenuId === folder.id && (
                         <div
                           ref={folderMenuRef}
-                          className="absolute left-8 top-full z-50 mt-1 w-32 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
+                          className="absolute left-8 top-full z-50 mt-1 w-40 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
                           onClick={(e) => e.stopPropagation()}
                           onMouseDown={(e) => e.stopPropagation()}
                         >
@@ -358,12 +404,51 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             onClick={(e) => {
                               e.stopPropagation();
                               e.nativeEvent.stopImmediatePropagation();
+                              setColorPickerId(folder.id);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
+                          >
+                            Change color
+                          </button>
+                          <button
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
                               handleDeleteFolderAction(folder.id);
                             }}
                             className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
                           >
                             Delete
                           </button>
+                        </div>
+                      )}
+
+                      {/* Color picker */}
+                      {colorPickerId === folder.id && (
+                        <div
+                          ref={colorPickerRef}
+                          className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          <div className="grid grid-cols-5 gap-2">
+                            {FOLDER_COLORS.map((color) => (
+                              <button
+                                key={color}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleFolderColorChange(folder.id, color);
+                                }}
+                                className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
+                                style={{
+                                  backgroundColor: color,
+                                  borderColor: folder.color === color ? '#ffffff' : 'transparent'
+                                }}
+                                title={color}
+                              />
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -418,9 +503,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   Tags
                 </span>
               </div>
-              <div className="mt-1 space-y-0.5 pl-2">
+              <div className="mt-1 flex flex-wrap gap-2 px-2">
                 {tags.length === 0 ? (
-                  <p className="px-4 py-2 text-xs text-text-dim">No tags yet</p>
+                  <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
                 ) : (
                   tags.map((tag) => (
                     <button
@@ -431,10 +516,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           setShowFavoritesOnly(false);
                         })
                       }
-                      className={`w-full text-left px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
                         selectedTag === tag.name
-                          ? "bg-surface-200 text-foreground"
-                          : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                          ? "bg-brand-500/15 border border-brand-400/50 text-brand-300"
+                          : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground"
                       }`}
                     >
                       #{tag.name}
@@ -445,11 +530,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          {/* Sign Out */}
-          <div className="border-t border-surface-200 px-3 py-4">
+          {/* Settings + Sign Out */}
+          <div className="border-t border-surface-200 px-3 py-3 space-y-1">
+            <ThemeToggle />
             <form action={signOut}>
-              <button type="submit" className="w-full px-4 py-2 text-sm text-text-muted hover:text-white hover:bg-surface-100 rounded-lg transition-colors cursor-pointer">
-                Sign Out
+              <button type="submit" className="w-full flex items-center gap-3 px-4 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors cursor-pointer">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Sign Out</span>
               </button>
             </form>
           </div>

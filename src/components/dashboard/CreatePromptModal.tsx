@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ImagePlus, Upload, Maximize, Minimize, Square } from "lucide-react";
+import { X, ImagePlus, Upload } from "lucide-react";
 import Image from "next/image";
 import type { Prompt, AiModel, Folder, Tag, FrameFit } from "@/lib/types";
 import {
@@ -480,8 +480,7 @@ export function CreatePromptModal({
                         <video
                           src={item.preview}
                           className={`w-full h-full ${
-                            item.frameFit === 'cover' ? 'object-cover' :
-                            item.frameFit === 'contain' ? 'object-contain' : 'object-fill'
+                            item.frameFit === 'contain' ? 'object-contain' : 'object-cover'
                           }`}
                           muted
                           playsInline
@@ -492,8 +491,7 @@ export function CreatePromptModal({
                           alt={`Media ${index + 1}`}
                           fill
                           className={
-                            item.frameFit === 'cover' ? 'object-cover' :
-                            item.frameFit === 'contain' ? 'object-contain' : 'object-fill'
+                            item.frameFit === 'contain' ? 'object-contain' : 'object-cover'
                           }
                           unoptimized={item.preview.startsWith("data:") || item.preview.startsWith("blob:")}
                         />
@@ -517,28 +515,30 @@ export function CreatePromptModal({
                       </button>
                     </div>
 
-                    {/* Frame fit selector */}
-                    <div className="flex items-center gap-0.5 mt-1.5">
-                      {([
-                        { value: 'cover' as FrameFit, icon: Maximize, label: 'Cover' },
-                        { value: 'contain' as FrameFit, icon: Minimize, label: 'Contain' },
-                        { value: 'fill' as FrameFit, icon: Square, label: 'Fill' },
-                      ]).map(({ value, icon: Icon, label }) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => handleFrameFitChange(index, value)}
-                          className={`flex-1 flex items-center justify-center gap-1 py-1 rounded text-[10px] transition-colors ${
-                            item.frameFit === value
-                              ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                              : 'bg-surface-100 text-text-dim hover:text-text-muted border border-transparent'
-                          }`}
-                          title={label}
-                        >
-                          <Icon size={10} />
-                          <span className="hidden sm:inline">{label}</span>
-                        </button>
-                      ))}
+                    {/* Frame fit toggle */}
+                    <div className="flex items-center gap-1 mt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleFrameFitChange(index, 'cover')}
+                        className={`flex-1 py-1 rounded text-[10px] font-medium transition-colors ${
+                          item.frameFit === 'cover' || item.frameFit === 'fill'
+                            ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                            : 'bg-surface-100 text-text-dim hover:text-text-muted border border-transparent'
+                        }`}
+                      >
+                        Crop
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleFrameFitChange(index, 'contain')}
+                        className={`flex-1 py-1 rounded text-[10px] font-medium transition-colors ${
+                          item.frameFit === 'contain'
+                            ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                            : 'bg-surface-100 text-text-dim hover:text-text-muted border border-transparent'
+                        }`}
+                      >
+                        Fit
+                      </button>
                     </div>
                   </div>
                 ))}

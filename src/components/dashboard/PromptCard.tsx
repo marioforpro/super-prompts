@@ -100,16 +100,19 @@ export function PromptCard({
 
   const handlePrevious = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setCurrentMediaIndex((prev) => (prev === 0 ? displayMedia.length - 1 : prev - 1));
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setCurrentMediaIndex((prev) => (prev === displayMedia.length - 1 ? 0 : prev + 1));
   };
 
   const handleDotClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     setCurrentMediaIndex(index);
   };
 
@@ -161,26 +164,28 @@ export function PromptCard({
               <>
                 <button
                   onClick={handlePrevious}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    'absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    'absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Previous media"
                   title="Previous media"
                 >
-                  <ChevronLeft size={16} className="text-white" />
+                  <ChevronLeft size={12} className="text-white" />
                 </button>
 
                 <button
                   onClick={handleNext}
+                  onMouseDown={(e) => e.stopPropagation()}
                   className={cn(
-                    'absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
+                    'absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 transition-opacity duration-200',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                   aria-label="Next media"
                   title="Next media"
                 >
-                  <ChevronRight size={16} className="text-white" />
+                  <ChevronRight size={12} className="text-white" />
                 </button>
 
                 {/* Navigation Dots */}
@@ -189,6 +194,7 @@ export function PromptCard({
                     <button
                       key={index}
                       onClick={(e) => handleDotClick(index, e)}
+                      onMouseDown={(e) => e.stopPropagation()}
                       className={cn(
                         'rounded-full transition-all duration-200',
                         currentMediaIndex === index
