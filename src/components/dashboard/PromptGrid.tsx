@@ -27,10 +27,7 @@ export interface PromptGridProps {
   onClickPrompt?: (id: string) => void;
   selectedPromptId?: string | null;
   onSelectPrompt?: (id: string) => void;
-  folders?: Array<{ id: string; name: string }>;
-  selectedFolderId?: string | null;
-  onAssignPromptToFolder?: (promptId: string, folderId: string) => void;
-  onRemovePromptFromCurrentFolder?: (promptId: string) => void;
+  onDeletePrompt?: (promptId: string) => void;
   selectable?: boolean;
   selectedIds?: string[];
   onToggleSelect?: (promptId: string) => void;
@@ -43,10 +40,7 @@ export function PromptGrid({
   onClickPrompt,
   selectedPromptId,
   onSelectPrompt,
-  folders = [],
-  selectedFolderId = null,
-  onAssignPromptToFolder,
-  onRemovePromptFromCurrentFolder,
+  onDeletePrompt,
   selectable = false,
   selectedIds = [],
   onToggleSelect,
@@ -155,11 +149,7 @@ export function PromptGrid({
               contentType={prompt.contentType}
               isFavorite={prompt.isFavorite}
               tags={prompt.tags}
-              folders={folders}
-              selectedFolderId={selectedFolderId}
-              folderIds={prompt.folderIds || []}
-              onAssignToFolder={(folderId) => onAssignPromptToFolder?.(prompt.id, folderId)}
-              onRemoveFromCurrentFolder={onRemovePromptFromCurrentFolder ? () => onRemovePromptFromCurrentFolder(prompt.id) : undefined}
+              onDelete={onDeletePrompt ? () => onDeletePrompt(prompt.id) : undefined}
               selectable={selectable}
               selected={selectedIds.includes(prompt.id)}
               onToggleSelected={() => onToggleSelect?.(prompt.id)}

@@ -32,10 +32,6 @@ interface CreatePromptModalProps {
   onSuccess?: (prompt: Prompt) => void;
   prompt?: Prompt | null;
   breadcrumb?: string;
-  canGoPrev?: boolean;
-  canGoNext?: boolean;
-  onPrev?: () => void;
-  onNext?: () => void;
   models: AiModel[];
   folders: Folder[];
   tags: Tag[];
@@ -49,10 +45,6 @@ export function CreatePromptModal({
   onSuccess,
   prompt,
   breadcrumb,
-  canGoPrev = false,
-  canGoNext = false,
-  onPrev,
-  onNext,
   models,
   folders,
   tags,
@@ -140,17 +132,8 @@ export function CreatePromptModal({
         setMediaItems([]);
       }
       setRemovedMediaIds([]);
-      // Show advanced section if advanced/organization fields already have content
-      setShowAdvanced(
-        !!(
-          prompt.negative_prompt ||
-          prompt.notes ||
-          prompt.source_url ||
-          prompt.folder_id ||
-          (prompt.folder_ids && prompt.folder_ids.length > 0) ||
-          (prompt.tags && prompt.tags.length > 0)
-        )
-      );
+      // Always start collapsed for a cleaner edit flow.
+      setShowAdvanced(false);
     } else {
       resetForm();
     }

@@ -7,12 +7,11 @@ import { EmptyState } from "./EmptyState";
 import { CreatePromptModal } from "./CreatePromptModal";
 import WelcomeGuide from "./WelcomeGuide";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
-import { assignPromptToFolder, toggleFavorite, unassignPromptFromFolder } from "@/lib/actions/prompts";
+import { toggleFavorite, deletePrompt } from "@/lib/actions/prompts";
 import { deleteFolder } from "@/lib/actions/folders";
 import { deleteModel } from "@/lib/actions/models";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { fuzzySearchFields } from "@/lib/fuzzySearch";
-import { useRouter } from "next/navigation";
 
 interface DashboardContentProps {
   initialPrompts: Prompt[];
@@ -29,7 +28,6 @@ export function DashboardContent({
   tags: initialTags,
   onModalOpen,
 }: DashboardContentProps) {
-  const router = useRouter();
   const {
     viewMode,
     searchQuery,
@@ -52,7 +50,6 @@ export function DashboardContent({
     registerPromptFolderAssignHandler,
     markFolderVisited,
     markPromptVisited,
-    recentPromptIds,
     setPromptIndex,
   } = useDashboard();
 
@@ -60,14 +57,9 @@ export function DashboardContent({
   const [tags, setTags] = useState<Tag[]>(initialTags);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
-  const [modalPromptIds, setModalPromptIds] = useState<string[]>([]);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [paletteQuery, setPaletteQuery] = useState("");
-  const [paletteIndex, setPaletteIndex] = useState(0);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
   const toastIdRef = useRef(0);
-  const paletteInputRef = useRef<HTMLInputElement>(null);
 
   // Register modal open callback with parent
   useEffect(() => {
@@ -128,7 +120,6 @@ export function DashboardContent({
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingPrompt(null);
-    setModalPromptIds([]);
   };
 
   const handleSuccessModal = (updatedPrompt: Prompt) => {
@@ -255,17 +246,6 @@ export function DashboardContent({
     ? selectedPromptId
     : (filteredPrompts[0]?.id || null);
 
-  useEffect(() => {
-    const openPalette = () => {
-      setPaletteOpen(true);
-      setPaletteQuery("");
-      setPaletteIndex(0);
-      setTimeout(() => paletteInputRef.current?.focus(), 0);
-    };
-    window.addEventListener("open-command-palette", openPalette);
-    return () => window.removeEventListener("open-command-palette", openPalette);
-  }, []);
-
   const clearAllFilters = () => {
     setSearchQuery("");
     setSelectedFolderId(null);
@@ -319,117 +299,23 @@ export function DashboardContent({
     }
   }, [selectedModel, removeModel, setSelectedModelSlug, showToast]);
 
-  type PaletteItem = {
-    id: string;
-    label: string;
-    hint?: string;
-    group: string;
-    action: () => void;
-  };
-
-  const paletteItems: PaletteItem[] = (() => {
-    const q = paletteQuery.trim().toLowerCase();
-    const items: PaletteItem[] = [];
-    const pushIfMatch = (item: PaletteItem, fields: string[]) => {
-      if (!q || fields.some((f) => f.toLowerCase().includes(q))) items.push(item);
-    };
-
-    pushIfMatch({
-      id: "action:new",
-      label: "New Prompt",
-      hint: "Create",
-      group: "Actions",
-      action: () => {
-        setPaletteOpen(false);
-        handleOpenModal();
-      },
-    }, ["new prompt", "create"]);
-    pushIfMatch({
-      id: "action:all",
-      label: "All Prompts",
-      hint: "Clear filters",
-      group: "Actions",
-      action: () => {
-        clearAllFilters();
-        setPaletteOpen(false);
-      },
-    }, ["all prompts", "clear filters"]);
-    pushIfMatch({
-      id: "action:settings",
-      label: "Open Settings",
-      hint: "/dashboard/settings",
-      group: "Actions",
-      action: () => {
-        setPaletteOpen(false);
-        router.push("/dashboard/settings");
-      },
-    }, ["settings", "models"]);
-
-    const promptById = new Map(prompts.map((p) => [p.id, p]));
-    for (const id of recentPromptIds) {
-      const p = promptById.get(id);
-      if (!p) continue;
-      pushIfMatch({
-        id: `recent:${p.id}`,
-        label: p.title,
-        hint: "Recently viewed",
-        group: "Recent",
-        action: () => {
-          setPaletteOpen(false);
-          handleEditPrompt(p);
-        },
-      }, [p.title, p.content]);
-    }
-
-    for (const p of prompts.slice(0, 60)) {
-      pushIfMatch({
-        id: `prompt:${p.id}`,
-        label: p.title,
-        hint: p.ai_model?.name || "Prompt",
-        group: "Prompts",
-        action: () => {
-          setPaletteOpen(false);
-          handleEditPrompt(p);
-        },
-      }, [p.title, p.content, p.ai_model?.name || ""]);
-    }
-    for (const f of contextFolders) {
-      pushIfMatch({
-        id: `folder:${f.id}`,
-        label: f.name,
-        hint: "Folder",
-        group: "Folders",
-        action: () => {
-          setSearchQuery("");
-          setSelectedFolderId(f.id);
-          setSelectedModelSlug(null);
-          setSelectedTags([]);
-          setSelectedContentType(null);
-          setShowFavoritesOnly(false);
-          setPaletteOpen(false);
-        },
-      }, [f.name, "folder"]);
-    }
-    for (const m of models) {
-      pushIfMatch({
-        id: `model:${m.slug}`,
-        label: m.name,
-        hint: "Model",
-        group: "Models",
-        action: () => {
-          setSearchQuery("");
-          setSelectedModelSlug(m.slug);
-          setSelectedFolderId(null);
-          setSelectedTags([]);
-          setSelectedContentType(null);
-          setShowFavoritesOnly(false);
-          setPaletteOpen(false);
-        },
-      }, [m.name, "model"]);
-    }
-
-    return items.slice(0, 60);
-  })();
+  const handleDeletePromptFromCard = useCallback(
+    async (id: string) => {
+      const confirmed = window.confirm("Delete this prompt?");
+      if (!confirmed) return;
+      try {
+        await deletePrompt(id);
+        setPrompts((prev) => prev.filter((prompt) => prompt.id !== id));
+        if (selectedPromptId === id) {
+          setSelectedPromptId(null);
+        }
+        showToast("Prompt deleted", "success");
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Failed to delete prompt", "error");
+      }
+    },
+    [selectedPromptId, showToast]
+  );
 
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({
@@ -458,10 +344,6 @@ export function DashboardContent({
     folderIds: p.folder_ids || (p.folder_id ? [p.folder_id] : []),
   }));
 
-  const editingIndex = editingPrompt ? modalPromptIds.findIndex((id) => id === editingPrompt.id) : -1;
-  const canGoPrev = editingIndex > 0;
-  const canGoNext = editingIndex >= 0 && editingIndex < modalPromptIds.length - 1;
-
   return (
     <>
       {/* Modals */}
@@ -476,66 +358,7 @@ export function DashboardContent({
         onTagsChange={setTags}
         onFolderCreate={addFolder}
         breadcrumb={selectedFolderId ? `All Prompts > ${contextFolders.find((f) => f.id === selectedFolderId)?.name || "Folder"} > ${editingPrompt?.title || ""}` : undefined}
-        canGoPrev={canGoPrev}
-        canGoNext={canGoNext}
-        onPrev={canGoPrev ? () => {
-          const prevId = modalPromptIds[editingIndex - 1];
-          const p = prompts.find((item) => item.id === prevId);
-          if (p) {
-            markPromptVisited(p.id);
-            setEditingPrompt(p);
-          }
-        } : undefined}
-        onNext={canGoNext ? () => {
-          const nextId = modalPromptIds[editingIndex + 1];
-          const p = prompts.find((item) => item.id === nextId);
-          if (p) {
-            markPromptVisited(p.id);
-            setEditingPrompt(p);
-          }
-        } : undefined}
       />
-
-      {paletteOpen && (
-        <div className="fixed inset-0 z-[80] bg-black/35 backdrop-blur-sm" onClick={() => setPaletteOpen(false)}>
-          <div className="max-w-2xl mx-auto mt-[12vh] px-4" onClick={(e) => e.stopPropagation()}>
-            <div className="rounded-xl border border-surface-300 bg-surface shadow-2xl overflow-hidden">
-              <div className="px-4 py-3 border-b border-surface-200">
-                <input
-                  ref={paletteInputRef}
-                  value={paletteQuery}
-                  onChange={(e) => {
-                    setPaletteQuery(e.target.value);
-                    setPaletteIndex(0);
-                  }}
-                  placeholder="Jump to prompt, folder, model, tag, or action..."
-                  className="w-full bg-transparent text-sm text-foreground placeholder-text-dim focus:outline-none"
-                />
-              </div>
-              <div className="max-h-[50vh] overflow-y-auto">
-                {paletteItems.length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-text-dim">No results</div>
-                ) : (
-                  <div className="py-1">
-                    {paletteItems.map((item, idx) => (
-                      <button
-                        key={item.id}
-                        onClick={item.action}
-                        className={`w-full px-4 py-2.5 text-left flex items-center justify-between text-sm transition-colors ${
-                          idx === paletteIndex ? "bg-brand-500/15 text-foreground" : "text-text-muted hover:bg-surface-100 hover:text-foreground"
-                        }`}
-                      >
-                        <span className="truncate">{item.label}</span>
-                        <span className="text-[11px] text-text-dim">{item.hint || item.group}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="space-y-1 animate-fadeIn">
@@ -585,32 +408,13 @@ export function DashboardContent({
             onSelectPrompt={setSelectedPromptId}
             selectable={false}
             selectedIds={[]}
-            folders={contextFolders.map((f) => ({ id: f.id, name: f.name }))}
-            selectedFolderId={selectedFolderId}
-            onAssignPromptToFolder={async (promptId, folderId) => {
-              try {
-                const updated = await assignPromptToFolder(promptId, folderId);
-                setPrompts((prev) => prev.map((p) => (p.id === promptId ? updated : p)));
-              } catch (err) {
-                showToast(err instanceof Error ? err.message : "Failed to assign folder", "error");
-              }
-            }}
-            onRemovePromptFromCurrentFolder={selectedFolderId ? async (promptId) => {
-              try {
-                const updated = await unassignPromptFromFolder(promptId, selectedFolderId);
-                setPrompts((prev) => prev.map((p) => (p.id === promptId ? updated : p)));
-                showToast("Removed from current folder", "success");
-              } catch (err) {
-                showToast(err instanceof Error ? err.message : "Failed to remove from folder", "error");
-              }
-            } : undefined}
             onClickPrompt={(id) => {
               const prompt = filteredPrompts.find((p) => p.id === id) || prompts.find((p) => p.id === id);
               if (prompt) {
-                setModalPromptIds(filteredPrompts.map((item) => item.id));
                 handleEditPrompt(prompt);
               }
             }}
+            onDeletePrompt={(id) => void handleDeletePromptFromCard(id)}
           />
         ) : (
           <PromptListView
@@ -622,7 +426,6 @@ export function DashboardContent({
             onClickPrompt={(id) => {
               const prompt = filteredPrompts.find((p) => p.id === id) || prompts.find((p) => p.id === id);
               if (prompt) {
-                setModalPromptIds(filteredPrompts.map((item) => item.id));
                 handleEditPrompt(prompt);
               }
             }}

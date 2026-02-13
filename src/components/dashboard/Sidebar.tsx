@@ -646,18 +646,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          <div className="border-t border-surface-200 px-3 py-3 flex justify-end">
+          <div className="border-t border-surface-200 px-3 py-3 flex justify-end items-center gap-2">
+            <div className="h-7 w-px bg-surface-300/80" />
             <button
               onClick={() => {
                 if (window.innerWidth < 768) onClose();
                 window.location.assign("/dashboard/settings");
               }}
-              className="h-9 rounded-lg border border-surface-200 bg-surface-100 px-3 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center gap-1.5"
+              className="h-9 w-9 rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span className="text-sm">New</span>
             </button>
           </div>
         </div>

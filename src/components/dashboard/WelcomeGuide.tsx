@@ -119,20 +119,13 @@ export default function WelcomeGuide({ onCreatePrompt }: WelcomeGuideProps) {
           from { opacity: 0; transform: scale(0.97); }
           to { opacity: 1; transform: scale(1); }
         }
-        @keyframes guideFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
         @keyframes guideCardUp {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
 
-      <div
-        className="fixed inset-0 z-[100] flex items-center justify-center"
-        style={{ animation: "guideFadeIn 0.25s ease-out" }}
-      >
+      <div className="fixed inset-0 z-[100] flex items-center justify-center">
         {/* Backdrop */}
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={dismiss} />
 

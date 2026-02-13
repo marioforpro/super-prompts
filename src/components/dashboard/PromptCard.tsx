@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface MediaItem {
@@ -27,11 +27,7 @@ export interface PromptCardProps {
   contentType?: string | null;
   isFavorite?: boolean;
   tags?: string[];
-  folderIds?: string[];
-  folders?: Array<{ id: string; name: string }>;
-  selectedFolderId?: string | null;
-  onAssignToFolder?: (folderId: string) => void;
-  onRemoveFromCurrentFolder?: () => void;
+  onDelete?: () => void;
   selectable?: boolean;
   selected?: boolean;
   onToggleSelected?: () => void;
@@ -85,11 +81,7 @@ export function PromptCard({
   modelCategory,
   isFavorite = false,
   tags = [],
-  folderIds = [],
-  folders = [],
-  selectedFolderId = null,
-  onAssignToFolder,
-  onRemoveFromCurrentFolder,
+  onDelete,
   selectable = false,
   selected = false,
   onToggleSelected,
@@ -102,7 +94,9 @@ export function PromptCard({
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showCopied, setShowCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Use mediaItems if provided, otherwise fall back to coverUrl/coverType
   const displayMedia = mediaItems && mediaItems.length > 0
@@ -145,20 +139,6 @@ export function PromptCard({
   const firstLine = content.split('\n')[0] || content.substring(0, 60);
   const gradientClass = getGradientBackground(id);
   const aspectClass = getAspectRatio(modelCategory);
-  const inCurrentFolder = !!(selectedFolderId && folderIds.includes(selectedFolderId));
-
-  const handleAssignFolder = (e: React.MouseEvent, folderId: string) => {
-    e.stopPropagation();
-    onAssignToFolder?.(folderId);
-    setMenuOpen(false);
-  };
-
-  const handleRemoveCurrentFolder = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onRemoveFromCurrentFolder?.();
-    setMenuOpen(false);
-  };
-
   useEffect(() => {
     if (!menuOpen) return;
     const handleDocClick = (e: MouseEvent) => {
@@ -168,6 +148,22 @@ export function PromptCard({
     };
     document.addEventListener('mousedown', handleDocClick);
     return () => document.removeEventListener('mousedown', handleDocClick);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen || !menuButtonRef.current) return;
+    const rect = menuButtonRef.current.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left: Math.max(12, rect.right - 180),
+    });
+    const close = () => setMenuOpen(false);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
   }, [menuOpen]);
 
   return (
@@ -326,6 +322,7 @@ export function PromptCard({
         >
           <div className="relative" ref={menuRef}>
             <button
+              ref={menuButtonRef}
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuOpen((prev) => !prev);
@@ -336,45 +333,6 @@ export function PromptCard({
             >
               <MoreHorizontal size={14} />
             </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-1 min-w-[180px] rounded-lg border border-surface-300 bg-surface-100 shadow-xl overflow-hidden">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onClick?.();
-                    setMenuOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
-                >
-                  Open prompt
-                </button>
-                {selectedFolderId && inCurrentFolder && onRemoveFromCurrentFolder && (
-                  <button
-                    onClick={handleRemoveCurrentFolder}
-                    className="w-full text-left px-3 py-2 text-xs text-brand-300 hover:bg-surface-200"
-                  >
-                    Remove from current folder
-                  </button>
-                )}
-                {folders.length > 0 && onAssignToFolder && (
-                  <>
-                    <div className="h-px bg-surface-200" />
-                    <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-text-dim">Add to folder</div>
-                    <div className="max-h-40 overflow-y-auto">
-                      {folders.slice(0, 12).map((folder) => (
-                        <button
-                          key={folder.id}
-                          onClick={(e) => handleAssignFolder(e, folder.id)}
-                          className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
-                        >
-                          {folder.name}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
           <button
             onClick={handleFavoriteClick}
@@ -413,7 +371,7 @@ export function PromptCard({
                 <Copy size={20} className="text-white" />
               )}
             </button>
-            <h3 className="text-sm font-semibold text-white line-clamp-2 text-center">
+            <h3 className="text-sm font-semibold text-white line-clamp-2 text-center uppercase tracking-wide">
               {title}
             </h3>
           </div>
@@ -442,6 +400,26 @@ export function PromptCard({
           </button>
         )}
       </div>
+
+      {menuOpen && menuPosition && (
+        <div
+          ref={menuRef}
+          className="fixed z-[140] w-[180px] rounded-lg border border-surface-300 bg-surface-100 shadow-2xl overflow-hidden"
+          style={{ top: menuPosition.top, left: menuPosition.left }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete?.();
+              setMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-red-300 hover:text-red-200 hover:bg-red-500/15"
+          >
+            <Trash2 size={12} />
+            <span>Delete prompt</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

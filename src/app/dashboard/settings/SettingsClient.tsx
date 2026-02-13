@@ -90,7 +90,9 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
   const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
 
   const [dragFolderId, setDragFolderId] = useState<string | null>(null);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const [dragModelSlug, setDragModelSlug] = useState<string | null>(null);
+  const [dragOverModelSlug, setDragOverModelSlug] = useState<string | null>(null);
   const [modelOrder, setModelOrder] = useState<string[]>([]);
 
   useEffect(() => {
@@ -147,6 +149,15 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     return ordered;
   }, [effectiveModels, modelOrder]);
 
+  const folderPromptTotal = useMemo(
+    () => Object.values(folderPromptCounts).reduce((acc, value) => acc + value, 0),
+    [folderPromptCounts]
+  );
+  const modelPromptTotal = useMemo(
+    () => Object.values(modelPromptCounts).reduce((acc, value) => acc + value, 0),
+    [modelPromptCounts]
+  );
+
   const saveFolderOrder = (ordered: Folder[]) => {
     ordered.forEach((folder, index) => {
       updateFolder(folder.id, { sort_order: index });
@@ -163,6 +174,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     const [moved] = ordered.splice(from, 1);
     ordered.splice(to, 0, moved);
     saveFolderOrder(ordered);
+    setDragOverFolderId(null);
   };
 
   const handleDropModel = (targetSlug: string) => {
@@ -174,6 +186,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     const [moved] = slugs.splice(from, 1);
     slugs.splice(to, 0, moved);
     setModelOrder(slugs);
+    setDragOverModelSlug(null);
   };
 
   const handleAddFolder = async () => {
@@ -324,9 +337,10 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
 
   return (
     <div className="animate-fadeIn">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         <div className="rounded-2xl border border-surface-200 bg-surface-100/55 backdrop-blur-sm p-5">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
               className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-surface hover:bg-surface-100 text-text-muted hover:text-foreground transition-colors"
@@ -338,6 +352,14 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
               <p className="text-sm text-text-dim">Organize folders and AI models in one place.</p>
             </div>
+            </div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-surface hover:bg-surface-100 text-text-muted hover:text-foreground transition-colors"
+              title="Close settings"
+            >
+              <span className="text-lg leading-none">×</span>
+            </Link>
           </div>
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
@@ -350,7 +372,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
           <section className="rounded-2xl border border-surface-200 bg-surface-100/45 backdrop-blur-sm p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm uppercase tracking-[0.18em] text-text-dim">Folders</h2>
-              <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{sortedFolders.length}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{folderPromptTotal} prompts</span>
             </div>
 
             <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -386,11 +408,26 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   key={folder.id}
                   draggable
                   onDragStart={() => setDragFolderId(folder.id)}
-                  onDragOver={(e) => e.preventDefault()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragFolderId) setDragOverFolderId(folder.id);
+                  }}
+                  onDragEnter={() => {
+                    if (dragFolderId) setDragOverFolderId(folder.id);
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverFolderId === folder.id) setDragOverFolderId(null);
+                  }}
                   onDrop={() => handleDropFolder(folder.id)}
-                  onDragEnd={() => setDragFolderId(null)}
+                  onDragEnd={() => {
+                    setDragFolderId(null);
+                    setDragOverFolderId(null);
+                  }}
                   className="relative rounded-xl border border-surface-200 bg-surface px-3 py-2.5 flex items-center gap-2"
                 >
+                  {dragFolderId && dragOverFolderId === folder.id && dragFolderId !== folder.id && (
+                    <div className="absolute left-2 right-2 top-0 h-0.5 bg-brand-400 rounded-full" />
+                  )}
                   <span className="text-text-dim text-xs">⋮⋮</span>
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: folder.color || COLOR_PALETTE[0] }} />
                   <div className="flex-1 min-w-0">
@@ -427,7 +464,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   />
                   <button
                     onClick={() => setDeletingFolderId(deletingFolderId === folder.id ? null : folder.id)}
-                    className="w-6 h-6 rounded-md text-red-300 hover:bg-red-500/15"
+                    className="w-8 h-8 rounded-md text-red-300 hover:bg-red-500/15 text-base"
                   >
                     ×
                   </button>
@@ -469,16 +506,25 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
           <section className="rounded-2xl border border-surface-200 bg-surface-100/45 backdrop-blur-sm p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm uppercase tracking-[0.18em] text-text-dim">AI Models</h2>
-              <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{sortedModels.length}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{modelPromptTotal} prompts</span>
             </div>
 
-            <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_120px_auto] gap-2">
               <input
                 value={newModelName}
                 onChange={(e) => setNewModelName(e.target.value)}
                 placeholder="New model name"
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
+              <select
+                value={newModelContentType}
+                onChange={(e) => setNewModelContentType(e.target.value as ContentType)}
+                className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-xs text-text-muted"
+              >
+                {CONTENT_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
               <button
                 onClick={handleAddModel}
                 disabled={isLoading}
@@ -488,26 +534,15 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               </button>
             </div>
 
-            <div className="grid grid-cols-[1fr_auto] gap-2">
-              <select
-                value={newModelContentType}
-                onChange={(e) => setNewModelContentType(e.target.value as ContentType)}
-                className="h-9 rounded-lg border border-surface-200 bg-surface px-3 text-xs text-text-muted"
-              >
-                {CONTENT_TYPES.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-              <div className="flex gap-1">
-                {COLOR_PALETTE.slice(0, 8).map((color) => (
+            <div className="flex flex-wrap gap-2">
+                {COLOR_PALETTE.map((color) => (
                   <button
                     key={color}
                     onClick={() => setNewModelColor(color)}
-                    className={`w-5 h-5 rounded-full ${newModelColor === color ? "ring-2 ring-white" : ""}`}
+                    className={`w-6 h-6 rounded-full transition-all ${newModelColor === color ? "ring-2 ring-white scale-110" : "ring-1 ring-transparent"}`}
                     style={{ backgroundColor: color }}
                   />
                 ))}
-              </div>
             </div>
 
             <div className="space-y-2">
@@ -516,11 +551,26 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   key={model.id}
                   draggable
                   onDragStart={() => setDragModelSlug(model.slug)}
-                  onDragOver={(e) => e.preventDefault()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragModelSlug) setDragOverModelSlug(model.slug);
+                  }}
+                  onDragEnter={() => {
+                    if (dragModelSlug) setDragOverModelSlug(model.slug);
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverModelSlug === model.slug) setDragOverModelSlug(null);
+                  }}
                   onDrop={() => handleDropModel(model.slug)}
-                  onDragEnd={() => setDragModelSlug(null)}
+                  onDragEnd={() => {
+                    setDragModelSlug(null);
+                    setDragOverModelSlug(null);
+                  }}
                   className="relative rounded-xl border border-surface-200 bg-surface px-3 py-2.5 flex items-center gap-2"
                 >
+                  {dragModelSlug && dragOverModelSlug === model.slug && dragModelSlug !== model.slug && (
+                    <div className="absolute left-2 right-2 top-0 h-0.5 bg-brand-400 rounded-full" />
+                  )}
                   <span className="text-text-dim text-xs">⋮⋮</span>
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: model.icon_url || getModelColor(model.name) }} />
                   <div className="flex-1 min-w-0">
@@ -566,7 +616,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   />
                   <button
                     onClick={() => setDeletingModelId(deletingModelId === model.id ? null : model.id)}
-                    className="w-6 h-6 rounded-md text-red-300 hover:bg-red-500/15"
+                    className="w-8 h-8 rounded-md text-red-300 hover:bg-red-500/15 text-base"
                   >
                     ×
                   </button>
