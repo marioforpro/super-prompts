@@ -16,7 +16,7 @@ const steps = [
       </svg>
     ),
     title: "Save & organize your prompts",
-    desc: "Capture your best AI prompts in one place. Add images, tag them by topic, and sort by model or folder — so you never lose a great idea.",
+    desc: "Capture your best AI prompts in one place. Add images, tag them by topic, and sort by model or folder so you never lose a great idea.",
   },
   {
     icon: (
@@ -25,7 +25,7 @@ const steps = [
       </svg>
     ),
     title: "Smart AI text detection",
-    desc: "Upload screenshots of conversations — Super Prompts auto-detects and extracts the text using AI vision, turning any image into a reusable prompt.",
+    desc: "Upload screenshots of conversations and Super Prompts will auto-detect and extract the text using AI vision, turning any image into a reusable prompt.",
   },
   {
     icon: (
@@ -108,87 +108,125 @@ export default function WelcomeGuide({ onCreatePrompt }: WelcomeGuideProps) {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={dismiss} />
 
-      {/* Card */}
-      <div
-        ref={containerRef}
-        className="relative w-full max-w-sm mx-4 bg-surface-100 border border-surface-200 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden"
-        style={{ animation: "fadeUp 0.3s ease-out" }}
-      >
-        {/* Close button */}
+      {/* Card with side arrows */}
+      <div className="relative flex items-center gap-3 mx-4 max-w-[460px] w-full">
+        {/* Left arrow */}
         <button
-          onClick={dismiss}
-          className="absolute top-4 right-4 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-surface-200/60 hover:bg-surface-200 text-text-dim hover:text-foreground transition-colors cursor-pointer"
+          onClick={() => step > 0 && goToStep(step - 1)}
+          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+            step > 0
+              ? "bg-surface-100/80 border border-surface-200 text-text-muted hover:bg-surface-200 hover:text-foreground"
+              : "opacity-0 pointer-events-none"
+          }`}
+          aria-label="Previous step"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
         </button>
 
-        {/* Icon area */}
-        <div className="pt-10 pb-4 flex items-center justify-center">
-          <div
-            className={`w-16 h-16 rounded-2xl bg-brand-400/10 border border-brand-400/20 flex items-center justify-center text-brand-400 transition-all duration-200 ease-out ${animClass}`}
-          >
-            {steps[step].icon}
-          </div>
-        </div>
-
-        {/* Step indicator dots */}
-        <div className="flex items-center justify-center gap-2 pb-5">
-          {steps.map((_, i) => (
+        {/* Main card */}
+        <div
+          ref={containerRef}
+          className="relative flex-1 bg-surface-100 border border-surface-200 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden"
+          style={{ animation: "fadeUp 0.3s ease-out" }}
+        >
+          {/* Top bar: step counter + close */}
+          <div className="flex items-center justify-between px-5 pt-4">
+            <span className="text-xs font-medium text-text-dim tracking-wide">
+              {step + 1}/{steps.length}
+            </span>
             <button
-              key={i}
-              onClick={() => goToStep(i)}
-              className={`rounded-full transition-all duration-300 cursor-pointer ${
-                i === step
-                  ? "w-6 h-1.5 bg-brand-400"
-                  : "w-1.5 h-1.5 bg-surface-300 hover:bg-surface-400"
-              }`}
-              aria-label={`Go to step ${i + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Content — animated slide */}
-        <div className="px-8 pb-2 text-center overflow-hidden">
-          <div
-            className={`transition-all duration-200 ease-out ${animClass}`}
-          >
-            <h3 className="text-lg font-bold text-foreground mb-2 leading-snug">
-              {steps[step].title}
-            </h3>
-            <p className="text-[13px] text-text-muted leading-relaxed">
-              {steps[step].desc}
-            </p>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="px-8 pt-5 pb-7">
-          {step < steps.length - 1 ? (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={dismiss}
-                className="flex-1 h-10 text-sm text-text-dim hover:text-text-muted hover:bg-surface-200 rounded-xl transition-colors cursor-pointer"
-              >
-                Skip
-              </button>
-              <button
-                onClick={() => goToStep(step + 1)}
-                className="flex-1 h-10 text-sm font-semibold text-white bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 rounded-xl shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleGetStarted}
-              className="w-full h-10 text-sm font-semibold text-white bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 rounded-xl shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
+              onClick={dismiss}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-200/60 hover:bg-surface-200 text-text-dim hover:text-foreground transition-colors cursor-pointer"
             >
-              Get started
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
-          )}
+          </div>
+
+          {/* Icon area */}
+          <div className="pt-4 pb-4 flex items-center justify-center">
+            <div
+              className={`w-16 h-16 rounded-2xl bg-brand-400/10 border border-brand-400/20 flex items-center justify-center text-brand-400 transition-all duration-200 ease-out ${animClass}`}
+            >
+              {steps[step].icon}
+            </div>
+          </div>
+
+          {/* Step indicator dots */}
+          <div className="flex items-center justify-center gap-2 pb-5">
+            {steps.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goToStep(i)}
+                className={`rounded-full transition-all duration-300 cursor-pointer ${
+                  i === step
+                    ? "w-6 h-1.5 bg-brand-400"
+                    : "w-1.5 h-1.5 bg-surface-300 hover:bg-surface-400"
+                }`}
+                aria-label={`Go to step ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Content */}
+          <div className="px-8 pb-2 text-center overflow-hidden">
+            <div
+              className={`transition-all duration-200 ease-out ${animClass}`}
+            >
+              <h3 className="text-lg font-bold text-foreground mb-2 leading-snug">
+                {steps[step].title}
+              </h3>
+              <p className="text-[13px] text-text-muted leading-relaxed">
+                {steps[step].desc}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="px-8 pt-5 pb-7">
+            {step < steps.length - 1 ? (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={dismiss}
+                  className="flex-1 h-10 text-sm text-text-dim hover:text-text-muted hover:bg-surface-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={() => goToStep(step + 1)}
+                  className="flex-1 h-10 text-sm font-semibold text-white bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 rounded-xl shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleGetStarted}
+                className="w-full h-10 text-sm font-semibold text-white bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 rounded-xl shadow-lg shadow-brand-500/25 transition-all cursor-pointer"
+              >
+                Get started
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Right arrow */}
+        <button
+          onClick={() => step < steps.length - 1 && goToStep(step + 1)}
+          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+            step < steps.length - 1
+              ? "bg-surface-100/80 border border-surface-200 text-text-muted hover:bg-surface-200 hover:text-foreground"
+              : "opacity-0 pointer-events-none"
+          }`}
+          aria-label="Next step"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </button>
       </div>
     </div>
   );
