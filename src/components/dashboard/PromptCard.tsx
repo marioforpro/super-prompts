@@ -75,7 +75,6 @@ export function PromptCard({
   modelName,
   modelSlug,
   modelCategory,
-  contentType,
   isFavorite = false,
   tags = [],
   onCopy,
@@ -263,20 +262,6 @@ export function PromptCard({
               {modelName}
             </div>
           )}
-          {contentType && (
-            <div className="h-[26px] flex items-center gap-1 px-2 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-black/40 backdrop-blur-md border border-white/10 text-white/70">
-              {contentType === 'IMAGE' ? (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              ) : contentType === 'VIDEO' ? (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-              ) : contentType === 'AUDIO' ? (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-              ) : (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              )}
-              {contentType.toLowerCase()}
-            </div>
-          )}
         </div>
 
         {/* Hover Overlay */}
@@ -287,27 +272,13 @@ export function PromptCard({
           )}
         />
 
-        {/* Action Icons — top-right corner, aligned with model pill (top-3) */}
+        {/* Action Icon — top-right corner */}
         <div
           className={cn(
             'absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto transition-all duration-200',
             isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-70'
           )}
         >
-          <button
-            onClick={handleCopyClick}
-            className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
-            aria-label="Copy prompt"
-            title="Copy prompt"
-          >
-            {showCopied ? (
-              <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <Copy size={14} className="text-white" />
-            )}
-          </button>
           <button
             onClick={handleFavoriteClick}
             className={cn(
@@ -326,16 +297,29 @@ export function PromptCard({
           </button>
         </div>
 
-        {/* Hover Content — title at bottom, well above the dots */}
+        {/* Hover Content — primary copy action + title */}
         <div
-          className={cn(
-            'absolute inset-x-0 bottom-0 z-20 px-4 pb-7 pt-10 transition-all duration-200 pointer-events-none',
-            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100'
-          )}
+          className="absolute inset-x-0 bottom-0 z-20 px-4 pb-7 pt-10 transition-all duration-200 pointer-events-none translate-y-0 opacity-100"
         >
-          <h3 className="text-sm font-semibold text-white line-clamp-2 text-center">
-            {title}
-          </h3>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={handleCopyClick}
+              className="pointer-events-auto w-11 h-11 flex items-center justify-center rounded-full bg-black/55 hover:bg-black/70 backdrop-blur-md border border-white/15 transition-all duration-200 hover:scale-110 active:scale-95"
+              aria-label="Copy prompt"
+              title="Copy prompt"
+            >
+              {showCopied ? (
+                <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <Copy size={20} className="text-white" />
+              )}
+            </button>
+            <h3 className="text-sm font-semibold text-white line-clamp-2 text-center">
+              {title}
+            </h3>
+          </div>
         </div>
       </div>
     </div>
