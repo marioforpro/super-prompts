@@ -804,7 +804,7 @@ export function CreatePromptModal({
 
                     {/* Zoom slider + inline reset icon */}
                     {item.type === 'image' && (
-                      <div className="mt-1 flex items-center gap-1 px-0.5">
+                      <div className="mt-1 flex items-center gap-1.5">
                         <input
                           type="range"
                           min="100"
@@ -814,7 +814,7 @@ export function CreatePromptModal({
                             const newScale = parseInt(e.target.value) / 100;
                             setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropScale: newScale } : m));
                           }}
-                          className="flex-1 min-w-0 h-1 accent-brand-400 cursor-pointer"
+                          className="zoom-slider flex-1 min-w-0"
                           title={`Zoom: ${Math.round(item.cropScale * 100)}%`}
                         />
                         {(item.cropScale !== 1 || item.cropX !== 50 || item.cropY !== 50) && (
@@ -823,7 +823,7 @@ export function CreatePromptModal({
                             onClick={() => {
                               setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: 50, cropY: 50, cropScale: 1 } : m));
                             }}
-                            className="w-4 h-4 flex items-center justify-center rounded text-text-dim hover:text-brand-400 transition-all cursor-pointer flex-shrink-0"
+                            className="w-3.5 h-3.5 flex items-center justify-center rounded-full text-text-dim hover:text-brand-400 transition-colors cursor-pointer flex-shrink-0"
                             title="Reset zoom and position"
                           >
                             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
