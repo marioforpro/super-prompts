@@ -101,11 +101,11 @@ export function DashboardContent({
       setPrompts(
         prompts.map((p) => (p.id === updatedPrompt.id ? updatedPrompt : p))
       );
-      showToast("Prompt updated successfully");
+      showToast("Prompt updated successfully", "success");
     } else {
       // Add new prompt
       setPrompts([updatedPrompt, ...prompts]);
-      showToast("Prompt created successfully");
+      showToast("Prompt created successfully", "success");
     }
   };
 

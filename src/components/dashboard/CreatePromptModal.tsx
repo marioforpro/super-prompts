@@ -1025,39 +1025,6 @@ export function CreatePromptModal({
 
           {showAdvanced && (
             <>
-          {/* Negative Prompt — collapsible */}
-          <div className="mb-6">
-            <button
-              type="button"
-              onClick={() => setNegativePromptOpen(!negativePromptOpen)}
-              className="flex items-center gap-2 text-sm font-medium text-text-muted hover:text-foreground transition-colors cursor-pointer group"
-            >
-              <svg
-                className={`w-3 h-3 text-text-dim transition-transform duration-200 ${negativePromptOpen ? 'rotate-0' : '-rotate-90'}`}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-              <span>Negative Prompt</span>
-              {negativePrompt.trim() && !negativePromptOpen && (
-                <span className="text-xs text-text-dim bg-surface-100 px-2 py-0.5 rounded-full">has content</span>
-              )}
-            </button>
-            {negativePromptOpen && (
-              <div className="mt-2">
-                <textarea
-                  value={negativePrompt}
-                  onChange={(e) => setNegativePrompt(e.target.value)}
-                  placeholder="Things to avoid or exclude from the output..."
-                  rows={3}
-                  className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50 text-sm"
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-text-dim mt-1">Optional — specify what to exclude from the AI output</p>
-              </div>
-            )}
-          </div>
-
           {/* AI Model */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
@@ -1264,6 +1231,22 @@ export function CreatePromptModal({
             )}
           </div>
 
+          {/* Negative Prompt — always visible, after tags */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Negative Prompt
+            </label>
+            <textarea
+              value={negativePrompt}
+              onChange={(e) => setNegativePrompt(e.target.value)}
+              placeholder="Things to avoid or exclude from the output..."
+              rows={3}
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50 text-sm"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-text-dim mt-1">Optional — specify what to exclude from the AI output</p>
+          </div>
+
           {/* Notes */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
@@ -1324,9 +1307,7 @@ export function CreatePromptModal({
               className="px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 disabled:from-brand-500/50 disabled:to-brand-500/50 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 disabled:shadow-brand-500/10 font-medium text-sm"
             >
               {isLoading
-                ? isUploadingMedia
-                  ? "Uploading..."
-                  : "Saving..."
+                ? "Saving..."
                 : prompt
                   ? "Update"
                   : "Create"}
