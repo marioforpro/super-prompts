@@ -7,7 +7,7 @@ import { EmptyState } from "./EmptyState";
 import { CreatePromptModal } from "./CreatePromptModal";
 import WelcomeGuide from "./WelcomeGuide";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
-import { assignPromptToFolder, deletePrompt, toggleFavorite, unassignPromptFromFolder } from "@/lib/actions/prompts";
+import { assignPromptToFolder, toggleFavorite, unassignPromptFromFolder } from "@/lib/actions/prompts";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { fuzzySearchFields } from "@/lib/fuzzySearch";
 import { useRouter } from "next/navigation";
@@ -61,9 +61,6 @@ export function DashboardContent({
   const [paletteQuery, setPaletteQuery] = useState("");
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-  const [selectedForBulk, setSelectedForBulk] = useState<string[]>([]);
-  const [bulkMoveFolderId, setBulkMoveFolderId] = useState<string>("");
-  const [editMode, setEditMode] = useState(false);
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
   const toastIdRef = useRef(0);
   const paletteInputRef = useRef<HTMLInputElement>(null);
@@ -463,75 +460,6 @@ export function DashboardContent({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [paletteOpen, paletteItems, paletteIndex, isModalOpen, filteredPrompts, effectiveSelectedPromptId, handleEditPrompt, sortedFolders, selectedFolderId]);
 
-  const filteredPromptIds = useMemo(() => filteredPrompts.map((p) => p.id), [filteredPrompts]);
-  const activeSelectedForBulk = useMemo(
-    () => selectedForBulk.filter((id) => filteredPromptIds.includes(id)),
-    [selectedForBulk, filteredPromptIds]
-  );
-  const selectedCount = activeSelectedForBulk.length;
-  const canBulkSelect = viewMode === "grid" && filteredPrompts.length > 0;
-  const isEditModeActive = editMode && canBulkSelect;
-
-  const toggleBulkSelection = (id: string) => {
-    setSelectedForBulk((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  };
-
-  const selectAllVisible = () => {
-    setSelectedForBulk(filteredPromptIds);
-  };
-
-  const clearBulkSelection = () => {
-    setSelectedForBulk([]);
-  };
-
-  const moveSelectedToFolder = async () => {
-    if (!bulkMoveFolderId || activeSelectedForBulk.length === 0) return;
-    try {
-      const results = await Promise.allSettled(
-        activeSelectedForBulk.map((id) => assignPromptToFolder(id, bulkMoveFolderId))
-      );
-      const updatedById = new Map(
-        results
-          .filter((r): r is PromiseFulfilledResult<Prompt> => r.status === "fulfilled")
-          .map((r) => [r.value.id, r.value])
-      );
-      if (updatedById.size > 0) {
-        setPrompts((prev) => prev.map((p) => updatedById.get(p.id) || p));
-      }
-      showToast(
-        `Moved ${updatedById.size} prompt${updatedById.size === 1 ? "" : "s"} to ${contextFolders.find((f) => f.id === bulkMoveFolderId)?.name || "folder"}`,
-        "success"
-      );
-      setBulkMoveFolderId("");
-      setSelectedForBulk([]);
-      setEditMode(false);
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to move prompts", "error");
-    }
-  };
-
-  const deleteSelectedPrompts = async () => {
-    if (activeSelectedForBulk.length === 0) return;
-    if (!window.confirm(`Delete ${activeSelectedForBulk.length} selected prompt${activeSelectedForBulk.length === 1 ? "" : "s"}? This cannot be undone.`)) {
-      return;
-    }
-    try {
-      const results = await Promise.allSettled(activeSelectedForBulk.map((id) => deletePrompt(id)));
-      const deletedIds = results
-        .map((result, index) => ({ result, id: activeSelectedForBulk[index] }))
-        .filter(({ result }) => result.status === "fulfilled")
-        .map(({ id }) => id);
-      if (deletedIds.length > 0) {
-        setPrompts((prev) => prev.filter((p) => !deletedIds.includes(p.id)));
-      }
-      setSelectedForBulk([]);
-      setEditMode(false);
-      showToast(`Deleted ${deletedIds.length} prompt${deletedIds.length === 1 ? "" : "s"}`, "success");
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to delete prompts", "error");
-    }
-  };
-
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({
     id: p.id,
@@ -639,69 +567,7 @@ export function DashboardContent({
       )}
 
       {/* Main Content */}
-      <div className="space-y-5 animate-fadeIn">
-        {canBulkSelect && (
-          <div className="flex items-center justify-end">
-            {!isEditModeActive ? (
-              <button
-                onClick={() => setEditMode(true)}
-                className="h-8 px-3 rounded-lg border border-surface-200 bg-surface-100 text-xs text-text-muted hover:text-foreground hover:border-surface-300 transition-colors"
-              >
-                Edit mode
-              </button>
-            ) : (
-              <div className="w-full rounded-lg border border-surface-200 bg-surface-100/70 px-2.5 py-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={selectedCount === filteredPromptIds.length ? clearBulkSelection : selectAllVisible}
-                    className="h-8 px-2.5 rounded-md border border-surface-200 bg-background text-xs text-text-muted hover:text-foreground hover:border-surface-300"
-                  >
-                    {selectedCount === filteredPromptIds.length ? "Clear all" : "Select all"}
-                  </button>
-                  <span className="text-xs text-text-dim">
-                    {selectedCount} selected
-                  </span>
-                  <div className="ml-auto flex flex-wrap items-center gap-2">
-                    <select
-                      value={bulkMoveFolderId}
-                      onChange={(e) => setBulkMoveFolderId(e.target.value)}
-                      className="h-8 min-w-[160px] rounded-md border border-surface-200 bg-background px-2 text-xs text-text-muted focus:outline-none focus:border-brand-400"
-                    >
-                      <option value="">Move to folder...</option>
-                      {sortedFolders.map((folder) => (
-                        <option key={folder.id} value={folder.id}>{folder.name}</option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={moveSelectedToFolder}
-                      disabled={selectedCount === 0 || !bulkMoveFolderId}
-                      className="h-8 px-3 rounded-md bg-brand-500/15 border border-brand-500/25 text-xs text-brand-300 hover:bg-brand-500/25 disabled:opacity-40"
-                    >
-                      Move
-                    </button>
-                    <button
-                      onClick={deleteSelectedPrompts}
-                      disabled={selectedCount === 0}
-                      className="h-8 px-3 rounded-md bg-red-500/15 border border-red-500/30 text-xs text-red-300 hover:bg-red-500/25 disabled:opacity-40"
-                    >
-                      Delete selected
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditMode(false);
-                        clearBulkSelection();
-                        setBulkMoveFolderId("");
-                      }}
-                      className="h-8 px-3 rounded-md border border-surface-200 bg-background text-xs text-text-muted hover:text-foreground hover:border-surface-300"
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      <div className="space-y-4 animate-fadeIn">
 
         {/* Welcome guide — always rendered, component decides visibility via localStorage */}
         <WelcomeGuide onCreatePrompt={handleOpenModal} />
@@ -746,9 +612,8 @@ export function DashboardContent({
             onFavoritePrompt={handleFavoritePrompt}
             selectedPromptId={effectiveSelectedPromptId}
             onSelectPrompt={setSelectedPromptId}
-            selectable={isEditModeActive}
-            selectedIds={activeSelectedForBulk}
-            onToggleSelect={toggleBulkSelection}
+            selectable={false}
+            selectedIds={[]}
             folders={contextFolders.map((f) => ({ id: f.id, name: f.name }))}
             selectedFolderId={selectedFolderId}
             onAssignPromptToFolder={async (promptId, folderId) => {
