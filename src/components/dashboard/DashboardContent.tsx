@@ -567,7 +567,7 @@ export function DashboardContent({
       )}
 
       {/* Main Content */}
-      <div className="space-y-4 animate-fadeIn">
+      <div className="space-y-2 animate-fadeIn">
 
         {/* Welcome guide — always rendered, component decides visibility via localStorage */}
         <WelcomeGuide onCreatePrompt={handleOpenModal} />

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
@@ -27,7 +26,6 @@ function getModelColor(name: string): string {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const router = useRouter();
   const {
     folders,
     addFolder,
@@ -657,8 +655,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span className="text-sm">New folder</span>
             </button>
 
-            <button
-              onClick={() => router.push("/dashboard/settings")}
+            <Link
+              href="/dashboard/settings"
               className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -666,7 +664,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
               </svg>
               <span className="text-sm">Settings</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>

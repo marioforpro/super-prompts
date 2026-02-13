@@ -10,13 +10,10 @@ import {
   updatePrompt,
   deletePrompt,
   getPrompt,
-  unassignPromptFromFolder,
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
-import { createFolder } from "@/lib/actions/folders";
 import { createPromptMedia, removePromptMedia, updateMediaSettings } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
-import { useDashboard } from "@/contexts/DashboardContext";
 
 interface LocalMediaItem {
   id?: string; // Existing DB media ID
@@ -64,7 +61,6 @@ export function CreatePromptModal({
   onFolderCreate,
 }: CreatePromptModalProps) {
   const router = useRouter();
-  const { selectedFolderId, folders: contextFolders } = useDashboard();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
@@ -82,16 +78,8 @@ export function CreatePromptModal({
   const [isSearchingModels, setIsSearchingModels] = useState(false);
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
-  const [folderDropdownOpen, setFolderDropdownOpen] = useState(false);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
-  const folderDropdownRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
-
-  // Inline folder creation
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [folderCreateError, setFolderCreateError] = useState("");
-  const newFolderInputRef = useRef<HTMLInputElement>(null);
 
   // Media gallery state
   const [mediaItems, setMediaItems] = useState<LocalMediaItem[]>([]);
@@ -208,18 +196,15 @@ export function CreatePromptModal({
 
   // Close model dropdown on outside click
   useEffect(() => {
-    if (!modelDropdownOpen && !folderDropdownOpen) return;
+    if (!modelDropdownOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
         setModelDropdownOpen(false);
       }
-      if (folderDropdownRef.current && !folderDropdownRef.current.contains(e.target as Node)) {
-        setFolderDropdownOpen(false);
-      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [modelDropdownOpen, folderDropdownOpen]);
+  }, [modelDropdownOpen]);
 
   const resetForm = () => {
     setTitle("");
@@ -240,7 +225,6 @@ export function CreatePromptModal({
     setShowAnalysisPrompt(false);
     setIsDetectingText(false);
     setDetectedTextPreview("");
-    setFolderDropdownOpen(false);
   };
 
   const MAX_MEDIA_ITEMS = 3;
@@ -558,33 +542,6 @@ export function CreatePromptModal({
     setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, frameFit: fit } : m));
   };
 
-  // Focus inline folder input when creating
-  useEffect(() => {
-    if (isCreatingFolder && newFolderInputRef.current) {
-      newFolderInputRef.current.focus();
-    }
-  }, [isCreatingFolder]);
-
-  // Handle inline folder creation
-  // Handle inline folder creation
-  const handleInlineFolderCreate = async () => {
-    if (!newFolderName.trim()) {
-      setIsCreatingFolder(false);
-      setNewFolderName("");
-      return;
-    }
-    setFolderCreateError("");
-    try {
-      const folder = await createFolder(newFolderName.trim());
-      onFolderCreate?.(folder);
-      setFolderId(folder.id);
-      setIsCreatingFolder(false);
-      setNewFolderName("");
-    } catch (err) {
-      setFolderCreateError(err instanceof Error ? err.message : "Failed to create folder");
-    }
-  };
-
   // Set a media item as the cover (move to index 0)
   const handleSetCover = (index: number) => {
     if (index === 0) return; // Already the cover
@@ -783,19 +740,6 @@ export function CreatePromptModal({
   if (!isOpen) return null;
 
   const selectedTagObjects = tags.filter((t) => selectedTags.includes(t.id));
-  const selectedFolder = folders.find((f) => f.id === folderId) || null;
-  const currentViewFolder = selectedFolderId
-    ? contextFolders.find((f) => f.id === selectedFolderId) || null
-    : null;
-  const canRemoveFromCurrentFolder = !!(
-    prompt &&
-    selectedFolderId &&
-    (
-      (prompt.folder_ids && prompt.folder_ids.includes(selectedFolderId)) ||
-      prompt.folder_id === selectedFolderId
-    )
-  );
-
   return (
     <>
       {/* Overlay */}
@@ -1284,9 +1228,9 @@ export function CreatePromptModal({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
             <span>Advanced options</span>
-            {(selectedFolder || selectedTagObjects.length > 0) && (
+            {selectedTagObjects.length > 0 && (
               <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/25">
-                {selectedFolder ? "1 folder" : "No folder"} · {selectedTagObjects.length} tag{selectedTagObjects.length === 1 ? "" : "s"}
+                {selectedTagObjects.length} tag{selectedTagObjects.length === 1 ? "" : "s"}
               </span>
             )}
           </button>
@@ -1294,159 +1238,6 @@ export function CreatePromptModal({
           {showAdvanced && (
             <>
           <div className="mb-6 rounded-xl border border-surface-200 bg-surface-100/60 p-4 space-y-4">
-
-            {canRemoveFromCurrentFolder && currentViewFolder && (
-              <div className="flex items-center justify-between rounded-lg border border-brand-500/30 bg-brand-500/8 px-3 py-2">
-                <p className="text-xs text-text-muted">
-                  In this view: <span className="text-foreground font-medium">{currentViewFolder.name}</span>
-                </p>
-                <button
-                  type="button"
-                  disabled={isLoading || !prompt || !selectedFolderId}
-                  onClick={async () => {
-                    if (!prompt || !selectedFolderId) return;
-                    setIsLoading(true);
-                    setError("");
-                    try {
-                      const updated = await unassignPromptFromFolder(prompt.id, selectedFolderId);
-                      onSuccess?.(updated);
-                      onClose();
-                      resetForm();
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Failed to remove from folder");
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                  className="px-2.5 py-1.5 text-xs font-medium text-brand-300 hover:text-brand-200 hover:bg-brand-500/15 rounded-md transition-colors disabled:opacity-50"
-                >
-                  Remove from this folder
-                </button>
-              </div>
-            )}
-
-            {/* Folder Picker */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Folder
-              </label>
-              <div ref={folderDropdownRef} className="relative">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => !isLoading && setFolderDropdownOpen(!folderDropdownOpen)}
-                    className={`flex-1 px-3 py-2.5 rounded-lg border text-left text-sm transition-all ${
-                      folderDropdownOpen
-                        ? 'border-brand-400 ring-1 ring-brand-400/30 bg-surface-200'
-                        : 'border-surface-200 hover:border-surface-300 bg-surface-100'
-                    } disabled:opacity-50`}
-                    disabled={isLoading}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      {selectedFolder ? (
-                        <>
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedFolder.color || "#e8764b" }} />
-                          <span className="text-foreground">{selectedFolder.name}</span>
-                        </>
-                      ) : (
-                        <span className="text-text-dim">No folder (All Prompts)</span>
-                      )}
-                    </span>
-                  </button>
-                  {folderId && (
-                    <button
-                      type="button"
-                      onClick={() => setFolderId(null)}
-                      className="px-2.5 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 rounded-lg transition-colors"
-                      disabled={isLoading}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-
-                {folderDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-100 border border-surface-200 rounded-lg shadow-xl max-h-56 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFolderId(null);
-                        setFolderDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
-                        !folderId ? 'text-brand-400 bg-brand-500/5' : 'text-text-muted'
-                      }`}
-                    >
-                      No folder (All Prompts)
-                    </button>
-                    <div className="h-px bg-surface-200" />
-                    {folders.map((folder) => (
-                      <button
-                        key={folder.id}
-                        type="button"
-                        onClick={() => {
-                          setFolderId(folder.id);
-                          setFolderDropdownOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
-                          folderId === folder.id ? 'text-brand-400 bg-brand-500/5' : 'text-foreground'
-                        }`}
-                      >
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: folder.color || "#e8764b" }} />
-                        <span className="truncate">{folder.name}</span>
-                      </button>
-                    ))}
-                    <div className="h-px bg-surface-200" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCreatingFolder(true);
-                        setFolderDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-sm text-brand-400 hover:bg-surface-200 transition-colors"
-                    >
-                      + Create new folder...
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Inline folder creation */}
-              {isCreatingFolder && (
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    ref={newFolderInputRef}
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") { e.preventDefault(); handleInlineFolderCreate(); }
-                      else if (e.key === "Escape") { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }
-                    }}
-                    placeholder="Folder name..."
-                    className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleInlineFolderCreate}
-                    className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
-                  >
-                    Add
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }}
-                    className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-              {folderCreateError && (
-                <p className="text-xs text-red-400 mt-1">{folderCreateError}</p>
-              )}
-            </div>
-
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
