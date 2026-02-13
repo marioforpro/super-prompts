@@ -86,7 +86,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar onMenuToggle={toggleSidebar} searchInputRef={searchInputRef} />
         <main className="flex-1 overflow-y-auto bg-background">
-          <div className="px-6 py-8">{children}</div>
+          <div className="px-6 py-6">{children}</div>
         </main>
       </div>
     </div>

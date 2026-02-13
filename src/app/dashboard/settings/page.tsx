@@ -1,4 +1,5 @@
 import { getModels } from "@/lib/actions/models";
+import { getFolders } from "@/lib/actions/folders";
 import SettingsClient from "./SettingsClient";
 
 export const metadata = {
@@ -7,6 +8,6 @@ export const metadata = {
 };
 
 export default async function SettingsPage() {
-  const models = await getModels();
-  return <SettingsClient models={models} />;
+  const [models, folders] = await Promise.all([getModels(), getFolders()]);
+  return <SettingsClient models={models} folders={folders} />;
 }

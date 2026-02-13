@@ -62,6 +62,14 @@ export async function updateModel(modelId: string, updates: { name?: string; slu
 export async function deleteModel(modelId: string): Promise<void> {
   const supabase = await createClient();
 
+  // Detach prompts first so model deletion doesn't fail on foreign key constraints.
+  const { error: promptUpdateError } = await supabase
+    .from("prompts")
+    .update({ model_id: null, content_type: null })
+    .eq("model_id", modelId);
+
+  if (promptUpdateError) throw promptUpdateError;
+
   const { error } = await supabase
     .from("ai_models")
     .delete()

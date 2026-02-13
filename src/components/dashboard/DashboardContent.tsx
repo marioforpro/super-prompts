@@ -8,6 +8,8 @@ import { CreatePromptModal } from "./CreatePromptModal";
 import WelcomeGuide from "./WelcomeGuide";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import { assignPromptToFolder, toggleFavorite, unassignPromptFromFolder } from "@/lib/actions/prompts";
+import { deleteFolder } from "@/lib/actions/folders";
+import { deleteModel } from "@/lib/actions/models";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { fuzzySearchFields } from "@/lib/fuzzySearch";
 import { useRouter } from "next/navigation";
@@ -43,8 +45,10 @@ export function DashboardContent({
     showFavoritesOnly,
     setShowFavoritesOnly,
     folders: contextFolders,
+    models: contextModels,
     addFolder,
-    addModel,
+    removeFolder,
+    removeModel,
     registerPromptFolderAssignHandler,
     markFolderVisited,
     markPromptVisited,
@@ -242,6 +246,14 @@ export function DashboardContent({
     () => [...contextFolders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
     [contextFolders]
   );
+  const selectedFolder = useMemo(
+    () => contextFolders.find((folder) => folder.id === selectedFolderId) || null,
+    [contextFolders, selectedFolderId]
+  );
+  const selectedModel = useMemo(
+    () => contextModels.find((model) => model.slug === selectedModelSlug) || null,
+    [contextModels, selectedModelSlug]
+  );
 
   const effectiveSelectedPromptId = selectedPromptId && filteredPrompts.some((p) => p.id === selectedPromptId)
     ? selectedPromptId
@@ -266,6 +278,50 @@ export function DashboardContent({
     setSelectedContentType(null);
     setShowFavoritesOnly(false);
   };
+
+  const handleDeleteSelectedFolder = useCallback(async () => {
+    if (!selectedFolder) return;
+    const confirmed = window.confirm(`Delete folder "${selectedFolder.name}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteFolder(selectedFolder.id);
+      removeFolder(selectedFolder.id);
+      setPrompts((prev) =>
+        prev.map((prompt) => ({
+          ...prompt,
+          folder_id: prompt.folder_id === selectedFolder.id ? null : prompt.folder_id,
+          folder_ids: (prompt.folder_ids || []).filter((folderId) => folderId !== selectedFolder.id),
+        }))
+      );
+      setSelectedFolderId(null);
+      showToast("Folder deleted", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to delete folder", "error");
+    }
+  }, [selectedFolder, removeFolder, setSelectedFolderId, showToast]);
+
+  const handleDeleteSelectedModel = useCallback(async () => {
+    if (!selectedModel) return;
+    const confirmed = window.confirm(`Delete AI model "${selectedModel.name}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteModel(selectedModel.id);
+      removeModel(selectedModel.id);
+      setPrompts((prev) =>
+        prev.map((prompt) =>
+          prompt.ai_model?.id === selectedModel.id
+            ? { ...prompt, model_id: null, ai_model: null, content_type: null }
+            : prompt
+        )
+      );
+      setSelectedModelSlug(null);
+      showToast("AI model deleted", "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to delete AI model", "error");
+    }
+  }, [selectedModel, removeModel, setSelectedModelSlug, showToast]);
 
   type PaletteItem = {
     id: string;
@@ -567,7 +623,7 @@ export function DashboardContent({
       )}
 
       {/* Main Content */}
-      <div className="space-y-2 animate-fadeIn">
+      <div className="space-y-1 animate-fadeIn">
 
         {/* Welcome guide — always rendered, component decides visibility via localStorage */}
         <WelcomeGuide onCreatePrompt={handleOpenModal} />
@@ -656,6 +712,17 @@ export function DashboardContent({
               }
             }}
           />
+        )}
+
+        {(selectedFolder || selectedModel) && (
+          <div className="pt-2">
+            <button
+              onClick={selectedFolder ? handleDeleteSelectedFolder : handleDeleteSelectedModel}
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-red-500/45 bg-red-500/10 px-3 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/20 hover:text-red-200"
+            >
+              {selectedFolder ? "Delete folder" : "Delete AI model"}
+            </button>
+          </div>
         )}
       </div>
 

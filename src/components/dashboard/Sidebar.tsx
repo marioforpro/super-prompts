@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
@@ -26,6 +27,7 @@ function getModelColor(name: string): string {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const router = useRouter();
   const {
     folders,
     addFolder,
@@ -190,9 +192,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleFolderDragStart = (event: React.PointerEvent, folderId: string) => {
-    if (selectedFolderId !== folderId) return;
-    event.preventDefault();
-    event.stopPropagation();
     setDragId(folderId);
     dragStartY.current = event.clientY;
     isDragging.current = false;
@@ -257,9 +256,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleModelDragStart = (event: React.PointerEvent, modelSlug: string) => {
-    if (selectedModelSlug !== modelSlug) return;
-    event.preventDefault();
-    event.stopPropagation();
     setModelDragId(modelSlug);
     modelDragStartY.current = event.clientY;
     isModelDragging.current = false;
@@ -497,6 +493,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             <div className="h-px bg-surface-200 my-4" />
 
+            <div className="px-1 mb-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-dim">Folders</p>
+            </div>
+
             {isCreatingFolder && (
               <div className="px-1 mb-2">
                 <div className="flex items-center gap-1.5">
@@ -576,7 +576,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         ? "bg-surface-200 text-foreground cursor-grab active:cursor-grabbing"
                         : dropFolderId === folder.id
                           ? "bg-brand-500/18 text-foreground ring-2 ring-brand-400/65 shadow-[0_0_0_1px_rgba(232,118,75,0.25)]"
-                          : "text-text-muted hover:text-foreground hover:bg-surface-100 cursor-pointer"
+                          : "text-text-muted hover:text-foreground hover:bg-surface-100 cursor-grab active:cursor-grabbing"
                     }`}
                   >
                     <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
@@ -584,13 +584,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </svg>
 
                     <span className="truncate flex-1 text-sm">{folder.name}</span>
-                    <span className={getPillClass(selectedFolderId === folder.id)}>{folderPromptCounts[folder.id] || 0}</span>
+                    {(folderPromptCounts[folder.id] || 0) > 0 && (
+                      <span className={getPillClass(selectedFolderId === folder.id)}>{folderPromptCounts[folder.id]}</span>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="h-px bg-surface-200 my-4" />
+
+            <div className="px-1 mb-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-text-dim">AI Models</p>
+            </div>
 
             <div ref={modelListRef} className="space-y-0.5 pb-6">
               {sortedModels.map((model, index) => (
@@ -621,10 +627,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onPointerMove={handleModelDragMove}
                     onPointerUp={handleModelDragEnd}
                     onPointerCancel={handleModelDragEnd}
-                    className={`relative w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-150 touch-none ${
+                    className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 select-none touch-none ${
                       selectedModelSlug === model.slug
                         ? "bg-surface-200 text-foreground cursor-grab active:cursor-grabbing"
-                        : "text-text-muted hover:text-foreground hover:bg-surface-100 cursor-pointer"
+                        : "text-text-muted hover:text-foreground hover:bg-surface-100 cursor-grab active:cursor-grabbing"
                     }`}
                   >
                     <span
@@ -655,8 +661,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span className="text-sm">New folder</span>
             </button>
 
-            <Link
-              href="/dashboard/settings"
+            <button
+              onClick={() => handleNavClick(() => router.push("/dashboard/settings"))}
               className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -664,7 +670,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
               </svg>
               <span className="text-sm">Settings</span>
-            </Link>
+            </button>
           </div>
         </div>
       </div>
