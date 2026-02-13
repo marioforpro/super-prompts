@@ -56,6 +56,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     notifyPromptFolderAssigned,
     draggedPromptId,
     setDraggedPromptId,
+    draggedPromptIds,
+    setDraggedPromptIds,
     markFolderVisited,
   } = useDashboard();
 
@@ -92,6 +94,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [dropFolderId, setDropFolderId] = useState<string | null>(null);
   const [dropToast, setDropToast] = useState<string | null>(null);
   const navScrollRef = useRef<HTMLElement>(null);
+  const dragOverRafRef = useRef<number | null>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -100,10 +103,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [isCreatingFolder]);
 
-  // While dragging a prompt, keep folders visible so drop targets are always available.
+  // While dragging prompts, keep folders visible so drop targets are always available.
   useEffect(() => {
-    if (draggedPromptId) setFoldersOpen(true);
-  }, [draggedPromptId]);
+    if (draggedPromptId || draggedPromptIds.length > 0) setFoldersOpen(true);
+  }, [draggedPromptId, draggedPromptIds]);
 
   // Focus input when renaming folder
   useEffect(() => {
@@ -141,6 +144,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       document.removeEventListener("click", handleClick);
     };
   }, [folderMenuId, colorPickerId]);
+
+  useEffect(() => {
+    return () => {
+      if (dragOverRafRef.current !== null) cancelAnimationFrame(dragOverRafRef.current);
+    };
+  }, []);
 
   const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
@@ -310,42 +319,75 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     return uuidLike.test(candidate) ? candidate : null;
   };
 
+  const getDraggedPromptIds = (event: React.DragEvent): string[] => {
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const raw = event.dataTransfer.getData("application/x-superprompts-prompt-ids");
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.filter((id) => typeof id === "string" && uuidLike.test(id));
+          if (valid.length > 0) return Array.from(new Set(valid));
+        }
+      } catch {
+        // ignore malformed payload
+      }
+    }
+    if (draggedPromptIds.length > 0) {
+      return Array.from(new Set(draggedPromptIds.filter((id) => uuidLike.test(id))));
+    }
+    const single = getDraggedPromptId(event);
+    return single ? [single] : [];
+  };
+
   const handlePromptDragOverFolder = (event: React.DragEvent, folderId: string) => {
-    const promptId = getDraggedPromptId(event);
-    if (!promptId) return;
+    const promptIds = getDraggedPromptIds(event);
+    if (promptIds.length === 0) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
-    setDropFolderId(folderId);
+    if (dropFolderId !== folderId) setDropFolderId(folderId);
 
     // Auto-scroll sidebar when dragging near top/bottom edges.
-    const navEl = navScrollRef.current;
-    if (!navEl) return;
-    const rect = navEl.getBoundingClientRect();
-    const threshold = 48;
-    const step = 14;
-    if (event.clientY < rect.top + threshold) {
-      navEl.scrollTop -= step;
-    } else if (event.clientY > rect.bottom - threshold) {
-      navEl.scrollTop += step;
-    }
+    if (dragOverRafRef.current !== null) return;
+    dragOverRafRef.current = requestAnimationFrame(() => {
+      dragOverRafRef.current = null;
+      const navEl = navScrollRef.current;
+      if (!navEl) return;
+      const rect = navEl.getBoundingClientRect();
+      const threshold = 48;
+      const step = 14;
+      if (event.clientY < rect.top + threshold) {
+        navEl.scrollTop -= step;
+      } else if (event.clientY > rect.bottom - threshold) {
+        navEl.scrollTop += step;
+      }
+    });
   };
 
   const handlePromptDropOnFolder = async (event: React.DragEvent, folderId: string) => {
-    const promptId = getDraggedPromptId(event);
+    const promptIds = getDraggedPromptIds(event);
     event.preventDefault();
     setDropFolderId(null);
-    if (!promptId) return;
+    if (promptIds.length === 0) return;
 
     try {
-      await assignPromptToFolder(promptId, folderId);
-      notifyPromptFolderAssigned(promptId, folderId);
+      const results = await Promise.allSettled(promptIds.map((promptId) => assignPromptToFolder(promptId, folderId)));
+      const succeeded = results
+        .map((r, i) => ({ result: r, promptId: promptIds[i] }))
+        .filter(({ result }) => result.status === "fulfilled");
+      succeeded.forEach(({ promptId }) => notifyPromptFolderAssigned(promptId, folderId));
       const folderName = folders.find((f) => f.id === folderId)?.name || "folder";
-      setDropToast(`Added to "${folderName}"`);
+      setDropToast(
+        succeeded.length > 1
+          ? `Added ${succeeded.length} prompts to "${folderName}"`
+          : `Added to "${folderName}"`
+      );
       setTimeout(() => setDropToast(null), 1800);
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to add prompt to folder");
     } finally {
       setDraggedPromptId(null);
+      setDraggedPromptIds([]);
     }
   };
 

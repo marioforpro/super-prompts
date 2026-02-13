@@ -28,6 +28,8 @@ interface DashboardState {
   toggleSidebar: () => void;
   draggedPromptId: string | null;
   setDraggedPromptId: (id: string | null) => void;
+  draggedPromptIds: string[];
+  setDraggedPromptIds: (ids: string[]) => void;
   // Reference data (mutable)
   folders: Folder[];
   addFolder: (folder: Folder) => void;
@@ -75,6 +77,7 @@ export function DashboardProvider({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [draggedPromptId, setDraggedPromptId] = useState<string | null>(null);
+  const [draggedPromptIds, setDraggedPromptIds] = useState<string[]>([]);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
   const [modelsState, setModelsState] = useState<AiModel[]>(initialModels);
   const [tagsState, setTagsState] = useState<Tag[]>(tags);
@@ -161,6 +164,8 @@ export function DashboardProvider({
         toggleSidebar,
         draggedPromptId,
         setDraggedPromptId,
+        draggedPromptIds,
+        setDraggedPromptIds,
         folders,
         addFolder,
         removeFolder,

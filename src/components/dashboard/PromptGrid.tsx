@@ -61,7 +61,7 @@ export function PromptGrid({
   selectedIds = [],
   onToggleSelect,
 }: PromptGridProps) {
-  const { setDraggedPromptId } = useDashboard();
+  const { setDraggedPromptId, setDraggedPromptIds } = useDashboard();
   const [mounted, setMounted] = useState(false);
   const [sortBy, setSortBy] = useState<GridSortField>('newest');
   const [sortOpen, setSortOpen] = useState(false);
@@ -151,14 +151,19 @@ export function PromptGrid({
             key={prompt.id}
             draggable
             onDragStart={(event) => {
+              const draggedIds = selectedIds.includes(prompt.id) && selectedIds.length > 0
+                ? selectedIds
+                : [prompt.id];
               event.dataTransfer.setData('application/x-superprompts-prompt-id', prompt.id);
+              event.dataTransfer.setData('application/x-superprompts-prompt-ids', JSON.stringify(draggedIds));
               event.dataTransfer.setData('text/plain', prompt.id);
               event.dataTransfer.effectAllowed = 'copyMove';
               setDraggedPromptId(prompt.id);
+              setDraggedPromptIds(draggedIds);
 
               // Use a compact drag preview so the large card doesn't cover folder targets.
               const preview = document.createElement('div');
-              preview.textContent = `+ ${prompt.title}`;
+              preview.textContent = draggedIds.length > 1 ? `+ ${draggedIds.length} prompts` : `+ ${prompt.title}`;
               preview.style.position = 'fixed';
               preview.style.top = '-1000px';
               preview.style.left = '-1000px';
@@ -181,6 +186,7 @@ export function PromptGrid({
             }}
             onDragEnd={() => {
               setDraggedPromptId(null);
+              setDraggedPromptIds([]);
               if (dragPreviewRef.current) {
                 dragPreviewRef.current.remove();
                 dragPreviewRef.current = null;
@@ -188,7 +194,7 @@ export function PromptGrid({
             }}
             className={cn(
               'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing rounded-lg',
-              selectedPromptId === prompt.id ? 'ring-2 ring-brand-400/60 ring-offset-2 ring-offset-background' : '',
+              selectedPromptId === prompt.id ? 'ring-4 ring-brand-400/75 ring-offset-2 ring-offset-background shadow-[0_0_0_1px_rgba(232,118,75,0.25)]' : '',
               mounted
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-4'

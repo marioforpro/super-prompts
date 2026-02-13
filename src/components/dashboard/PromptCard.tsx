@@ -426,10 +426,10 @@ export function PromptCard({
               onToggleSelected?.();
             }}
             className={cn(
-              'absolute right-3 bottom-3 z-30 w-5 h-5 rounded-sm border-2 transition-colors',
+              'absolute right-3 bottom-3 z-30 w-6 h-6 rounded-sm border-2 transition-colors shadow-md',
               selected
-                ? 'bg-brand-500 border-brand-400'
-                : 'bg-black/40 border-white/70 hover:border-brand-300'
+                ? 'bg-brand-500 border-brand-300 shadow-brand-500/40'
+                : 'bg-black/55 border-white/85 hover:border-brand-300'
             )}
             aria-label={selected ? 'Deselect prompt' : 'Select prompt'}
             title={selected ? 'Deselect prompt' : 'Select prompt'}
