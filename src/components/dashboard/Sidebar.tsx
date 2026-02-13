@@ -5,9 +5,7 @@ import Link from "next/link";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
-import { createModel as createModelAction, updateModel as updateModelAction, deleteModel as deleteModelAction } from "@/lib/actions/models";
 import { createTag, deleteTag } from "@/lib/actions/tags";
-import type { ContentType } from "@/lib/types";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -38,9 +36,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     removeFolder,
     updateFolder,
     models,
-    addModel,
-    removeModel,
-    updateModelCtx,
     tags,
     selectedFolderId,
     setSelectedFolderId,
@@ -73,19 +68,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // Model management
-  const [isCreatingModel, setIsCreatingModel] = useState(false);
-  const [newModelName, setNewModelName] = useState("");
-  const [modelError, setModelError] = useState("");
-  const modelInputRef = useRef<HTMLInputElement>(null);
-  const [modelMenuId, setModelMenuId] = useState<string | null>(null);
-  const [editingModelId, setEditingModelId] = useState<string | null>(null);
-  const [editingModelName, setEditingModelName] = useState("");
-  const [modelColorPickerId, setModelColorPickerId] = useState<string | null>(null);
-  const [newModelContentType, setNewModelContentType] = useState<ContentType>('IMAGE');
-  const editModelInputRef = useRef<HTMLInputElement>(null);
-  const modelMenuRef = useRef<HTMLDivElement>(null);
-  const modelColorPickerRef = useRef<HTMLDivElement>(null);
 
   // Tag management
   const [isCreatingTag, setIsCreatingTag] = useState(false);
@@ -114,20 +96,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [editingFolderId]);
 
-  // Focus model input
-  useEffect(() => {
-    if (isCreatingModel && modelInputRef.current) {
-      modelInputRef.current.focus();
-    }
-  }, [isCreatingModel]);
-
-  // Focus model rename input
-  useEffect(() => {
-    if (editingModelId && editModelInputRef.current) {
-      editModelInputRef.current.focus();
-      editModelInputRef.current.select();
-    }
-  }, [editingModelId]);
 
   // Focus tag input
   useEffect(() => {
@@ -141,16 +109,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!folderMenuId && !colorPickerId && !modelMenuId && !modelColorPickerId) return;
+    if (!folderMenuId && !colorPickerId) return;
     const handleClick = (e: MouseEvent) => {
       if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
       if (colorPickerRef.current && colorPickerRef.current.contains(e.target as Node)) return;
-      if (modelMenuRef.current && modelMenuRef.current.contains(e.target as Node)) return;
-      if (modelColorPickerRef.current && modelColorPickerRef.current.contains(e.target as Node)) return;
       setFolderMenuId(null);
       setColorPickerId(null);
-      setModelMenuId(null);
-      setModelColorPickerId(null);
     };
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
@@ -159,7 +123,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       clearTimeout(timer);
       document.removeEventListener("click", handleClick);
     };
-  }, [folderMenuId, colorPickerId, modelMenuId, modelColorPickerId]);
+  }, [folderMenuId, colorPickerId]);
 
   const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
@@ -312,88 +276,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     isDragging.current = false;
   };
 
-  // Model CRUD
-  const isCreatingModelRef = useRef(false);
-  const handleCreateModel = async () => {
-    if (isCreatingModelRef.current) return;
-    const name = newModelName.trim();
-    if (!name) {
-      setIsCreatingModel(false);
-      setNewModelName("");
-      return;
-    }
-    isCreatingModelRef.current = true;
-    setModelError("");
-    const slug = name.toLowerCase().replace(/\s+/g, "-");
-    const ct = newModelContentType;
-    setNewModelName("");
-    setNewModelContentType('IMAGE');
-    setIsCreatingModel(false);
-    try {
-      const model = await createModelAction(name, slug, ct.toLowerCase(), ct);
-      addModel(model);
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to create model");
-    } finally {
-      isCreatingModelRef.current = false;
-    }
-  };
-
-  const handleRenameModel = async () => {
-    if (!editingModelId || !editingModelName.trim()) {
-      setEditingModelId(null);
-      setEditingModelName("");
-      return;
-    }
-    try {
-      const slug = editingModelName.trim().toLowerCase().replace(/\s+/g, "-");
-      const updated = await updateModelAction(editingModelId, { name: editingModelName.trim(), slug });
-      updateModelCtx(editingModelId, { name: updated.name, slug: updated.slug });
-      setEditingModelId(null);
-      setEditingModelName("");
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to rename model");
-      setEditingModelId(null);
-    }
-  };
-
-  const handleDeleteModel = async (modelId: string) => {
-    setModelMenuId(null);
-    if (selectedModelSlug) {
-      const m = models.find(mm => mm.id === modelId);
-      if (m && m.slug === selectedModelSlug) setSelectedModelSlug(null);
-    }
-    removeModel(modelId);
-    try {
-      await deleteModelAction(modelId);
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to delete model");
-    }
-  };
-
-  // Model content type change handler
-  const handleModelContentTypeChange = async (modelId: string, newType: ContentType) => {
-    setModelMenuId(null);
-    updateModelCtx(modelId, { content_type: newType, category: newType.toLowerCase() });
-    try {
-      await updateModelAction(modelId, { content_type: newType, category: newType.toLowerCase() });
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to update model type");
-    }
-  };
-
-  // Model color change handler
-  const handleModelColorChange = async (modelId: string, newColor: string) => {
-    // Close picker immediately (optimistic)
-    setModelColorPickerId(null);
-    setModelMenuId(null);
-    updateModelCtx(modelId, { icon_url: newColor });
-    try {
-      await updateModelAction(modelId, { icon_url: newColor });
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to update model color");
-    }
-  };
 
   // Create tag handler
   const isCreatingTagRef = useRef(false);
@@ -455,16 +337,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  const handleModelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleCreateModel();
-    } else if (e.key === "Escape") {
-      setIsCreatingModel(false);
-      setNewModelName("");
-      setModelError("");
-    }
-  };
 
   const handleNavClick = (action: () => void) => {
     action();
@@ -859,7 +731,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Divider */}
             <div className="h-px bg-surface-200 my-4" />
 
-            {/* AI MODELS — collapsible with CRUD */}
+            {/* AI MODELS — collapsible, filter-only */}
             <div>
               <div className="flex items-center justify-between px-4 py-2 gap-2">
                 <button
@@ -873,12 +745,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </button>
                 <button
                   onClick={() => {
-                    setIsCreatingModel(true);
-                    setModelError("");
-                    if (!modelsOpen) setModelsOpen(true);
+                    window.location.href = '/dashboard/settings';
                   }}
                   className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
-                  title="Add AI model"
+                  title="Manage AI models"
                 >
                   <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -887,222 +757,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
 
               {modelsOpen && (
-                <>
-                  {/* Inline model creation */}
-                  {isCreatingModel && (
-                    <div className="px-4 mt-1 mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          ref={modelInputRef}
-                          type="text"
-                          value={newModelName}
-                          onChange={(e) => setNewModelName(e.target.value)}
-                          onKeyDown={handleModelKeyDown}
-                          placeholder="Model name..."
-                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                <div className="mt-1 space-y-0.5 pl-2">
+                  {sortedModels.length === 0 ? (
+                    <p className="px-4 py-2 text-xs text-text-dim">No models yet</p>
+                  ) : (
+                    sortedModels.map((model) => (
+                      <div
+                        key={model.id}
+                        onClick={() =>
+                          handleNavClick(() => {
+                            setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
+                            setShowFavoritesOnly(false);
+                          })
+                        }
+                        className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
+                          selectedModelSlug === model.slug
+                            ? "bg-surface-200 text-foreground"
+                            : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                        }`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
                         />
-                        <button
-                          onClick={handleCreateModel}
-                          className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
-                          title="Add model"
-                        >
-                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => { setIsCreatingModel(false); setNewModelName(""); setModelError(""); }}
-                          className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
-                          title="Cancel"
-                        >
-                          <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        <span className="truncate flex-1">{model.name}</span>
                       </div>
-                      {/* Content type selector for new model */}
-                      <div className="flex gap-1 mt-1.5">
-                        {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((ct) => (
-                          <button
-                            key={ct}
-                            onClick={() => setNewModelContentType(ct)}
-                            className={`flex-1 py-1 rounded text-[10px] font-medium transition-all cursor-pointer border ${
-                              newModelContentType === ct
-                                ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
-                                : 'bg-surface-100 border-surface-200 text-text-dim hover:border-surface-300'
-                            }`}
-                          >
-                            {ct === 'IMAGE' ? 'Image' : ct === 'VIDEO' ? 'Video' : ct === 'AUDIO' ? 'Audio' : 'Text'}
-                          </button>
-                        ))}
-                      </div>
-                      {modelError && (
-                        <p className="text-xs text-red-400 mt-1">{modelError}</p>
-                      )}
-                    </div>
+                    ))
                   )}
-
-                  <div className="mt-1 space-y-0.5 pl-2">
-                    {sortedModels.length === 0 && !isCreatingModel ? (
-                      <p className="px-4 py-2 text-xs text-text-dim">No models yet</p>
-                    ) : (
-                      sortedModels.map((model) => (
-                        <div key={model.id} className="relative group">
-                          {editingModelId === model.id ? (
-                            <div className="px-4 py-1">
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  ref={editModelInputRef}
-                                  type="text"
-                                  value={editingModelName}
-                                  onChange={(e) => setEditingModelName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") { e.preventDefault(); handleRenameModel(); }
-                                    else if (e.key === "Escape") { setEditingModelId(null); setEditingModelName(""); }
-                                  }}
-                                  className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                                />
-                                <button
-                                  onClick={handleRenameModel}
-                                  className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
-                                  title="Confirm rename"
-                                >
-                                  <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => { setEditingModelId(null); setEditingModelName(""); }}
-                                  className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
-                                  title="Cancel"
-                                >
-                                  <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div
-                              onClick={() =>
-                                handleNavClick(() => {
-                                  setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
-                                  setShowFavoritesOnly(false);
-                                })
-                              }
-                              onContextMenu={(e) => {
-                                e.preventDefault();
-                                setModelMenuId(modelMenuId === model.id ? null : model.id);
-                              }}
-                              className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
-                                selectedModelSlug === model.slug
-                                  ? "bg-surface-200 text-foreground"
-                                  : "text-text-muted hover:text-foreground hover:bg-surface-100"
-                              }`}
-                            >
-                              <span
-                                className="w-2 h-2 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
-                              />
-                              <span className="truncate flex-1">{model.name}</span>
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setModelMenuId(modelMenuId === model.id ? null : model.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
-                              >
-                                <svg className="w-3.5 h-3.5 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-                                </svg>
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Model context menu */}
-                          {modelMenuId === model.id && (
-                            <div
-                              ref={modelMenuRef}
-                              className="absolute left-8 top-full z-50 mt-1 w-36 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setEditingModelId(model.id); setEditingModelName(model.name); setModelMenuId(null); }}
-                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
-                              >
-                                Rename
-                              </button>
-                              <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setModelColorPickerId(model.id); }}
-                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
-                              >
-                                Change color
-                              </button>
-                              <div className="px-3 py-1.5">
-                                <p className="text-[10px] text-text-dim mb-1">Content type</p>
-                                <div className="grid grid-cols-4 gap-0.5">
-                                  {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((ct) => (
-                                    <button
-                                      key={ct}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleModelContentTypeChange(model.id, ct); }}
-                                      className={`py-1 rounded text-[9px] font-medium transition-all cursor-pointer ${
-                                        model.content_type === ct
-                                          ? 'bg-brand-500/20 text-brand-300'
-                                          : 'text-text-dim hover:text-text-muted hover:bg-surface-200'
-                                      }`}
-                                    >
-                                      {ct === 'IMAGE' ? 'Img' : ct === 'VIDEO' ? 'Vid' : ct === 'AUDIO' ? 'Aud' : 'Txt'}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="h-px bg-surface-200 my-0.5" />
-                              <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleDeleteModel(model.id); }}
-                                className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Model color picker */}
-                          {modelColorPickerId === model.id && (
-                            <div
-                              ref={modelColorPickerRef}
-                              className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              <div className="grid grid-cols-5 gap-2">
-                                {MODEL_COLORS.map((color) => {
-                                  const currentColor = (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name);
-                                  return (
-                                    <button
-                                      key={color}
-                                      onClick={(e) => { e.stopPropagation(); handleModelColorChange(model.id, color); }}
-                                      className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
-                                      style={{
-                                        backgroundColor: color,
-                                        borderColor: currentColor === color ? '#ffffff' : 'transparent'
-                                      }}
-                                      title={color}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
+                </div>
               )}
             </div>
 

@@ -1158,11 +1158,6 @@ export function CreatePromptModal({
                           {model.content_type === 'IMAGE' ? 'Image' : model.content_type === 'VIDEO' ? 'Video' : model.content_type === 'AUDIO' ? 'Audio' : 'Text'}
                         </span>
                       )}
-                      {modelId === model.id && (
-                        <svg className="w-4 h-4 text-brand-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
                     </button>
                   ))}
                   <div className="h-px bg-surface-200" />
