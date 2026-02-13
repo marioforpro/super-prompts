@@ -8,6 +8,7 @@ export interface Prompt {
   content_type: ContentType | null;
   title: string;
   content: string;
+  negative_prompt: string | null;
   notes: string | null;
   source_url: string | null;
   is_favorite: boolean;
@@ -75,6 +76,7 @@ export interface PromptMedia {
 export interface CreatePromptInput {
   title: string;
   content: string;
+  negative_prompt?: string | null;
   model_id?: string | null;
   folder_id?: string | null;
   content_type?: ContentType | null;
@@ -86,6 +88,7 @@ export interface CreatePromptInput {
 export interface UpdatePromptInput {
   title?: string;
   content?: string;
+  negative_prompt?: string | null;
   model_id?: string | null;
   folder_id?: string | null;
   content_type?: ContentType | null;

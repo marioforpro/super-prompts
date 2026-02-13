@@ -57,6 +57,8 @@ export function CreatePromptModal({
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
   const [contentType, setContentType] = useState<ContentType | null>(null);
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [negativePromptOpen, setNegativePromptOpen] = useState(false);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -103,6 +105,8 @@ export function CreatePromptModal({
       setContent(prompt.content);
       setModelId(prompt.model_id || null);
       setContentType(prompt.content_type || null);
+      setNegativePrompt(prompt.negative_prompt || "");
+      setNegativePromptOpen(!!prompt.negative_prompt);
       setFolderId(prompt.folder_id || null);
       setNotes(prompt.notes || "");
       setSourceUrl(prompt.source_url || "");
@@ -183,6 +187,8 @@ export function CreatePromptModal({
     setContent("");
     setModelId(null);
     setContentType(null);
+    setNegativePrompt("");
+    setNegativePromptOpen(false);
     setFolderId(null);
     setNotes("");
     setSourceUrl("");
@@ -615,6 +621,7 @@ export function CreatePromptModal({
       const input = {
         title: title.trim(),
         content: content.trim(),
+        negative_prompt: negativePrompt.trim() || undefined,
         model_id: modelId,
         folder_id: folderId,
         content_type: contentType,
@@ -1014,6 +1021,39 @@ export function CreatePromptModal({
               className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50"
               disabled={isLoading}
             />
+          </div>
+
+          {/* Negative Prompt — collapsible */}
+          <div className="mb-6">
+            <button
+              type="button"
+              onClick={() => setNegativePromptOpen(!negativePromptOpen)}
+              className="flex items-center gap-2 text-sm font-medium text-text-muted hover:text-foreground transition-colors cursor-pointer group"
+            >
+              <svg
+                className={`w-3 h-3 text-text-dim transition-transform duration-200 ${negativePromptOpen ? 'rotate-0' : '-rotate-90'}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              <span>Negative Prompt</span>
+              {negativePrompt.trim() && !negativePromptOpen && (
+                <span className="text-xs text-text-dim bg-surface-100 px-2 py-0.5 rounded-full">has content</span>
+              )}
+            </button>
+            {negativePromptOpen && (
+              <div className="mt-2">
+                <textarea
+                  value={negativePrompt}
+                  onChange={(e) => setNegativePrompt(e.target.value)}
+                  placeholder="Things to avoid or exclude from the output..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50 text-sm"
+                  disabled={isLoading}
+                />
+                <p className="text-xs text-text-dim mt-1">Optional — specify what to exclude from the AI output</p>
+              </div>
+            )}
           </div>
 
           {/* AI Model */}

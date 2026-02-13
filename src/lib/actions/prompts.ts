@@ -94,6 +94,7 @@ export async function createPrompt(input: CreatePromptInput): Promise<Prompt> {
       model_id: input.model_id || null,
       folder_id: input.folder_id || null,
       content_type: input.content_type || null,
+      negative_prompt: input.negative_prompt?.trim() || null,
       notes: input.notes?.trim() || null,
       source_url: input.source_url?.trim() || null,
       is_favorite: false,
@@ -162,6 +163,8 @@ export async function updatePrompt(
   if (input.model_id !== undefined) updateData.model_id = input.model_id;
   if (input.folder_id !== undefined) updateData.folder_id = input.folder_id;
   if (input.content_type !== undefined) updateData.content_type = input.content_type;
+  if (input.negative_prompt !== undefined)
+    updateData.negative_prompt = input.negative_prompt?.trim() || null;
   if (input.notes !== undefined)
     updateData.notes = input.notes?.trim() || null;
   if (input.source_url !== undefined)

@@ -505,52 +505,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Divider */}
             <div className="h-px bg-surface-200 my-4" />
 
-            {/* CONTENT TYPE — inline filter pills */}
-            <div className="px-2">
-              <div className="flex items-center gap-1.5 px-2 py-1 mb-1">
-                <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
-                  Type
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 px-1">
-                {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
-                  const isActive = selectedContentType === type;
-                  const label = type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
-                  const icon = type === 'IMAGE' ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  ) : type === 'VIDEO' ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  ) : type === 'AUDIO' ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-                  ) : (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  );
-                  return (
-                    <button
-                      key={type}
-                      onClick={() =>
-                        handleNavClick(() => {
-                          setSelectedContentType(isActive ? null : type);
-                          setShowFavoritesOnly(false);
-                        })
-                      }
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-150 cursor-pointer border ${
-                        isActive
-                          ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
-                          : 'bg-surface-100 border-surface-200 text-text-dim hover:text-text-muted hover:border-surface-300'
-                      }`}
-                    >
-                      {icon}
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="h-px bg-surface-200 my-4" />
-
             {/* FOLDERS — collapsible */}
             <div>
               <div className="flex items-center justify-between px-4 py-2 gap-2">
@@ -802,6 +756,49 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </div>
                 </>
               )}
+            </div>
+
+            {/* CONTENT TYPE — compact filter pills */}
+            <div className="px-3 mt-3 mb-1">
+              <div className="flex items-center gap-1.5 px-1 py-1 mb-1.5">
+                <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+                  Type
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-1">
+                {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
+                  const isActive = selectedContentType === type;
+                  const label = type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
+                  const icon = type === 'IMAGE' ? (
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  ) : type === 'VIDEO' ? (
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  ) : type === 'AUDIO' ? (
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+                  ) : (
+                    <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  );
+                  return (
+                    <button
+                      key={type}
+                      onClick={() =>
+                        handleNavClick(() => {
+                          setSelectedContentType(isActive ? null : type);
+                          setShowFavoritesOnly(false);
+                        })
+                      }
+                      className={`flex items-center justify-center gap-0.5 py-1.5 rounded-md text-[10px] font-medium transition-all duration-150 cursor-pointer border ${
+                        isActive
+                          ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
+                          : 'bg-surface-100 border-surface-200 text-text-dim hover:text-text-muted hover:border-surface-300'
+                      }`}
+                    >
+                      {icon}
+                      <span className="truncate">{label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Divider */}
