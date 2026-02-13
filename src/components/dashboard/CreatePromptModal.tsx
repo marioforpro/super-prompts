@@ -35,6 +35,11 @@ interface CreatePromptModalProps {
   onClose: () => void;
   onSuccess?: (prompt: Prompt) => void;
   prompt?: Prompt | null;
+  breadcrumb?: string;
+  canGoPrev?: boolean;
+  canGoNext?: boolean;
+  onPrev?: () => void;
+  onNext?: () => void;
   models: AiModel[];
   folders: Folder[];
   tags: Tag[];
@@ -47,6 +52,11 @@ export function CreatePromptModal({
   onClose,
   onSuccess,
   prompt,
+  breadcrumb,
+  canGoPrev = false,
+  canGoNext = false,
+  onPrev,
+  onNext,
   models,
   folders,
   tags,
@@ -798,9 +808,34 @@ export function CreatePromptModal({
       <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] bg-surface border-l border-surface-200 shadow-2xl shadow-black/40 z-50 flex flex-col overflow-hidden animate-in slide-in-from-right-full duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-surface-200">
-          <h2 className="text-lg font-semibold text-foreground">
-            {prompt ? "Edit Prompt" : "Create Prompt"}
-          </h2>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              {prompt ? "Edit Prompt" : "Create Prompt"}
+            </h2>
+            {breadcrumb && (
+              <p className="text-xs text-text-dim mt-0.5 truncate max-w-[320px]">{breadcrumb}</p>
+            )}
+          </div>
+          {prompt && (onPrev || onNext) && (
+            <div className="flex items-center gap-1 mr-2">
+              <button
+                type="button"
+                onClick={onPrev}
+                disabled={!canGoPrev || isLoading}
+                className="px-2.5 py-1.5 text-xs rounded-md border border-surface-200 text-text-muted hover:text-foreground hover:bg-surface-100 disabled:opacity-40"
+              >
+                Prev
+              </button>
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={!canGoNext || isLoading}
+                className="px-2.5 py-1.5 text-xs rounded-md border border-surface-200 text-text-muted hover:text-foreground hover:bg-surface-100 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          )}
           <button
             onClick={onClose}
             className="p-1 hover:bg-surface-100 rounded-lg transition-colors"

@@ -49,10 +49,10 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
       const isMod = e.metaKey || e.ctrlKey;
 
-      // Cmd/Ctrl + K → Focus search
+      // Cmd/Ctrl + K → Open command palette
       if (isMod && e.key === "k") {
         e.preventDefault();
-        searchInputRef.current?.focus();
+        window.dispatchEvent(new CustomEvent("open-command-palette"));
         return;
       }
 

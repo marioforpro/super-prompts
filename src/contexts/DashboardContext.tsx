@@ -45,6 +45,10 @@ interface DashboardState {
   userInitial: string;
   registerPromptFolderAssignHandler: (handler: ((promptId: string, folderId: string) => void) | null) => void;
   notifyPromptFolderAssigned: (promptId: string, folderId: string) => void;
+  recentFolderIds: string[];
+  markFolderVisited: (folderId: string | null) => void;
+  recentPromptIds: string[];
+  markPromptVisited: (promptId: string) => void;
 }
 
 const DashboardContext = createContext<DashboardState | null>(null);
@@ -75,6 +79,8 @@ export function DashboardProvider({
   const [modelsState, setModelsState] = useState<AiModel[]>(initialModels);
   const [tagsState, setTagsState] = useState<Tag[]>(tags);
   const [promptFolderAssignHandler, setPromptFolderAssignHandler] = useState<((promptId: string, folderId: string) => void) | null>(null);
+  const [recentFolderIds, setRecentFolderIds] = useState<string[]>([]);
+  const [recentPromptIds, setRecentPromptIds] = useState<string[]>([]);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";
@@ -123,6 +129,15 @@ export function DashboardProvider({
     promptFolderAssignHandler?.(promptId, folderId);
   };
 
+  const markFolderVisited = (folderId: string | null) => {
+    if (!folderId) return;
+    setRecentFolderIds((prev) => [folderId, ...prev.filter((id) => id !== folderId)].slice(0, 6));
+  };
+
+  const markPromptVisited = (promptId: string) => {
+    setRecentPromptIds((prev) => [promptId, ...prev.filter((id) => id !== promptId)].slice(0, 8));
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -161,6 +176,10 @@ export function DashboardProvider({
         userInitial,
         registerPromptFolderAssignHandler,
         notifyPromptFolderAssigned,
+        recentFolderIds,
+        markFolderVisited,
+        recentPromptIds,
+        markPromptVisited,
       }}
     >
       {children}

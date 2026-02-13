@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface MediaItem {
@@ -27,6 +27,11 @@ export interface PromptCardProps {
   contentType?: string | null;
   isFavorite?: boolean;
   tags?: string[];
+  folderIds?: string[];
+  folders?: Array<{ id: string; name: string }>;
+  selectedFolderId?: string | null;
+  onAssignToFolder?: (folderId: string) => void;
+  onRemoveFromCurrentFolder?: () => void;
   onCopy?: () => void;
   onFavorite?: () => void;
   onClick?: () => void;
@@ -77,6 +82,11 @@ export function PromptCard({
   modelCategory,
   isFavorite = false,
   tags = [],
+  folderIds = [],
+  folders = [],
+  selectedFolderId = null,
+  onAssignToFolder,
+  onRemoveFromCurrentFolder,
   onCopy,
   onFavorite,
   onClick,
@@ -85,6 +95,8 @@ export function PromptCard({
   const [isFavoritedLocally, setIsFavoritedLocally] = useState(isFavorite);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showCopied, setShowCopied] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Use mediaItems if provided, otherwise fall back to coverUrl/coverType
   const displayMedia = mediaItems && mediaItems.length > 0
@@ -127,6 +139,30 @@ export function PromptCard({
   const firstLine = content.split('\n')[0] || content.substring(0, 60);
   const gradientClass = getGradientBackground(id);
   const aspectClass = getAspectRatio(modelCategory);
+  const inCurrentFolder = !!(selectedFolderId && folderIds.includes(selectedFolderId));
+
+  const handleAssignFolder = (e: React.MouseEvent, folderId: string) => {
+    e.stopPropagation();
+    onAssignToFolder?.(folderId);
+    setMenuOpen(false);
+  };
+
+  const handleRemoveCurrentFolder = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onRemoveFromCurrentFolder?.();
+    setMenuOpen(false);
+  };
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleDocClick);
+    return () => document.removeEventListener('mousedown', handleDocClick);
+  }, [menuOpen]);
 
   return (
     <div
@@ -282,6 +318,58 @@ export function PromptCard({
             isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-70'
           )}
         >
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((prev) => !prev);
+              }}
+              className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
+              aria-label="Prompt actions"
+              title="Prompt actions"
+            >
+              <MoreHorizontal size={14} />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 min-w-[180px] rounded-lg border border-surface-300 bg-surface-100 shadow-xl overflow-hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick?.();
+                    setMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
+                >
+                  Open prompt
+                </button>
+                {selectedFolderId && inCurrentFolder && onRemoveFromCurrentFolder && (
+                  <button
+                    onClick={handleRemoveCurrentFolder}
+                    className="w-full text-left px-3 py-2 text-xs text-brand-300 hover:bg-surface-200"
+                  >
+                    Remove from current folder
+                  </button>
+                )}
+                {folders.length > 0 && onAssignToFolder && (
+                  <>
+                    <div className="h-px bg-surface-200" />
+                    <div className="px-3 py-1.5 text-[10px] uppercase tracking-wide text-text-dim">Add to folder</div>
+                    <div className="max-h-40 overflow-y-auto">
+                      {folders.slice(0, 12).map((folder) => (
+                        <button
+                          key={folder.id}
+                          onClick={(e) => handleAssignFolder(e, folder.id)}
+                          className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
+                        >
+                          {folder.name}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={handleFavoriteClick}
             className={cn(

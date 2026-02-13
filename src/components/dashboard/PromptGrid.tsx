@@ -23,10 +23,17 @@ export interface PromptGridProps {
     isFavorite?: boolean;
     tags?: string[];
     createdAt?: string;
+    folderIds?: string[];
   }>;
   onCopyPrompt?: (id: string, content: string) => void;
   onFavoritePrompt?: (id: string) => void;
   onClickPrompt?: (id: string) => void;
+  selectedPromptId?: string | null;
+  onSelectPrompt?: (id: string) => void;
+  folders?: Array<{ id: string; name: string }>;
+  selectedFolderId?: string | null;
+  onAssignPromptToFolder?: (promptId: string, folderId: string) => void;
+  onRemovePromptFromCurrentFolder?: (promptId: string) => void;
 }
 
 const SORT_OPTIONS: { value: GridSortField; label: string }[] = [
@@ -41,6 +48,12 @@ export function PromptGrid({
   onCopyPrompt,
   onFavoritePrompt,
   onClickPrompt,
+  selectedPromptId,
+  onSelectPrompt,
+  folders = [],
+  selectedFolderId = null,
+  onAssignPromptToFolder,
+  onRemovePromptFromCurrentFolder,
 }: PromptGridProps) {
   const { setDraggedPromptId } = useDashboard();
   const [mounted, setMounted] = useState(false);
@@ -168,7 +181,8 @@ export function PromptGrid({
               }
             }}
             className={cn(
-              'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing',
+              'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing rounded-lg',
+              selectedPromptId === prompt.id ? 'ring-2 ring-brand-400/60 ring-offset-2 ring-offset-background' : '',
               mounted
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-4'
@@ -190,9 +204,17 @@ export function PromptGrid({
               contentType={prompt.contentType}
               isFavorite={prompt.isFavorite}
               tags={prompt.tags}
+              folders={folders}
+              selectedFolderId={selectedFolderId}
+              folderIds={prompt.folderIds || []}
+              onAssignToFolder={(folderId) => onAssignPromptToFolder?.(prompt.id, folderId)}
+              onRemoveFromCurrentFolder={onRemovePromptFromCurrentFolder ? () => onRemovePromptFromCurrentFolder(prompt.id) : undefined}
               onCopy={() => onCopyPrompt?.(prompt.id, prompt.content)}
               onFavorite={() => onFavoritePrompt?.(prompt.id)}
-              onClick={() => onClickPrompt?.(prompt.id)}
+              onClick={() => {
+                onSelectPrompt?.(prompt.id);
+                onClickPrompt?.(prompt.id);
+              }}
             />
           </div>
         ))}

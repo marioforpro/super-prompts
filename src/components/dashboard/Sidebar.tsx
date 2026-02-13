@@ -56,6 +56,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     notifyPromptFolderAssigned,
     draggedPromptId,
     setDraggedPromptId,
+    recentFolderIds,
+    markFolderVisited,
   } = useDashboard();
 
   // Collapsible sections
@@ -419,7 +421,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     !selectedFolderId && !selectedModelSlug && selectedTags.length === 0 && !selectedContentType && !showFavoritesOnly;
 
   const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+  const recentFolders = recentFolderIds
+    .map((id) => sortedFolders.find((f) => f.id === id))
+    .filter(Boolean) as Folder[];
   const sortedModels = [...models].sort((a, b) => a.name.localeCompare(b.name));
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!e.shiftKey) return;
+      const key = e.key.toLowerCase();
+      if (key !== 'j' && key !== 'k') return;
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
+      if (isInput) return;
+      e.preventDefault();
+      if (sortedFolders.length === 0) return;
+      const currentIdx = selectedFolderId ? sortedFolders.findIndex((f) => f.id === selectedFolderId) : -1;
+      const nextIdx = key === 'j'
+        ? Math.min(sortedFolders.length - 1, Math.max(0, currentIdx + 1))
+        : Math.max(0, currentIdx <= 0 ? 0 : currentIdx - 1);
+      const folder = sortedFolders[nextIdx];
+      if (!folder) return;
+      setSelectedFolderId(folder.id);
+      markFolderVisited(folder.id);
+      setShowFavoritesOnly(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [sortedFolders, selectedFolderId, setSelectedFolderId, setShowFavoritesOnly, markFolderVisited]);
 
   // Chevron component for collapsible sections
   const SectionChevron = ({ open }: { open: boolean }) => (
@@ -547,6 +576,39 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Divider */}
             <div className="h-px bg-surface-200 my-4" />
 
+            {recentFolders.length > 0 && (
+              <>
+                <div className="px-4 py-2">
+                  <span className="text-[10px] font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
+                    Recent Folders
+                  </span>
+                </div>
+                <div className="space-y-0.5">
+                  {recentFolders.slice(0, 4).map((folder) => (
+                    <button
+                      key={`recent-${folder.id}`}
+                      onClick={() =>
+                        handleNavClick(() => {
+                          setSelectedFolderId(folder.id);
+                          markFolderVisited(folder.id);
+                          setShowFavoritesOnly(false);
+                        })
+                      }
+                      className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
+                        selectedFolderId === folder.id
+                          ? "bg-surface-200 text-foreground"
+                          : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: folder.color || '#e8764b' }} />
+                      <span className="truncate">{folder.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="h-px bg-surface-200 my-4" />
+              </>
+            )}
+
             {/* FOLDERS — collapsible */}
             <div>
               <div className="flex items-center justify-between px-4 py-2 gap-2">
@@ -669,6 +731,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               onClick={() =>
                                 handleNavClick(() => {
                                   setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
+                                  if (selectedFolderId !== folder.id) markFolderVisited(folder.id);
                                   setShowFavoritesOnly(false);
                                 })
                               }
