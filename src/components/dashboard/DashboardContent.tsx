@@ -290,10 +290,8 @@ export function DashboardContent({
           </div>
         )}
 
-        {/* Welcome guide for new users */}
-        {prompts.length === 0 && !hasActiveFilters && (
-          <WelcomeGuide onCreatePrompt={handleOpenModal} />
-        )}
+        {/* Welcome guide — always rendered, component decides visibility via localStorage */}
+        <WelcomeGuide onCreatePrompt={handleOpenModal} />
 
         {/* Content View */}
         {prompts.length === 0 && !hasActiveFilters ? (

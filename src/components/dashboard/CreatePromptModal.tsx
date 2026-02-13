@@ -13,7 +13,7 @@ import {
 import { createTag } from "@/lib/actions/tags";
 import { createFolder } from "@/lib/actions/folders";
 import { createModel } from "@/lib/actions/models";
-import { createPromptMedia, removePromptMedia, updateMediaFrameFit, updateMediaCrop } from "@/lib/actions/media";
+import { createPromptMedia, removePromptMedia, updateMediaSettings } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
 
 interface LocalMediaItem {
@@ -508,17 +508,11 @@ export function CreatePromptModal({
         }
       }
 
-      // 2. Update frame_fit and crop for existing items
-      for (const item of mediaItems) {
-        if (item.id && !item.file) {
-          try {
-            await updateMediaFrameFit(item.id, item.frameFit);
-            await updateMediaCrop(item.id, item.cropX, item.cropY, item.cropScale);
-          } catch {
-            // Non-fatal
-          }
-        }
-      }
+      // 2. Update frame_fit and crop for existing items (parallel, single call each)
+      const existingUpdates = mediaItems
+        .filter(item => item.id && !item.file)
+        .map(item => updateMediaSettings(item.id!, item.frameFit, item.cropX, item.cropY, item.cropScale).catch(() => {}));
+      await Promise.all(existingUpdates);
 
       // 3. Upload new files
       for (let i = 0; i < mediaItems.length; i++) {

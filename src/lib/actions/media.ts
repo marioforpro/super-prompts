@@ -214,3 +214,29 @@ export async function updateMediaCrop(
   if (error) throw error;
   return data as PromptMedia;
 }
+
+/**
+ * Batch update frame_fit + crop in a single call per media item.
+ */
+export async function updateMediaSettings(
+  mediaId: string,
+  frameFit: FrameFit,
+  cropX: number,
+  cropY: number,
+  cropScale: number
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  await supabase
+    .from("prompt_media")
+    .update({
+      frame_fit: frameFit,
+      crop_x: cropX,
+      crop_y: cropY,
+      crop_scale: cropScale,
+    })
+    .eq("id", mediaId);
+}
