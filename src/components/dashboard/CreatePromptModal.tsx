@@ -69,7 +69,9 @@ export function CreatePromptModal({
   const [isSearchingModels, setIsSearchingModels] = useState(false);
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [folderDropdownOpen, setFolderDropdownOpen] = useState(false);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
+  const folderDropdownRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   // Inline folder creation
@@ -105,7 +107,7 @@ export function CreatePromptModal({
       setContentType(prompt.content_type || null);
       setNegativePrompt(prompt.negative_prompt || "");
       setNegativePromptOpen(!!prompt.negative_prompt);
-      setFolderId(prompt.folder_id || null);
+      setFolderId(prompt.folder_id || prompt.folder_ids?.[0] || null);
       setNotes(prompt.notes || "");
       setSourceUrl(prompt.source_url || "");
       setSelectedTags(prompt.tags?.map((t) => t.id) || []);
@@ -139,8 +141,17 @@ export function CreatePromptModal({
         setMediaItems([]);
       }
       setRemovedMediaIds([]);
-      // Show advanced section if any advanced fields have content
-      setShowAdvanced(!!(prompt.negative_prompt || prompt.notes || prompt.source_url));
+      // Show advanced section if advanced/organization fields already have content
+      setShowAdvanced(
+        !!(
+          prompt.negative_prompt ||
+          prompt.notes ||
+          prompt.source_url ||
+          prompt.folder_id ||
+          (prompt.folder_ids && prompt.folder_ids.length > 0) ||
+          (prompt.tags && prompt.tags.length > 0)
+        )
+      );
     } else {
       resetForm();
     }
@@ -184,15 +195,18 @@ export function CreatePromptModal({
 
   // Close model dropdown on outside click
   useEffect(() => {
-    if (!modelDropdownOpen) return;
+    if (!modelDropdownOpen && !folderDropdownOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
         setModelDropdownOpen(false);
       }
+      if (folderDropdownRef.current && !folderDropdownRef.current.contains(e.target as Node)) {
+        setFolderDropdownOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [modelDropdownOpen]);
+  }, [modelDropdownOpen, folderDropdownOpen]);
 
   const resetForm = () => {
     setTitle("");
@@ -213,6 +227,7 @@ export function CreatePromptModal({
     setShowAnalysisPrompt(false);
     setIsDetectingText(false);
     setDetectedTextPreview("");
+    setFolderDropdownOpen(false);
   };
 
   const MAX_MEDIA_ITEMS = 3;
@@ -651,7 +666,7 @@ export function CreatePromptModal({
     setIsLoading(true);
     try {
       await deletePrompt(prompt.id);
-      onSuccess?.(null as any);
+      onSuccess?.(null as unknown as Prompt);
       onClose();
       resetForm();
     } catch (err) {
@@ -665,6 +680,7 @@ export function CreatePromptModal({
   if (!isOpen) return null;
 
   const selectedTagObjects = tags.filter((t) => selectedTags.includes(t.id));
+  const selectedFolder = folders.find((f) => f.id === folderId) || null;
 
   return (
     <>
@@ -1118,105 +1134,6 @@ export function CreatePromptModal({
             </div>
           </div>
 
-          {/* Folder */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Folder
-            </label>
-            <select
-              value={folderId || ""}
-              onChange={(e) => {
-                if (e.target.value === "__new__") {
-                  setIsCreatingFolder(true);
-                  e.target.value = folderId || "";
-                } else {
-                  setFolderId(e.target.value || null);
-                }
-              }}
-              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
-              disabled={isLoading}
-            >
-              <option value="">All Prompts</option>
-              {folders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {folder.name}
-                </option>
-              ))}
-              <option value="__new__">+ Create new folder...</option>
-            </select>
-
-            {/* Inline folder creation */}
-            {isCreatingFolder && (
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  ref={newFolderInputRef}
-                  type="text"
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); handleInlineFolderCreate(); }
-                    else if (e.key === "Escape") { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }
-                  }}
-                  placeholder="Folder name..."
-                  className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={handleInlineFolderCreate}
-                  className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }}
-                  className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            {folderCreateError && (
-              <p className="text-xs text-red-400 mt-1">{folderCreateError}</p>
-            )}
-          </div>
-
-          {/* Tags */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Tags
-            </label>
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleAddTag}
-              placeholder="Type tag name, press Enter to add"
-              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50 mb-3"
-              disabled={isLoading}
-            />
-            {selectedTagObjects.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedTagObjects.map((tag) => (
-                  <div
-                    key={tag.id}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500/30 text-sm text-foreground"
-                  >
-                    <span>{tag.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag.id)}
-                      className="hover:opacity-70 transition-opacity"
-                      disabled={isLoading}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Advanced Options Toggle */}
           <button
             type="button"
@@ -1227,10 +1144,181 @@ export function CreatePromptModal({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
             <span>Advanced options</span>
+            {(selectedFolder || selectedTagObjects.length > 0) && (
+              <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/25">
+                {selectedFolder ? "1 folder" : "No folder"} · {selectedTagObjects.length} tag{selectedTagObjects.length === 1 ? "" : "s"}
+              </span>
+            )}
           </button>
 
           {showAdvanced && (
             <>
+          {/* Organization */}
+          <div className="mb-6 rounded-xl border border-surface-200 bg-surface-100/60 p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Organization</h3>
+              <span className="text-[11px] text-text-dim">Folder and tags</span>
+            </div>
+
+            {/* Folder Picker */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Folder
+              </label>
+              <div ref={folderDropdownRef} className="relative">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => !isLoading && setFolderDropdownOpen(!folderDropdownOpen)}
+                    className={`flex-1 px-3 py-2.5 rounded-lg border text-left text-sm transition-all ${
+                      folderDropdownOpen
+                        ? 'border-brand-400 ring-1 ring-brand-400/30 bg-surface-200'
+                        : 'border-surface-200 hover:border-surface-300 bg-surface-100'
+                    } disabled:opacity-50`}
+                    disabled={isLoading}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {selectedFolder ? (
+                        <>
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedFolder.color || "#e8764b" }} />
+                          <span className="text-foreground">{selectedFolder.name}</span>
+                        </>
+                      ) : (
+                        <span className="text-text-dim">No folder (All Prompts)</span>
+                      )}
+                    </span>
+                  </button>
+                  {folderId && (
+                    <button
+                      type="button"
+                      onClick={() => setFolderId(null)}
+                      className="px-2.5 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 rounded-lg transition-colors"
+                      disabled={isLoading}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {folderDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-100 border border-surface-200 rounded-lg shadow-xl max-h-56 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFolderId(null);
+                        setFolderDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
+                        !folderId ? 'text-brand-400 bg-brand-500/5' : 'text-text-muted'
+                      }`}
+                    >
+                      No folder (All Prompts)
+                    </button>
+                    <div className="h-px bg-surface-200" />
+                    {folders.map((folder) => (
+                      <button
+                        key={folder.id}
+                        type="button"
+                        onClick={() => {
+                          setFolderId(folder.id);
+                          setFolderDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
+                          folderId === folder.id ? 'text-brand-400 bg-brand-500/5' : 'text-foreground'
+                        }`}
+                      >
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: folder.color || "#e8764b" }} />
+                        <span className="truncate">{folder.name}</span>
+                      </button>
+                    ))}
+                    <div className="h-px bg-surface-200" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreatingFolder(true);
+                        setFolderDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-brand-400 hover:bg-surface-200 transition-colors"
+                    >
+                      + Create new folder...
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Inline folder creation */}
+              {isCreatingFolder && (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    ref={newFolderInputRef}
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); handleInlineFolderCreate(); }
+                      else if (e.key === "Escape") { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }
+                    }}
+                    placeholder="Folder name..."
+                    className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleInlineFolderCreate}
+                    className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
+                  >
+                    Add
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsCreatingFolder(false); setNewFolderName(""); setFolderCreateError(""); }}
+                    className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+              {folderCreateError && (
+                <p className="text-xs text-red-400 mt-1">{folderCreateError}</p>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Tags
+              </label>
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTag}
+                placeholder="Type tag name, press Enter to add"
+                className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50 mb-3"
+                disabled={isLoading}
+              />
+              {selectedTagObjects.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedTagObjects.map((tag) => (
+                    <div
+                      key={tag.id}
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-500/30 text-sm text-foreground"
+                    >
+                      <span>{tag.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag.id)}
+                        className="hover:opacity-70 transition-opacity"
+                        disabled={isLoading}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Negative Prompt */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
