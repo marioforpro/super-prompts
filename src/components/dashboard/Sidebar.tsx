@@ -89,6 +89,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [dragAfterIndex, setDragAfterIndex] = useState<number | null>(null);
   const folderListRef = useRef<HTMLDivElement>(null);
   const [dropFolderId, setDropFolderId] = useState<string | null>(null);
+  const [dropToast, setDropToast] = useState<string | null>(null);
+  const navScrollRef = useRef<HTMLElement>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -96,6 +98,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       folderInputRef.current.focus();
     }
   }, [isCreatingFolder]);
+
+  // While dragging a prompt, keep folders visible so drop targets are always available.
+  useEffect(() => {
+    if (draggedPromptId) setFoldersOpen(true);
+  }, [draggedPromptId]);
 
   // Focus input when renaming folder
   useEffect(() => {
@@ -308,6 +315,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
     setDropFolderId(folderId);
+
+    // Auto-scroll sidebar when dragging near top/bottom edges.
+    const navEl = navScrollRef.current;
+    if (!navEl) return;
+    const rect = navEl.getBoundingClientRect();
+    const threshold = 48;
+    const step = 14;
+    if (event.clientY < rect.top + threshold) {
+      navEl.scrollTop -= step;
+    } else if (event.clientY > rect.bottom - threshold) {
+      navEl.scrollTop += step;
+    }
   };
 
   const handlePromptDropOnFolder = async (event: React.DragEvent, folderId: string) => {
@@ -319,6 +338,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     try {
       await assignPromptToFolder(promptId, folderId);
       notifyPromptFolderAssigned(promptId, folderId);
+      const folderName = folders.find((f) => f.id === folderId)?.name || "folder";
+      setDropToast(`Added to "${folderName}"`);
+      setTimeout(() => setDropToast(null), 1800);
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to add prompt to folder");
     } finally {
@@ -440,7 +462,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1 sidebar-scroll">
+          <nav ref={navScrollRef} className="flex-1 overflow-y-auto px-3 py-5 space-y-1 sidebar-scroll">
             {/* All Prompts */}
             <button
               onClick={() =>
@@ -663,7 +685,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 selectedFolderId === folder.id
                                   ? "bg-surface-200 text-foreground"
                                   : dropFolderId === folder.id
-                                    ? "bg-brand-500/10 text-foreground ring-1 ring-brand-400/40"
+                                    ? "bg-brand-500/18 text-foreground ring-2 ring-brand-400/65 shadow-[0_0_0_1px_rgba(232,118,75,0.25)]"
                                     : "text-text-muted hover:text-foreground hover:bg-surface-100"
                               }`}
                             >
@@ -983,6 +1005,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <p className="text-[10px] text-text-dim text-center tracking-wider uppercase">Super Prompts v1.0</p>
           </div>
         </div>
+
+        {dropToast && (
+          <div className="absolute left-3 right-3 bottom-3 z-50 rounded-lg border border-brand-500/40 bg-brand-500/18 px-3 py-2 text-xs text-brand-200 shadow-lg backdrop-blur-sm">
+            {dropToast}
+          </div>
+        )}
       </div>
     </>
   );

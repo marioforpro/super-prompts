@@ -47,6 +47,7 @@ export function PromptGrid({
   const [sortBy, setSortBy] = useState<GridSortField>('newest');
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const dragPreviewRef = useRef<HTMLDivElement | null>(null);
 
   // Trigger fade-in shortly after mount using setTimeout for reliability
   useEffect(() => {
@@ -135,8 +136,37 @@ export function PromptGrid({
               event.dataTransfer.setData('text/plain', prompt.id);
               event.dataTransfer.effectAllowed = 'copyMove';
               setDraggedPromptId(prompt.id);
+
+              // Use a compact drag preview so the large card doesn't cover folder targets.
+              const preview = document.createElement('div');
+              preview.textContent = `+ ${prompt.title}`;
+              preview.style.position = 'fixed';
+              preview.style.top = '-1000px';
+              preview.style.left = '-1000px';
+              preview.style.padding = '8px 12px';
+              preview.style.borderRadius = '999px';
+              preview.style.fontSize = '12px';
+              preview.style.fontWeight = '600';
+              preview.style.color = '#f5f5f5';
+              preview.style.background = 'rgba(10,10,10,0.92)';
+              preview.style.border = '1px solid rgba(232,118,75,0.65)';
+              preview.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
+              preview.style.maxWidth = '260px';
+              preview.style.whiteSpace = 'nowrap';
+              preview.style.overflow = 'hidden';
+              preview.style.textOverflow = 'ellipsis';
+              preview.style.pointerEvents = 'none';
+              document.body.appendChild(preview);
+              dragPreviewRef.current = preview;
+              event.dataTransfer.setDragImage(preview, 18, 18);
             }}
-            onDragEnd={() => setDraggedPromptId(null)}
+            onDragEnd={() => {
+              setDraggedPromptId(null);
+              if (dragPreviewRef.current) {
+                dragPreviewRef.current.remove();
+                dragPreviewRef.current = null;
+              }
+            }}
             className={cn(
               'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing',
               mounted
