@@ -804,7 +804,7 @@ export function CreatePromptModal({
 
                     {/* Zoom slider + inline reset icon */}
                     {item.type === 'image' && (
-                      <div className="mt-1.5 flex items-center gap-1.5">
+                      <div className="mt-1 flex items-center gap-1 px-0.5">
                         <input
                           type="range"
                           min="100"
@@ -814,7 +814,7 @@ export function CreatePromptModal({
                             const newScale = parseInt(e.target.value) / 100;
                             setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropScale: newScale } : m));
                           }}
-                          className="flex-1 h-1 accent-brand-400 cursor-pointer"
+                          className="flex-1 min-w-0 h-1 accent-brand-400 cursor-pointer"
                           title={`Zoom: ${Math.round(item.cropScale * 100)}%`}
                         />
                         {(item.cropScale !== 1 || item.cropX !== 50 || item.cropY !== 50) && (
@@ -823,10 +823,10 @@ export function CreatePromptModal({
                             onClick={() => {
                               setMediaItems(prev => prev.map((m, i) => i === index ? { ...m, cropX: 50, cropY: 50, cropScale: 1 } : m));
                             }}
-                            className="w-5 h-5 flex items-center justify-center rounded-md text-text-dim hover:text-brand-400 hover:bg-surface-200 transition-all cursor-pointer flex-shrink-0"
+                            className="w-4 h-4 flex items-center justify-center rounded text-text-dim hover:text-brand-400 transition-all cursor-pointer flex-shrink-0"
                             title="Reset zoom and position"
                           >
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                           </button>

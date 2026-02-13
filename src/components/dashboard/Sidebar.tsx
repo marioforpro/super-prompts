@@ -589,18 +589,37 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           )}
                           {editingFolderId === folder.id ? (
                             <div className="px-4 py-1">
-                              <input
-                                ref={editFolderInputRef}
-                                type="text"
-                                value={editingFolderName}
-                                onChange={(e) => setEditingFolderName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") { e.preventDefault(); handleRenameFolder(); }
-                                  else if (e.key === "Escape") { setEditingFolderId(null); setEditingFolderName(""); }
-                                }}
-                                onBlur={handleRenameFolder}
-                                className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                              />
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  ref={editFolderInputRef}
+                                  type="text"
+                                  value={editingFolderName}
+                                  onChange={(e) => setEditingFolderName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") { e.preventDefault(); handleRenameFolder(); }
+                                    else if (e.key === "Escape") { setEditingFolderId(null); setEditingFolderName(""); }
+                                  }}
+                                  className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                                />
+                                <button
+                                  onClick={handleRenameFolder}
+                                  className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
+                                  title="Confirm rename"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => { setEditingFolderId(null); setEditingFolderName(""); }}
+                                  className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
+                                  title="Cancel"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <div
@@ -816,18 +835,37 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <div key={model.id} className="relative group">
                           {editingModelId === model.id ? (
                             <div className="px-4 py-1">
-                              <input
-                                ref={editModelInputRef}
-                                type="text"
-                                value={editingModelName}
-                                onChange={(e) => setEditingModelName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") { e.preventDefault(); handleRenameModel(); }
-                                  else if (e.key === "Escape") { setEditingModelId(null); setEditingModelName(""); }
-                                }}
-                                onBlur={handleRenameModel}
-                                className="w-full px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                              />
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  ref={editModelInputRef}
+                                  type="text"
+                                  value={editingModelName}
+                                  onChange={(e) => setEditingModelName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") { e.preventDefault(); handleRenameModel(); }
+                                    else if (e.key === "Escape") { setEditingModelId(null); setEditingModelName(""); }
+                                  }}
+                                  className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                                />
+                                <button
+                                  onClick={handleRenameModel}
+                                  className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
+                                  title="Confirm rename"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => { setEditingModelId(null); setEditingModelName(""); }}
+                                  className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
+                                  title="Cancel"
+                                >
+                                  <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <div

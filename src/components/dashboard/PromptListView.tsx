@@ -133,13 +133,23 @@ export function PromptListView({
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden flex-shrink-0 bg-surface">
                 {prompt.coverUrl ? (
                   <>
-                    <Image
-                      src={prompt.coverUrl}
-                      alt={prompt.title}
-                      fill
-                      className="object-cover"
-                      sizes="48px"
-                    />
+                    {prompt.coverType === 'video' ? (
+                      <video
+                        src={prompt.coverUrl}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <Image
+                        src={prompt.coverUrl}
+                        alt={prompt.title}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
+                    )}
                     {prompt.coverType === 'video' && (
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                         <Play size={12} className="text-white fill-white" />
