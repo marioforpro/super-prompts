@@ -15,8 +15,9 @@ interface DashboardState {
   setSelectedFolderId: (id: string | null) => void;
   selectedModelSlug: string | null;
   setSelectedModelSlug: (slug: string | null) => void;
-  selectedTag: string | null;
-  setSelectedTag: (tag: string | null) => void;
+  selectedTags: string[];
+  setSelectedTags: (tags: string[]) => void;
+  addTag: (tag: Tag) => void;
   selectedContentType: ContentType | null;
   setSelectedContentType: (type: ContentType | null) => void;
   showFavoritesOnly: boolean;
@@ -35,6 +36,7 @@ interface DashboardState {
   removeModel: (id: string) => void;
   updateModelCtx: (id: string, updates: Partial<AiModel>) => void;
   tags: Tag[];
+  addTagToContext: (tag: Tag) => void;
   removeTag: (id: string) => void;
   // User
   userEmail: string;
@@ -60,7 +62,7 @@ export function DashboardProvider({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedModelSlug, setSelectedModelSlug] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedContentType, setSelectedContentType] = useState<ContentType | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -99,6 +101,10 @@ export function DashboardProvider({
     );
   };
 
+  const addTagToContext = (tag: Tag) => {
+    setTagsState((prev) => [...prev, tag]);
+  };
+
   const removeTag = (id: string) => {
     setTagsState((prev) => prev.filter((t) => t.id !== id));
   };
@@ -114,8 +120,9 @@ export function DashboardProvider({
         setSelectedFolderId,
         selectedModelSlug,
         setSelectedModelSlug,
-        selectedTag,
-        setSelectedTag,
+        selectedTags,
+        setSelectedTags,
+        addTag: addTagToContext,
         selectedContentType,
         setSelectedContentType,
         showFavoritesOnly,
@@ -132,6 +139,7 @@ export function DashboardProvider({
         removeModel,
         updateModelCtx,
         tags: tagsState,
+        addTagToContext,
         removeTag,
         userEmail,
         userInitial,

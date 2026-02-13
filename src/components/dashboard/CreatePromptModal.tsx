@@ -69,6 +69,8 @@ export function CreatePromptModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSearchingModels, setIsSearchingModels] = useState(false);
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   // Inline folder creation
@@ -181,6 +183,18 @@ export function CreatePromptModal({
       setFilteredModels(models);
     }
   }, [tagInput, models, isSearchingModels]);
+
+  // Close model dropdown on outside click
+  useEffect(() => {
+    if (!modelDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setModelDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [modelDropdownOpen]);
 
   const resetForm = () => {
     setTitle("");
@@ -1061,37 +1075,111 @@ export function CreatePromptModal({
             <label className="block text-sm font-medium text-foreground mb-2">
               AI Model
             </label>
-            <select
-              value={modelId || ""}
-              onChange={(e) => {
-                if (e.target.value === "__new__") {
-                  setIsCreatingModel(true);
-                  e.target.value = modelId || "";
-                } else {
-                  const newModelId = e.target.value || null;
-                  setModelId(newModelId);
-                  // Auto-set content type from model's content_type
-                  if (newModelId) {
-                    const selectedModel = models.find(m => m.id === newModelId);
-                    if (selectedModel?.content_type) {
-                      setContentType(selectedModel.content_type);
-                    }
-                  } else {
-                    setContentType(null);
-                  }
-                }
-              }}
-              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
-              disabled={isLoading}
-            >
-              <option value="">Select a model...</option>
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}{model.content_type ? ` · ${model.content_type.charAt(0) + model.content_type.slice(1).toLowerCase()}` : ''}
-                </option>
-              ))}
-              <option value="__new__">+ Create new model...</option>
-            </select>
+            <div ref={modelDropdownRef} className="relative">
+              {/* Trigger button */}
+              <button
+                type="button"
+                onClick={() => !isLoading && setModelDropdownOpen(!modelDropdownOpen)}
+                className={`w-full flex items-center justify-between px-4 py-2.5 bg-surface-100 border rounded-lg text-left transition-all disabled:opacity-50 ${
+                  modelDropdownOpen
+                    ? 'border-brand-400 ring-1 ring-brand-400/30'
+                    : 'border-surface-200 hover:border-surface-300'
+                }`}
+                disabled={isLoading}
+              >
+                {modelId ? (
+                  (() => {
+                    const sel = models.find(m => m.id === modelId);
+                    if (!sel) return <span className="text-text-dim text-sm">Select a model...</span>;
+                    return (
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm text-foreground truncate">{sel.name}</span>
+                        {sel.content_type && (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
+                            sel.content_type === 'IMAGE' ? 'bg-blue-500/15 text-blue-400' :
+                            sel.content_type === 'VIDEO' ? 'bg-purple-500/15 text-purple-400' :
+                            sel.content_type === 'AUDIO' ? 'bg-amber-500/15 text-amber-400' :
+                            'bg-emerald-500/15 text-emerald-400'
+                          }`}>
+                            {sel.content_type === 'IMAGE' ? 'Image' : sel.content_type === 'VIDEO' ? 'Video' : sel.content_type === 'AUDIO' ? 'Audio' : 'Text'}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()
+                ) : (
+                  <span className="text-text-dim text-sm">Select a model...</span>
+                )}
+                <svg className={`w-4 h-4 text-text-dim transition-transform flex-shrink-0 ${modelDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown menu */}
+              {modelDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-100 border border-surface-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                  {/* None option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModelId(null);
+                      setContentType(null);
+                      setModelDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
+                      !modelId ? 'text-brand-400' : 'text-text-muted'
+                    }`}
+                  >
+                    None
+                  </button>
+                  <div className="h-px bg-surface-200" />
+                  {/* Model options */}
+                  {models.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => {
+                        setModelId(model.id);
+                        if (model.content_type) setContentType(model.content_type);
+                        setModelDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
+                        modelId === model.id ? 'text-brand-400 bg-brand-500/5' : 'text-foreground'
+                      }`}
+                    >
+                      <span className="truncate flex-1 text-left">{model.name}</span>
+                      {model.content_type && (
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
+                          model.content_type === 'IMAGE' ? 'bg-blue-500/15 text-blue-400' :
+                          model.content_type === 'VIDEO' ? 'bg-purple-500/15 text-purple-400' :
+                          model.content_type === 'AUDIO' ? 'bg-amber-500/15 text-amber-400' :
+                          'bg-emerald-500/15 text-emerald-400'
+                        }`}>
+                          {model.content_type === 'IMAGE' ? 'Image' : model.content_type === 'VIDEO' ? 'Video' : model.content_type === 'AUDIO' ? 'Audio' : 'Text'}
+                        </span>
+                      )}
+                      {modelId === model.id && (
+                        <svg className="w-4 h-4 text-brand-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                  <div className="h-px bg-surface-200" />
+                  {/* Create new */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCreatingModel(true);
+                      setModelDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-brand-400 hover:bg-surface-200 transition-colors"
+                  >
+                    + Create new model...
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Inline model creation */}
             {isCreatingModel && (

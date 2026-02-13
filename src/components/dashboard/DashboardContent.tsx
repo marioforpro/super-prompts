@@ -31,7 +31,7 @@ export function DashboardContent({
     searchQuery,
     selectedFolderId,
     selectedModelSlug,
-    selectedTag,
+    selectedTags,
     selectedContentType,
     showFavoritesOnly,
     folders: contextFolders,
@@ -168,9 +168,9 @@ export function DashboardContent({
     }
 
     // Tag filter
-    if (selectedTag) {
+    if (selectedTags.length > 0) {
       result = result.filter((p) =>
-        p.tags?.some((t) => t.name === selectedTag)
+        selectedTags.every((tag) => p.tags?.some((t) => t.name === tag))
       );
     }
 
@@ -185,7 +185,7 @@ export function DashboardContent({
     }
 
     return result;
-  }, [prompts, searchQuery, selectedFolderId, selectedModelSlug, selectedTag, selectedContentType, showFavoritesOnly]);
+  }, [prompts, searchQuery, selectedFolderId, selectedModelSlug, selectedTags, selectedContentType, showFavoritesOnly]);
 
   // Dynamic heading
   const activeFilterLabel = useMemo(() => {
@@ -198,12 +198,12 @@ export function DashboardContent({
       const model = models.find((m) => m.slug === selectedModelSlug);
       return model ? model.name : "Model";
     }
-    if (selectedTag) return `#${selectedTag}`;
+    if (selectedTags.length > 0) return selectedTags.map(t => '#' + t).join(' + ');
     if (selectedContentType) return `${selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()} Prompts`;
     return "All Prompts";
-  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTag, selectedContentType, contextFolders, models]);
+  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTags, selectedContentType, contextFolders, models]);
 
-  const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTag || selectedContentType || showFavoritesOnly);
+  const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTags.length > 0 || selectedContentType || showFavoritesOnly);
 
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({
@@ -285,11 +285,11 @@ export function DashboardContent({
                 Model: {models.find((m) => m.slug === selectedModelSlug)?.name}
               </span>
             )}
-            {selectedTag && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
-                #{selectedTag}
+            {selectedTags.map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+                #{tag}
               </span>
-            )}
+            ))}
             {selectedContentType && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
                 Type: {selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()}
