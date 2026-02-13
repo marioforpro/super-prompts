@@ -7,6 +7,8 @@ import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { createTag, deleteTag } from "@/lib/actions/tags";
+import { assignPromptToFolder } from "@/lib/actions/prompts";
+import type { Folder } from "@/lib/types";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -51,6 +53,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     showFavoritesOnly,
     setShowFavoritesOnly,
     removeTag: removeTagFromContext,
+    notifyPromptFolderAssigned,
   } = useDashboard();
 
   // Collapsible sections
@@ -83,6 +86,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragAfterIndex, setDragAfterIndex] = useState<number | null>(null);
   const folderListRef = useRef<HTMLDivElement>(null);
+  const [dropFolderId, setDropFolderId] = useState<string | null>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -142,7 +146,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const tempId = `temp-${Date.now()}`;
     setNewFolderName("");
     setIsCreatingFolder(false);
-    addFolder({ id: tempId, name, color: '#e8764b', sort_order: folders.length, user_id: '', created_at: new Date().toISOString() } as any);
+    const tempFolder: Folder = {
+      id: tempId,
+      name,
+      color: '#e8764b',
+      sort_order: folders.length,
+      user_id: '',
+      created_at: new Date().toISOString(),
+    };
+    addFolder(tempFolder);
     try {
       const folder = await createFolder(name);
       removeFolder(tempId);
@@ -277,6 +289,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setDragOverId(null);
     setDragAfterIndex(null);
     isDragging.current = false;
+  };
+
+  const getDraggedPromptId = (event: React.DragEvent): string | null => {
+    const custom = event.dataTransfer.getData("application/x-superprompts-prompt-id");
+    const text = event.dataTransfer.getData("text/plain");
+    return custom || text || null;
+  };
+
+  const handlePromptDragOverFolder = (event: React.DragEvent, folderId: string) => {
+    const promptId = getDraggedPromptId(event);
+    if (!promptId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setDropFolderId(folderId);
+  };
+
+  const handlePromptDropOnFolder = async (event: React.DragEvent, folderId: string) => {
+    const promptId = getDraggedPromptId(event);
+    event.preventDefault();
+    setDropFolderId(null);
+    if (!promptId) return;
+
+    try {
+      await assignPromptToFolder(promptId, folderId);
+      notifyPromptFolderAssigned(promptId, folderId);
+    } catch (err) {
+      setFolderError(err instanceof Error ? err.message : "Failed to add prompt to folder");
+    }
   };
 
 
@@ -603,6 +643,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   setShowFavoritesOnly(false);
                                 })
                               }
+                              onDragOver={(event) => handlePromptDragOverFolder(event, folder.id)}
+                              onDrop={(event) => void handlePromptDropOnFolder(event, folder.id)}
+                              onDragLeave={() => {
+                                if (dropFolderId === folder.id) setDropFolderId(null);
+                              }}
                               onContextMenu={(e) => {
                                 e.preventDefault();
                                 setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
@@ -610,7 +655,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
                                 selectedFolderId === folder.id
                                   ? "bg-surface-200 text-foreground"
-                                  : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                                  : dropFolderId === folder.id
+                                    ? "bg-brand-500/10 text-foreground ring-1 ring-brand-400/40"
+                                    : "text-text-muted hover:text-foreground hover:bg-surface-100"
                               }`}
                             >
                               {/* Drag handle */}

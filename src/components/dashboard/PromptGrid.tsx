@@ -127,8 +127,14 @@ export function PromptGrid({
         {sortedPrompts.map((prompt, index) => (
           <div
             key={prompt.id}
+            draggable
+            onDragStart={(event) => {
+              event.dataTransfer.setData('application/x-superprompts-prompt-id', prompt.id);
+              event.dataTransfer.setData('text/plain', prompt.id);
+              event.dataTransfer.effectAllowed = 'copyMove';
+            }}
             className={cn(
-              'transition-all duration-700 ease-out',
+              'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing',
               mounted
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-4'

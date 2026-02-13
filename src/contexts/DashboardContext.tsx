@@ -41,6 +41,8 @@ interface DashboardState {
   // User
   userEmail: string;
   userInitial: string;
+  registerPromptFolderAssignHandler: (handler: ((promptId: string, folderId: string) => void) | null) => void;
+  notifyPromptFolderAssigned: (promptId: string, folderId: string) => void;
 }
 
 const DashboardContext = createContext<DashboardState | null>(null);
@@ -69,6 +71,7 @@ export function DashboardProvider({
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
   const [modelsState, setModelsState] = useState<AiModel[]>(initialModels);
   const [tagsState, setTagsState] = useState<Tag[]>(tags);
+  const [promptFolderAssignHandler, setPromptFolderAssignHandler] = useState<((promptId: string, folderId: string) => void) | null>(null);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";
@@ -109,6 +112,14 @@ export function DashboardProvider({
     setTagsState((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const registerPromptFolderAssignHandler = (handler: ((promptId: string, folderId: string) => void) | null) => {
+    setPromptFolderAssignHandler(() => handler);
+  };
+
+  const notifyPromptFolderAssigned = (promptId: string, folderId: string) => {
+    promptFolderAssignHandler?.(promptId, folderId);
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -143,6 +154,8 @@ export function DashboardProvider({
         removeTag,
         userEmail,
         userInitial,
+        registerPromptFolderAssignHandler,
+        notifyPromptFolderAssigned,
       }}
     >
       {children}

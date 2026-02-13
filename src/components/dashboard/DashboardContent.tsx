@@ -43,6 +43,7 @@ export function DashboardContent({
     folders: contextFolders,
     addFolder,
     addModel,
+    registerPromptFolderAssignHandler,
   } = useDashboard();
 
   const [prompts, setPrompts] = useState<Prompt[]>(initialPrompts);
@@ -59,6 +60,20 @@ export function DashboardContent({
       setIsModalOpen(true);
     });
   }, [onModalOpen]);
+
+  useEffect(() => {
+    registerPromptFolderAssignHandler((promptId, folderId) => {
+      setPrompts((prev) =>
+        prev.map((p) => {
+          if (p.id !== promptId) return p;
+          const nextFolderIds = Array.from(new Set([...(p.folder_ids || []), folderId]));
+          return { ...p, folder_ids: nextFolderIds };
+        })
+      );
+    });
+
+    return () => registerPromptFolderAssignHandler(null);
+  }, [registerPromptFolderAssignHandler]);
 
   const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'info') => {
     const id = ++toastIdRef.current;
@@ -165,7 +180,11 @@ export function DashboardContent({
 
     // Folder filter
     if (selectedFolderId) {
-      result = result.filter((p) => p.folder_id === selectedFolderId);
+      result = result.filter((p) =>
+        (p.folder_ids && p.folder_ids.length > 0)
+          ? p.folder_ids.includes(selectedFolderId)
+          : p.folder_id === selectedFolderId
+      );
     }
 
     // Model filter

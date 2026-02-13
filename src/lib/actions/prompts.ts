@@ -16,6 +16,7 @@ export async function getPrompts(): Promise<Prompt[]> {
       *,
       ai_model:ai_models(*),
       prompt_tags(tag:tags(*)),
+      prompt_folders(folder_id),
       media:prompt_media!prompt_media_prompt_id_fkey(*),
       primary_media:prompt_media!prompts_primary_media_id_fkey(*)
     `
@@ -29,10 +30,16 @@ export async function getPrompts(): Promise<Prompt[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const prompts = (data || []).map((p: any) => {
     const tags = Array.isArray(p.prompt_tags)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? p.prompt_tags.map((pt: any) => pt.tag).filter(Boolean)
       : [];
-    const { prompt_tags: _, ...rest } = p;
-    return { ...rest, tags };
+    const folderIds = Array.from(new Set([
+      ...(p.folder_id ? [p.folder_id] : []),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(Array.isArray(p.prompt_folders) ? p.prompt_folders.map((pf: any) => pf.folder_id).filter(Boolean) : []),
+    ]));
+    const { prompt_tags: _, prompt_folders: __, ...rest } = p;
+    return { ...rest, tags, folder_ids: folderIds };
   });
 
   return prompts as unknown as Prompt[];
@@ -51,6 +58,7 @@ export async function getPrompt(id: string): Promise<Prompt> {
       *,
       ai_model:ai_models(*),
       prompt_tags(tag:tags(*)),
+      prompt_folders(folder_id),
       media:prompt_media!prompt_media_prompt_id_fkey(*),
       primary_media:prompt_media!prompts_primary_media_id_fkey(*)
     `
@@ -69,9 +77,14 @@ export async function getPrompt(id: string): Promise<Prompt> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ? d.prompt_tags.map((pt: any) => pt.tag).filter(Boolean)
     : [];
-  const { prompt_tags: _, ...rest } = d;
+  const folderIds = Array.from(new Set([
+    ...(d.folder_id ? [d.folder_id] : []),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(Array.isArray(d.prompt_folders) ? d.prompt_folders.map((pf: any) => pf.folder_id).filter(Boolean) : []),
+  ]));
+  const { prompt_tags: _, prompt_folders: __, ...rest } = d;
 
-  return { ...rest, tags } as unknown as Prompt;
+  return { ...rest, tags, folder_ids: folderIds } as unknown as Prompt;
 }
 
 export async function createPrompt(input: CreatePromptInput): Promise<Prompt> {
@@ -106,6 +119,17 @@ export async function createPrompt(input: CreatePromptInput): Promise<Prompt> {
 
   if (promptError) throw promptError;
   if (!promptData) throw new Error("Failed to create prompt");
+
+  // Keep multi-folder junction in sync with legacy folder_id field
+  if (input.folder_id) {
+    const { error: folderLinkError } = await supabase
+      .from("prompt_folders")
+      .insert({
+        prompt_id: promptData.id,
+        folder_id: input.folder_id,
+      });
+    if (folderLinkError) throw folderLinkError;
+  }
 
   // Add tags if provided
   if (input.tag_ids && input.tag_ids.length > 0) {
@@ -184,7 +208,28 @@ export async function updatePrompt(
       })()
     : Promise.resolve();
 
-  const [updateResult] = await Promise.all([updatePromise, tagPromise]);
+  const folderPromise = input.folder_id !== undefined
+    ? (async () => {
+        if (input.folder_id === null) {
+          const { error } = await supabase
+            .from("prompt_folders")
+            .delete()
+            .eq("prompt_id", id);
+          if (error) throw error;
+          return;
+        }
+
+        const { error } = await supabase
+          .from("prompt_folders")
+          .upsert(
+            { prompt_id: id, folder_id: input.folder_id },
+            { onConflict: "prompt_id,folder_id", ignoreDuplicates: true }
+          );
+        if (error) throw error;
+      })()
+    : Promise.resolve();
+
+  const [updateResult] = await Promise.all([updatePromise, tagPromise, folderPromise]);
   if (updateResult.error) throw updateResult.error;
 
   return getPrompt(id);
@@ -248,4 +293,40 @@ export async function toggleFavorite(id: string): Promise<Prompt> {
   if (updateError) throw updateError;
 
   return getPrompt(id);
+}
+
+export async function assignPromptToFolder(promptId: string, folderId: string): Promise<Prompt> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: prompt, error: promptError } = await supabase
+    .from("prompts")
+    .select("id,user_id")
+    .eq("id", promptId)
+    .single();
+
+  if (promptError || !prompt) throw new Error("Prompt not found");
+  if (prompt.user_id !== user.id) throw new Error("Unauthorized to update this prompt");
+
+  const { data: folder, error: folderError } = await supabase
+    .from("folders")
+    .select("id,user_id")
+    .eq("id", folderId)
+    .single();
+
+  if (folderError || !folder) throw new Error("Folder not found");
+  if (folder.user_id !== user.id) throw new Error("Unauthorized folder");
+
+  const { error: linkError } = await supabase
+    .from("prompt_folders")
+    .upsert(
+      { prompt_id: promptId, folder_id: folderId },
+      { onConflict: "prompt_id,folder_id", ignoreDuplicates: true }
+    );
+
+  if (linkError) throw linkError;
+
+  return getPrompt(promptId);
 }

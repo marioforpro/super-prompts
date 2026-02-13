@@ -4,6 +4,7 @@ export interface Prompt {
   id: string;
   user_id: string;
   folder_id: string | null;
+  folder_ids?: string[];
   model_id: string | null;
   content_type: ContentType | null;
   title: string;
