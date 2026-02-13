@@ -70,12 +70,14 @@ export function DashboardProvider({
   models: initialModels,
   tags,
   userEmail,
+  initialPromptIndex = [],
 }: {
   children: ReactNode;
   folders: Folder[];
   models: AiModel[];
   tags: Tag[];
   userEmail: string;
+  initialPromptIndex?: PromptIndexItem[];
 }) {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +95,7 @@ export function DashboardProvider({
   const [promptFolderAssignHandler, setPromptFolderAssignHandler] = useState<((promptId: string, folderId: string) => void) | null>(null);
   const [recentFolderIds, setRecentFolderIds] = useState<string[]>([]);
   const [recentPromptIds, setRecentPromptIds] = useState<string[]>([]);
-  const [promptIndex, setPromptIndex] = useState<PromptIndexItem[]>([]);
+  const [promptIndex, setPromptIndex] = useState<PromptIndexItem[]>(initialPromptIndex);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";

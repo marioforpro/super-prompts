@@ -1,16 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { AiModel, ContentType, Folder } from "@/lib/types";
+import { useDashboard } from "@/contexts/DashboardContext";
 import { createModel, updateModel, deleteModel } from "@/lib/actions/models";
 import {
   createFolder,
   updateFolder as updateFolderAction,
   deleteFolder as deleteFolderAction,
 } from "@/lib/actions/folders";
-import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import ChevronLeftIcon from "@/components/icons/ChevronLeftIcon";
 
 const COLOR_PALETTE = [
@@ -36,6 +35,8 @@ const COLOR_PALETTE = [
   "#f0eff2",
 ];
 
+const CONTENT_TYPES: ContentType[] = ["IMAGE", "VIDEO", "AUDIO", "TEXT"];
+
 function getModelColor(name: string): string {
   const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return COLOR_PALETTE[hash % COLOR_PALETTE.length];
@@ -54,62 +55,139 @@ interface SettingsClientProps {
   folders: Folder[];
 }
 
-export default function SettingsClient({ models: initialModels, folders: initialFolders }: SettingsClientProps) {
-  const [models, setModels] = useState<AiModel[]>(initialModels);
-  const [folders, setFolders] = useState<Folder[]>(initialFolders);
+export default function SettingsClient({ models: _initialModels, folders: _initialFolders }: SettingsClientProps) {
+  const {
+    folders,
+    models,
+    promptIndex,
+    addFolder,
+    removeFolder,
+    updateFolder,
+    addModel,
+    removeModel,
+    updateModelCtx,
+  } = useDashboard();
+
+  const effectiveFolders = folders.length > 0 ? folders : _initialFolders;
+  const effectiveModels = models.length > 0 ? models : _initialModels;
+
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState(COLOR_PALETTE[0]);
-  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
-  const [editingFolderName, setEditingFolderName] = useState("");
-  const [folderColorPickerId, setFolderColorPickerId] = useState<string | null>(null);
-  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
-
-  const [isAddingModel, setIsAddingModel] = useState(false);
   const [newModelName, setNewModelName] = useState("");
   const [newModelContentType, setNewModelContentType] = useState<ContentType>("TEXT");
   const [newModelColor, setNewModelColor] = useState(COLOR_PALETTE[0]);
+
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editingFolderName, setEditingFolderName] = useState("");
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
   const [editingModelName, setEditingModelName] = useState("");
+  const [folderColorPickerId, setFolderColorPickerId] = useState<string | null>(null);
   const [modelColorPickerId, setModelColorPickerId] = useState<string | null>(null);
-  const [contentTypeDropdownId, setContentTypeDropdownId] = useState<string | null>(null);
+  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null);
   const [deletingModelId, setDeletingModelId] = useState<string | null>(null);
 
-  const getContentTypeBadgeColor = (contentType: ContentType | null) => {
-    switch (contentType) {
-      case "IMAGE":
-        return "bg-yellow-500/15 text-yellow-400";
-      case "VIDEO":
-        return "bg-blue-500/15 text-blue-400";
-      case "AUDIO":
-        return "bg-purple-500/15 text-purple-400";
-      case "TEXT":
-        return "bg-emerald-500/15 text-emerald-400";
-      default:
-        return "bg-surface-200 text-text-muted";
+  const [dragFolderId, setDragFolderId] = useState<string | null>(null);
+  const [dragModelSlug, setDragModelSlug] = useState<string | null>(null);
+  const [modelOrder, setModelOrder] = useState<string[]>([]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("superprompts:model-order");
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setModelOrder(parsed.filter((item) => typeof item === "string"));
+      }
+    } catch {
+      // Ignore invalid localStorage data.
     }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("superprompts:model-order", JSON.stringify(modelOrder));
+  }, [modelOrder]);
+
+  const folderPromptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of promptIndex) {
+      for (const folderId of item.folderIds) counts[folderId] = (counts[folderId] || 0) + 1;
+    }
+    return counts;
+  }, [promptIndex]);
+
+  const modelPromptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of promptIndex) {
+      if (!item.modelSlug) continue;
+      counts[item.modelSlug] = (counts[item.modelSlug] || 0) + 1;
+    }
+    return counts;
+  }, [promptIndex]);
+
+  const sortedFolders = useMemo(
+    () => [...effectiveFolders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    [effectiveFolders]
+  );
+
+  const sortedModels = useMemo(() => {
+    const byName = [...effectiveModels].sort((a, b) => a.name.localeCompare(b.name));
+    if (modelOrder.length === 0) return byName;
+    const bySlug = new Map(byName.map((m) => [m.slug, m]));
+    const ordered: AiModel[] = [];
+    for (const slug of modelOrder) {
+      const found = bySlug.get(slug);
+      if (!found) continue;
+      ordered.push(found);
+      bySlug.delete(slug);
+    }
+    ordered.push(...Array.from(bySlug.values()));
+    return ordered;
+  }, [effectiveModels, modelOrder]);
+
+  const saveFolderOrder = (ordered: Folder[]) => {
+    ordered.forEach((folder, index) => {
+      updateFolder(folder.id, { sort_order: index });
+      updateFolderAction(folder.id, { sort_order: index }).catch(() => {});
+    });
   };
 
-  const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-  const sortedModels = [...models].sort((a, b) => a.name.localeCompare(b.name));
+  const handleDropFolder = (targetId: string) => {
+    if (!dragFolderId || dragFolderId === targetId) return;
+    const ordered = [...sortedFolders];
+    const from = ordered.findIndex((f) => f.id === dragFolderId);
+    const to = ordered.findIndex((f) => f.id === targetId);
+    if (from === -1 || to === -1) return;
+    const [moved] = ordered.splice(from, 1);
+    ordered.splice(to, 0, moved);
+    saveFolderOrder(ordered);
+  };
+
+  const handleDropModel = (targetSlug: string) => {
+    if (!dragModelSlug || dragModelSlug === targetSlug) return;
+    const slugs = sortedModels.map((m) => m.slug);
+    const from = slugs.findIndex((slug) => slug === dragModelSlug);
+    const to = slugs.findIndex((slug) => slug === targetSlug);
+    if (from === -1 || to === -1) return;
+    const [moved] = slugs.splice(from, 1);
+    slugs.splice(to, 0, moved);
+    setModelOrder(slugs);
+  };
 
   const handleAddFolder = async () => {
     if (!newFolderName.trim()) {
       setError("Folder name is required");
       return;
     }
-
     setIsLoading(true);
     setError(null);
     try {
       const created = await createFolder(newFolderName, newFolderColor);
-      setFolders((prev) => [...prev, created]);
+      addFolder(created);
       setNewFolderName("");
       setNewFolderColor(COLOR_PALETTE[0]);
-      setIsAddingFolder(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create folder");
     } finally {
@@ -126,7 +204,7 @@ export default function SettingsClient({ models: initialModels, folders: initial
     setError(null);
     try {
       const updated = await updateFolderAction(id, { name });
-      setFolders((prev) => prev.map((folder) => (folder.id === id ? updated : folder)));
+      updateFolder(id, updated);
       setEditingFolderId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to rename folder");
@@ -140,7 +218,7 @@ export default function SettingsClient({ models: initialModels, folders: initial
     setError(null);
     try {
       const updated = await updateFolderAction(id, { color });
-      setFolders((prev) => prev.map((folder) => (folder.id === id ? updated : folder)));
+      updateFolder(id, updated);
       setFolderColorPickerId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update folder color");
@@ -154,7 +232,7 @@ export default function SettingsClient({ models: initialModels, folders: initial
     setError(null);
     try {
       await deleteFolderAction(id);
-      setFolders((prev) => prev.filter((folder) => folder.id !== id));
+      removeFolder(id);
       setDeletingFolderId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete folder");
@@ -168,17 +246,15 @@ export default function SettingsClient({ models: initialModels, folders: initial
       setError("Model name is required");
       return;
     }
-
     setIsLoading(true);
     setError(null);
     try {
-      const newModel = await createModel(newModelName, toSlug(newModelName), "custom", newModelContentType);
-      const withColor = await updateModel(newModel.id, { icon_url: newModelColor });
-      setModels((prev) => [...prev, withColor].sort((a, b) => a.name.localeCompare(b.name)));
+      const created = await createModel(newModelName, toSlug(newModelName), "custom", newModelContentType);
+      const withColor = await updateModel(created.id, { icon_url: newModelColor });
+      addModel(withColor);
       setNewModelName("");
-      setNewModelContentType("TEXT");
       setNewModelColor(COLOR_PALETTE[0]);
-      setIsAddingModel(false);
+      setNewModelContentType("TEXT");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create model");
     } finally {
@@ -195,7 +271,7 @@ export default function SettingsClient({ models: initialModels, folders: initial
     setError(null);
     try {
       const updated = await updateModel(id, { name, slug: toSlug(name) });
-      setModels((prev) => prev.map((model) => (model.id === id ? updated : model)));
+      updateModelCtx(id, updated);
       setEditingModelId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to rename model");
@@ -209,7 +285,7 @@ export default function SettingsClient({ models: initialModels, folders: initial
     setError(null);
     try {
       const updated = await updateModel(id, { icon_url: color });
-      setModels((prev) => prev.map((model) => (model.id === id ? updated : model)));
+      updateModelCtx(id, updated);
       setModelColorPickerId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update model color");
@@ -223,8 +299,7 @@ export default function SettingsClient({ models: initialModels, folders: initial
     setError(null);
     try {
       const updated = await updateModel(id, { content_type: contentType });
-      setModels((prev) => prev.map((model) => (model.id === id ? updated : model)));
-      setContentTypeDropdownId(null);
+      updateModelCtx(id, updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update content type");
     } finally {
@@ -232,12 +307,13 @@ export default function SettingsClient({ models: initialModels, folders: initial
     }
   };
 
-  const handleDeleteModel = async (id: string) => {
+  const handleDeleteModel = async (id: string, slug: string) => {
     setIsLoading(true);
     setError(null);
     try {
       await deleteModel(id);
-      setModels((prev) => prev.filter((model) => model.id !== id));
+      removeModel(id);
+      setModelOrder((prev) => prev.filter((item) => item !== slug));
       setDeletingModelId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete model");
@@ -247,320 +323,216 @@ export default function SettingsClient({ models: initialModels, folders: initial
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
-      <div className="flex items-center gap-3">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-surface hover:bg-surface-100 transition-colors duration-200 text-text-muted hover:text-foreground"
-          title="Back to Dashboard"
-        >
-          <ChevronLeftIcon className="w-5 h-5" />
-        </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground font-mono">Settings</h1>
-          <p className="text-text-muted text-sm mt-1">Manage folders and AI models</p>
-        </div>
-      </div>
-
-      {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground font-mono">Folders</h2>
-          {!isAddingFolder && (
-            <button
-              onClick={() => setIsAddingFolder(true)}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-500 hover:bg-brand-600 transition-colors duration-200 text-white cursor-pointer"
-              disabled={isLoading}
-              title="Add new folder"
+    <div className="animate-fadeIn">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="rounded-2xl border border-surface-200 bg-surface-100/55 backdrop-blur-sm p-5">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-surface hover:bg-surface-100 text-text-muted hover:text-foreground transition-colors"
+              title="Back to Dashboard"
             >
-              <span className="text-lg leading-none">+</span>
-            </button>
-          )}
-        </div>
-
-        {isAddingFolder && (
-          <div className="p-4 rounded-xl border border-surface-200 bg-surface-100/50 space-y-4">
-            <Input
-              placeholder="Folder name"
-              value={newFolderName}
-              onChange={(e) => {
-                setNewFolderName(e.target.value);
-                setError(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAddFolder();
-              }}
-              disabled={isLoading}
-              autoFocus
-            />
+              <ChevronLeftIcon className="w-5 h-5" />
+            </Link>
             <div>
-              <label className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2 block">Color</label>
-              <div className="flex flex-wrap gap-2">
-                {COLOR_PALETTE.map((palColor) => (
-                  <button
-                    key={palColor}
-                    type="button"
-                    onClick={() => setNewFolderColor(palColor)}
-                    disabled={isLoading}
-                    className={`w-7 h-7 rounded-full cursor-pointer transition-all duration-200 ${
-                      newFolderColor === palColor ? "ring-2 ring-white scale-110" : "ring-2 ring-transparent hover:ring-surface-300"
-                    }`}
-                    style={{ backgroundColor: palColor }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="primary" size="sm" onClick={handleAddFolder} disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Folder"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsAddingFolder(false);
-                  setNewFolderName("");
-                  setError(null);
-                }}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
+              <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+              <p className="text-sm text-text-dim">Organize folders and AI models in one place.</p>
             </div>
           </div>
-        )}
-
-        {sortedFolders.length === 0 ? (
-          <div className="flex items-center justify-center min-h-40 rounded-xl border border-surface-200 bg-surface/50">
-            <p className="text-text-muted text-sm">No folders yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-2 rounded-xl border border-surface-200 overflow-hidden">
-            {sortedFolders.map((folder) => (
-              <div
-                key={folder.id}
-                className="px-4 py-3 flex items-center gap-3 border-b border-surface-200 last:border-b-0 bg-surface hover:bg-surface-100/50 transition-colors duration-150 group relative"
-              >
-                <div
-                  className="w-3 h-3 rounded-full flex-shrink-0 cursor-pointer ring-2 ring-transparent hover:ring-surface-300 transition-all duration-200"
-                  style={{ backgroundColor: folder.color || COLOR_PALETTE[0] }}
-                  onClick={() => setFolderColorPickerId(folderColorPickerId === folder.id ? null : folder.id)}
-                  title="Click to change color"
-                />
-
-                {folderColorPickerId === folder.id && (
-                  <div className="absolute z-10 ml-12 p-3 rounded-lg bg-surface border border-surface-300 shadow-lg grid grid-cols-5 gap-2 w-fit">
-                    {COLOR_PALETTE.map((palColor) => (
-                      <button
-                        key={palColor}
-                        onClick={() => handleFolderColorChange(folder.id, palColor)}
-                        disabled={isLoading}
-                        className="w-6 h-6 rounded-full cursor-pointer ring-2 ring-transparent hover:ring-surface-300 transition-all duration-200"
-                        style={{ backgroundColor: palColor }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  {editingFolderId === folder.id ? (
-                    <input
-                      type="text"
-                      value={editingFolderName}
-                      onChange={(e) => setEditingFolderName(e.target.value)}
-                      onBlur={() => handleRenameFolder(folder.id, editingFolderName)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRenameFolder(folder.id, editingFolderName);
-                      }}
-                      disabled={isLoading}
-                      className="w-full bg-surface-100 border border-brand-500/50 rounded-lg px-3 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all duration-200"
-                      autoFocus
-                    />
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setEditingFolderId(folder.id);
-                        setEditingFolderName(folder.name);
-                      }}
-                      disabled={isLoading}
-                      className="text-foreground hover:text-brand-400 transition-colors duration-200 cursor-pointer font-medium truncate"
-                    >
-                      {folder.name}
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  {deletingFolderId === folder.id ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-text-muted">Sure?</span>
-                      <button
-                        onClick={() => handleDeleteFolder(folder.id)}
-                        disabled={isLoading}
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors duration-200 cursor-pointer text-sm font-medium"
-                      >
-                        Yes
-                      </button>
-                      <button
-                        onClick={() => setDeletingFolderId(null)}
-                        disabled={isLoading}
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface-200 hover:bg-surface-300 text-text-muted hover:text-foreground transition-colors duration-200 cursor-pointer text-sm font-medium"
-                      >
-                        No
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeletingFolderId(folder.id)}
-                      disabled={isLoading}
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface-200 hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors duration-200 cursor-pointer"
-                      title="Delete folder"
-                    >
-                      <span className="text-lg leading-none">×</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground font-mono">AI Models</h2>
-          {!isAddingModel && (
-            <button
-              onClick={() => setIsAddingModel(true)}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-500 hover:bg-brand-600 transition-colors duration-200 text-white cursor-pointer"
-              disabled={isLoading}
-              title="Add new model"
-            >
-              <span className="text-lg leading-none">+</span>
-            </button>
+          {error && (
+            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
+              {error}
+            </div>
           )}
         </div>
 
-        {isAddingModel && (
-          <div className="p-4 rounded-xl border border-surface-200 bg-surface-100/50 space-y-4">
-            <div className="space-y-3">
-              <Input
-                placeholder="Model name (e.g., GPT-4, Claude, Midjourney)"
-                value={newModelName}
-                onChange={(e) => {
-                  setNewModelName(e.target.value);
-                  setError(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddModel();
-                }}
-                disabled={isLoading}
-                autoFocus
+        <div className="grid gap-4 xl:grid-cols-2">
+          <section className="rounded-2xl border border-surface-200 bg-surface-100/45 backdrop-blur-sm p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm uppercase tracking-[0.18em] text-text-dim">Folders</h2>
+              <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{sortedFolders.length}</span>
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <input
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="New folder name"
+                className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
-              <div>
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2 block">Color</label>
-                <div className="flex flex-wrap gap-2">
-                  {COLOR_PALETTE.map((palColor) => (
-                    <button
-                      key={palColor}
-                      type="button"
-                      onClick={() => setNewModelColor(palColor)}
-                      disabled={isLoading}
-                      className={`w-7 h-7 rounded-full cursor-pointer transition-all duration-200 ${
-                        newModelColor === palColor ? "ring-2 ring-white scale-110" : "ring-2 ring-transparent hover:ring-surface-300"
-                      }`}
-                      style={{ backgroundColor: palColor }}
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2 block">Content Type</label>
-                <select
-                  value={newModelContentType}
-                  onChange={(e) => setNewModelContentType(e.target.value as ContentType)}
-                  disabled={isLoading}
-                  className="w-full bg-surface-100 border border-surface-300 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200"
-                >
-                  <option value="IMAGE">IMAGE</option>
-                  <option value="VIDEO">VIDEO</option>
-                  <option value="AUDIO">AUDIO</option>
-                  <option value="TEXT">TEXT</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="primary" size="sm" onClick={handleAddModel} disabled={isLoading}>
-                {isLoading ? "Creating..." : "Create Model"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsAddingModel(false);
-                  setNewModelName("");
-                  setError(null);
-                }}
+              <button
+                onClick={handleAddFolder}
                 disabled={isLoading}
+                className="h-10 px-3 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-400 disabled:opacity-50"
               >
-                Cancel
-              </Button>
+                Add
+              </button>
             </div>
-          </div>
-        )}
 
-        {sortedModels.length === 0 ? (
-          <div className="flex items-center justify-center min-h-40 rounded-xl border border-surface-200 bg-surface/50">
-            <p className="text-text-muted text-sm">No models yet.</p>
-          </div>
-        ) : (
-          <div className="space-y-2 rounded-xl border border-surface-200 overflow-hidden">
-            {sortedModels.map((model) => {
-              const color = model.icon_url || getModelColor(model.name);
-              const contentType = (model.content_type || "TEXT") as ContentType;
-              return (
+            <div className="flex flex-wrap gap-2">
+              {COLOR_PALETTE.map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setNewFolderColor(color)}
+                  className={`w-6 h-6 rounded-full transition-all ${newFolderColor === color ? "ring-2 ring-white scale-110" : "ring-1 ring-transparent"}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              {sortedFolders.map((folder) => (
                 <div
-                  key={model.id}
-                  className="px-4 py-3 flex items-center gap-3 border-b border-surface-200 last:border-b-0 bg-surface hover:bg-surface-100/50 transition-colors duration-150 group relative"
+                  key={folder.id}
+                  draggable
+                  onDragStart={() => setDragFolderId(folder.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDropFolder(folder.id)}
+                  onDragEnd={() => setDragFolderId(null)}
+                  className="relative rounded-xl border border-surface-200 bg-surface px-3 py-2.5 flex items-center gap-2"
                 >
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0 cursor-pointer ring-2 ring-transparent hover:ring-surface-300 transition-all duration-200"
-                    style={{ backgroundColor: color }}
-                    onClick={() => setModelColorPickerId(modelColorPickerId === model.id ? null : model.id)}
-                    title="Click to change color"
+                  <span className="text-text-dim text-xs">⋮⋮</span>
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: folder.color || COLOR_PALETTE[0] }} />
+                  <div className="flex-1 min-w-0">
+                    {editingFolderId === folder.id ? (
+                      <input
+                        value={editingFolderName}
+                        onChange={(e) => setEditingFolderName(e.target.value)}
+                        onBlur={() => handleRenameFolder(folder.id, editingFolderName)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRenameFolder(folder.id, editingFolderName);
+                        }}
+                        className="w-full bg-transparent text-sm text-foreground focus:outline-none"
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setEditingFolderId(folder.id);
+                          setEditingFolderName(folder.name);
+                        }}
+                        className="text-sm text-foreground truncate"
+                      >
+                        {folder.name}
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface-200 text-text-muted">
+                    {folderPromptCounts[folder.id] || 0}
+                  </span>
+                  <button
+                    onClick={() => setFolderColorPickerId(folderColorPickerId === folder.id ? null : folder.id)}
+                    className="w-6 h-6 rounded-md border border-surface-200"
+                    style={{ backgroundColor: folder.color || COLOR_PALETTE[0] }}
                   />
+                  <button
+                    onClick={() => setDeletingFolderId(deletingFolderId === folder.id ? null : folder.id)}
+                    className="w-6 h-6 rounded-md text-red-300 hover:bg-red-500/15"
+                  >
+                    ×
+                  </button>
 
-                  {modelColorPickerId === model.id && (
-                    <div className="absolute z-10 ml-12 p-3 rounded-lg bg-surface border border-surface-300 shadow-lg grid grid-cols-5 gap-2 w-fit">
-                      {COLOR_PALETTE.map((palColor) => (
+                  {folderColorPickerId === folder.id && (
+                    <div className="absolute right-8 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1">
+                      {COLOR_PALETTE.map((color) => (
                         <button
-                          key={palColor}
-                          onClick={() => handleModelColorChange(model.id, palColor)}
-                          disabled={isLoading}
-                          className="w-6 h-6 rounded-full cursor-pointer ring-2 ring-transparent hover:ring-surface-300 transition-all duration-200"
-                          style={{ backgroundColor: palColor }}
+                          key={color}
+                          onClick={() => handleFolderColorChange(folder.id, color)}
+                          className="w-5 h-5 rounded-full"
+                          style={{ backgroundColor: color }}
                         />
                       ))}
                     </div>
                   )}
 
+                  {deletingFolderId === folder.id && (
+                    <div className="absolute inset-0 rounded-xl bg-black/55 backdrop-blur-sm flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => handleDeleteFolder(folder.id)}
+                        className="px-2.5 py-1 rounded-md bg-red-500/25 text-red-200 text-xs"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setDeletingFolderId(null)}
+                        className="px-2.5 py-1 rounded-md bg-surface-200 text-text-muted text-xs"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-surface-200 bg-surface-100/45 backdrop-blur-sm p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm uppercase tracking-[0.18em] text-text-dim">AI Models</h2>
+              <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{sortedModels.length}</span>
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <input
+                value={newModelName}
+                onChange={(e) => setNewModelName(e.target.value)}
+                placeholder="New model name"
+                className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
+              />
+              <button
+                onClick={handleAddModel}
+                disabled={isLoading}
+                className="h-10 px-3 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-400 disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <select
+                value={newModelContentType}
+                onChange={(e) => setNewModelContentType(e.target.value as ContentType)}
+                className="h-9 rounded-lg border border-surface-200 bg-surface px-3 text-xs text-text-muted"
+              >
+                {CONTENT_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+              <div className="flex gap-1">
+                {COLOR_PALETTE.slice(0, 8).map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setNewModelColor(color)}
+                    className={`w-5 h-5 rounded-full ${newModelColor === color ? "ring-2 ring-white" : ""}`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {sortedModels.map((model) => (
+                <div
+                  key={model.id}
+                  draggable
+                  onDragStart={() => setDragModelSlug(model.slug)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => handleDropModel(model.slug)}
+                  onDragEnd={() => setDragModelSlug(null)}
+                  className="relative rounded-xl border border-surface-200 bg-surface px-3 py-2.5 flex items-center gap-2"
+                >
+                  <span className="text-text-dim text-xs">⋮⋮</span>
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: model.icon_url || getModelColor(model.name) }} />
                   <div className="flex-1 min-w-0">
                     {editingModelId === model.id ? (
                       <input
-                        type="text"
                         value={editingModelName}
                         onChange={(e) => setEditingModelName(e.target.value)}
                         onBlur={() => handleRenameModel(model.id, editingModelName)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleRenameModel(model.id, editingModelName);
                         }}
-                        disabled={isLoading}
-                        className="w-full bg-surface-100 border border-brand-500/50 rounded-lg px-3 py-1.5 text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all duration-200"
+                        className="w-full bg-transparent text-sm text-foreground focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -569,77 +541,70 @@ export default function SettingsClient({ models: initialModels, folders: initial
                           setEditingModelId(model.id);
                           setEditingModelName(model.name);
                         }}
-                        disabled={isLoading}
-                        className="text-foreground hover:text-brand-400 transition-colors duration-200 cursor-pointer font-medium truncate"
+                        className="text-sm text-foreground truncate"
                       >
                         {model.name}
                       </button>
                     )}
                   </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface-200 text-text-muted">
+                    {modelPromptCounts[model.slug] || 0}
+                  </span>
+                  <select
+                    value={(model.content_type || "TEXT") as ContentType}
+                    onChange={(e) => void handleModelContentTypeChange(model.id, e.target.value as ContentType)}
+                    className="h-7 rounded-md border border-surface-200 bg-surface px-2 text-[10px] text-text-dim"
+                  >
+                    {CONTENT_TYPES.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setModelColorPickerId(modelColorPickerId === model.id ? null : model.id)}
+                    className="w-6 h-6 rounded-md border border-surface-200"
+                    style={{ backgroundColor: model.icon_url || getModelColor(model.name) }}
+                  />
+                  <button
+                    onClick={() => setDeletingModelId(deletingModelId === model.id ? null : model.id)}
+                    className="w-6 h-6 rounded-md text-red-300 hover:bg-red-500/15"
+                  >
+                    ×
+                  </button>
 
-                  <div className="relative">
-                    <div
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors duration-200 ${getContentTypeBadgeColor(contentType)}`}
-                      onClick={() => setContentTypeDropdownId(contentTypeDropdownId === model.id ? null : model.id)}
-                    >
-                      {contentType}
+                  {modelColorPickerId === model.id && (
+                    <div className="absolute right-8 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1">
+                      {COLOR_PALETTE.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => handleModelColorChange(model.id, color)}
+                          className="w-5 h-5 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
                     </div>
+                  )}
 
-                    {contentTypeDropdownId === model.id && (
-                      <div className="absolute right-0 z-10 mt-1 bg-surface border border-surface-300 rounded-lg shadow-lg overflow-hidden">
-                        {(["IMAGE", "VIDEO", "AUDIO", "TEXT"] as ContentType[]).map((ct) => (
-                          <button
-                            key={ct}
-                            onClick={() => handleModelContentTypeChange(model.id, ct)}
-                            disabled={isLoading}
-                            className={`w-full px-4 py-2 text-sm text-left transition-colors duration-200 ${
-                              ct === contentType
-                                ? "bg-brand-500/20 text-brand-300 font-medium"
-                                : "text-text-muted hover:bg-surface-100 hover:text-foreground"
-                            }`}
-                          >
-                            {ct}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    {deletingModelId === model.id ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-text-muted">Sure?</span>
-                        <button
-                          onClick={() => handleDeleteModel(model.id)}
-                          disabled={isLoading}
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors duration-200 cursor-pointer text-sm font-medium"
-                        >
-                          Yes
-                        </button>
-                        <button
-                          onClick={() => setDeletingModelId(null)}
-                          disabled={isLoading}
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface-200 hover:bg-surface-300 text-text-muted hover:text-foreground transition-colors duration-200 cursor-pointer text-sm font-medium"
-                        >
-                          No
-                        </button>
-                      </div>
-                    ) : (
+                  {deletingModelId === model.id && (
+                    <div className="absolute inset-0 rounded-xl bg-black/55 backdrop-blur-sm flex items-center justify-center gap-2">
                       <button
-                        onClick={() => setDeletingModelId(model.id)}
-                        disabled={isLoading}
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-surface-200 hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors duration-200 cursor-pointer"
-                        title="Delete model"
+                        onClick={() => handleDeleteModel(model.id, model.slug)}
+                        className="px-2.5 py-1 rounded-md bg-red-500/25 text-red-200 text-xs"
                       >
-                        <span className="text-lg leading-none">×</span>
+                        Delete
                       </button>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => setDeletingModelId(null)}
+                        className="px-2.5 py-1 rounded-md bg-surface-200 text-text-muted text-xs"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

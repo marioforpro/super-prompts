@@ -242,10 +242,6 @@ export function DashboardContent({
   }, [prompts, searchQuery, selectedFolderId, selectedModelSlug, selectedTags, selectedContentType, showFavoritesOnly]);
 
   const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTags.length > 0 || selectedContentType || showFavoritesOnly);
-  const sortedFolders = useMemo(
-    () => [...contextFolders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
-    [contextFolders]
-  );
   const selectedFolder = useMemo(
     () => contextFolders.find((folder) => folder.id === selectedFolderId) || null,
     [contextFolders, selectedFolderId]
@@ -434,87 +430,6 @@ export function DashboardContent({
 
     return items.slice(0, 60);
   })();
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable;
-      const key = e.key.toLowerCase();
-
-      if (paletteOpen) {
-        if (key === "escape") {
-          e.preventDefault();
-          setPaletteOpen(false);
-          return;
-        }
-        if (key === "arrowdown") {
-          e.preventDefault();
-          setPaletteIndex((prev) => Math.min(prev + 1, Math.max(0, paletteItems.length - 1)));
-          return;
-        }
-        if (key === "arrowup") {
-          e.preventDefault();
-          setPaletteIndex((prev) => Math.max(0, prev - 1));
-          return;
-        }
-        if (key === "enter") {
-          e.preventDefault();
-          const safeIndex = Math.min(paletteIndex, Math.max(0, paletteItems.length - 1));
-          paletteItems[safeIndex]?.action();
-          return;
-        }
-      }
-
-      if (isInput || isModalOpen) return;
-
-      if (key === "arrowdown") {
-        e.preventDefault();
-        if (filteredPrompts.length === 0) return;
-        const idx = filteredPrompts.findIndex((p) => p.id === effectiveSelectedPromptId);
-        const next = filteredPrompts[Math.min(filteredPrompts.length - 1, Math.max(0, idx + 1))];
-        setSelectedPromptId(next.id);
-      } else if (key === "arrowup") {
-        e.preventDefault();
-        if (filteredPrompts.length === 0) return;
-        const idx = filteredPrompts.findIndex((p) => p.id === effectiveSelectedPromptId);
-        const prev = filteredPrompts[Math.max(0, idx <= 0 ? 0 : idx - 1)];
-        setSelectedPromptId(prev.id);
-      } else if (key === "arrowright") {
-        if (sortedFolders.length === 0) return;
-        e.preventDefault();
-        const currentIdx = selectedFolderId ? sortedFolders.findIndex((f) => f.id === selectedFolderId) : -1;
-        const nextIdx = Math.min(sortedFolders.length - 1, Math.max(0, currentIdx + 1));
-        const folder = sortedFolders[nextIdx];
-        if (folder) {
-          setSelectedFolderId(folder.id);
-          setShowFavoritesOnly(false);
-        }
-      } else if (key === "arrowleft") {
-        e.preventDefault();
-        if (!selectedFolderId) {
-          clearAllFilters();
-          return;
-        }
-        const currentIdx = sortedFolders.findIndex((f) => f.id === selectedFolderId);
-        if (currentIdx <= 0) {
-          setSelectedFolderId(null);
-        } else {
-          const prevFolder = sortedFolders[currentIdx - 1];
-          if (prevFolder) setSelectedFolderId(prevFolder.id);
-        }
-      } else if (key === "enter" && effectiveSelectedPromptId) {
-        e.preventDefault();
-        const p = filteredPrompts.find((item) => item.id === effectiveSelectedPromptId);
-        if (p) {
-          setModalPromptIds(filteredPrompts.map((item) => item.id));
-          handleEditPrompt(p);
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [paletteOpen, paletteItems, paletteIndex, isModalOpen, filteredPrompts, effectiveSelectedPromptId, handleEditPrompt, sortedFolders, selectedFolderId]);
 
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({

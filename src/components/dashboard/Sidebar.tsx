@@ -160,7 +160,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getPillClass = (active: boolean) =>
     active
-      ? "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-white/20 px-2 text-[11px] font-semibold text-white"
+      ? "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-brand-500/20 border border-brand-500/30 px-2 text-[11px] font-semibold text-brand-300"
       : "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-surface-200 px-2 text-[11px] font-semibold text-text-dim";
 
   const handleCreateFolder = async () => {
@@ -449,7 +449,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 }
                 className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-default ${
                   isAllActive
-                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
+                    ? "bg-brand-500/10 border border-brand-500/35 text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18)]"
                     : "text-text-muted hover:text-foreground hover:bg-surface-100"
                 }`}
               >
@@ -475,7 +475,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 }
                 className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-default ${
                   showFavoritesOnly
-                    ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
+                    ? "bg-brand-500/10 border border-brand-500/35 text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18)]"
                     : "text-text-muted hover:text-foreground hover:bg-surface-100"
                 }`}
               >
@@ -637,40 +637,27 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     />
 
                     <span className="truncate flex-1 text-sm">{model.name}</span>
-                    <span className={getPillClass(selectedModelSlug === model.slug)}>{modelPromptCounts[model.slug] || 0}</span>
+                    {(modelPromptCounts[model.slug] || 0) > 0 && (
+                      <span className={getPillClass(selectedModelSlug === model.slug)}>{modelPromptCounts[model.slug]}</span>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </nav>
 
-          <div className="border-t border-surface-200 px-3 py-3 space-y-2">
-            <button
-              onClick={() => {
-                setIsCreatingFolder(true);
-                setFolderError("");
-              }}
-              className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center gap-2"
-              title="New folder"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="text-sm">New folder</span>
-            </button>
-
+          <div className="border-t border-surface-200 px-3 py-3 flex justify-end">
             <button
               onClick={() => {
                 if (window.innerWidth < 768) onClose();
                 window.location.assign("/dashboard/settings");
               }}
-              className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center gap-2"
+              className="h-9 rounded-lg border border-surface-200 bg-surface-100 px-3 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center gap-1.5"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l.457.2a1 1 0 00.826 0l.457-.2a1 1 0 011.35.936l.06.49a1 1 0 00.6.812l.452.182a1 1 0 01.53 1.3l-.2.457a1 1 0 000 .826l.2.457a1 1 0 01-.53 1.3l-.452.182a1 1 0 00-.6.812l-.06.49a1 1 0 01-1.35.936l-.457-.2a1 1 0 00-.826 0l-.457.2a1 1 0 01-1.35-.936l-.06-.49a1 1 0 00-.6-.812l-.452-.182a1 1 0 01-.53-1.3l.2-.457a1 1 0 000-.826l-.2-.457a1 1 0 01.53-1.3l.452-.182a1 1 0 00.6-.812l.06-.49z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              <span className="text-sm">Settings</span>
+              <span className="text-sm">New</span>
             </button>
           </div>
         </div>

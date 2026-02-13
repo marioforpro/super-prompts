@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getModels } from "@/lib/actions/models";
 import { getFolders } from "@/lib/actions/folders";
 import { getTags } from "@/lib/actions/tags";
+import { getPrompts } from "@/lib/actions/prompts";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export const dynamic = "force-dynamic";
@@ -27,11 +28,19 @@ export default async function Layout({
   }
 
   // Fetch reference data for sidebar
-  const [models, folders, tags] = await Promise.all([
+  const [models, folders, tags, prompts] = await Promise.all([
     getModels(),
     getFolders(),
     getTags(),
+    getPrompts(),
   ]);
+
+  const initialPromptIndex = prompts.map((prompt) => ({
+    id: prompt.id,
+    isFavorite: prompt.is_favorite,
+    modelSlug: prompt.ai_model?.slug || null,
+    folderIds: prompt.folder_ids || (prompt.folder_id ? [prompt.folder_id] : []),
+  }));
 
   return (
     <DashboardShell
@@ -39,6 +48,7 @@ export default async function Layout({
       models={models}
       folders={folders}
       tags={tags}
+      initialPromptIndex={initialPromptIndex}
     >
       {children}
     </DashboardShell>
