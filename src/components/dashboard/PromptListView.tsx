@@ -147,7 +147,7 @@ export function PromptListView({
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-900/40 to-pink-900/40" />
+                  <div className="w-full h-full bg-gradient-to-br from-orange-900/40 to-amber-900/40" />
                 )}
               </div>
 

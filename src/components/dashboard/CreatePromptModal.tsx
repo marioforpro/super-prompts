@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
 import { createFolder } from "@/lib/actions/folders";
+import { createModel } from "@/lib/actions/models";
 import { createPromptMedia, removePromptMedia, updateMediaFrameFit } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,6 +38,7 @@ interface CreatePromptModalProps {
   tags: Tag[];
   onTagsChange?: (tags: Tag[]) => void;
   onFolderCreate?: (folder: Folder) => void;
+  onModelCreate?: (model: AiModel) => void;
 }
 
 export function CreatePromptModal({
@@ -49,6 +51,7 @@ export function CreatePromptModal({
   tags,
   onTagsChange,
   onFolderCreate,
+  onModelCreate,
 }: CreatePromptModalProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -70,6 +73,12 @@ export function CreatePromptModal({
   const [newFolderName, setNewFolderName] = useState("");
   const [folderCreateError, setFolderCreateError] = useState("");
   const newFolderInputRef = useRef<HTMLInputElement>(null);
+
+  // Inline model creation
+  const [isCreatingModel, setIsCreatingModel] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
+  const [modelCreateError, setModelCreateError] = useState("");
+  const newModelInputRef = useRef<HTMLInputElement>(null);
 
   // Media gallery state
   const [mediaItems, setMediaItems] = useState<LocalMediaItem[]>([]);
@@ -385,6 +394,33 @@ export function CreatePromptModal({
     }
   }, [isCreatingFolder]);
 
+  // Focus inline model input when creating
+  useEffect(() => {
+    if (isCreatingModel && newModelInputRef.current) {
+      newModelInputRef.current.focus();
+    }
+  }, [isCreatingModel]);
+
+  // Handle inline model creation
+  const handleInlineModelCreate = async () => {
+    if (!newModelName.trim()) {
+      setIsCreatingModel(false);
+      setNewModelName("");
+      return;
+    }
+    setModelCreateError("");
+    try {
+      const slug = newModelName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      const model = await createModel(newModelName.trim(), slug);
+      onModelCreate?.(model);
+      setModelId(model.id);
+      setIsCreatingModel(false);
+      setNewModelName("");
+    } catch (err) {
+      setModelCreateError(err instanceof Error ? err.message : "Failed to create model");
+    }
+  };
+
   // Handle inline folder creation
   const handleInlineFolderCreate = async () => {
     if (!newFolderName.trim()) {
@@ -650,7 +686,7 @@ export function CreatePromptModal({
             {mediaItems.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {mediaItems.map((item, index) => (
-                  <div key={`${item.id || ''}-${item.preview}-${index}`} className="relative group">
+                  <div key={`${item.id || ''}-${item.preview}-${index}`} className="relative group min-w-0 overflow-hidden">
                     {/* Thumbnail — draggable for crop repositioning in crop mode */}
                     <div className="relative aspect-square rounded-lg overflow-hidden border border-surface-200 bg-surface-100">
                       {item.type === 'video' ? (
@@ -935,7 +971,14 @@ export function CreatePromptModal({
             </label>
             <select
               value={modelId || ""}
-              onChange={(e) => setModelId(e.target.value || null)}
+              onChange={(e) => {
+                if (e.target.value === "__new__") {
+                  setIsCreatingModel(true);
+                  e.target.value = modelId || "";
+                } else {
+                  setModelId(e.target.value || null);
+                }
+              }}
               className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
               disabled={isLoading}
             >
@@ -945,7 +988,43 @@ export function CreatePromptModal({
                   {model.name}
                 </option>
               ))}
+              <option value="__new__">+ Create new model...</option>
             </select>
+
+            {/* Inline model creation */}
+            {isCreatingModel && (
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  ref={newModelInputRef}
+                  type="text"
+                  value={newModelName}
+                  onChange={(e) => setNewModelName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); handleInlineModelCreate(); }
+                    else if (e.key === "Escape") { setIsCreatingModel(false); setNewModelName(""); setModelCreateError(""); }
+                  }}
+                  placeholder="Model name..."
+                  className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={handleInlineModelCreate}
+                  className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsCreatingModel(false); setNewModelName(""); setModelCreateError(""); }}
+                  className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            {modelCreateError && (
+              <p className="text-xs text-red-400 mt-1">{modelCreateError}</p>
+            )}
           </div>
 
           {/* Folder */}

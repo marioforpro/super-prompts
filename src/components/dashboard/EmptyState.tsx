@@ -24,14 +24,14 @@ export function EmptyState({
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
       {/* Illustration */}
       <div className="mb-8 relative">
-        <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-purple-900/30 to-pink-900/30 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+        <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-brand-500/20 to-brand-400/10 backdrop-blur-sm border border-brand-400/20 flex items-center justify-center">
           <svg
             width="64"
             height="64"
             viewBox="0 0 64 64"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="text-text-muted opacity-60"
+            className="text-brand-400 opacity-70"
           >
             <path
               d="M16 8C16 6.89543 16.8954 6 18 6H46C47.1046 6 48 6.89543 48 8V48C48 49.1046 47.1046 50 46 50H18C16.8954 50 16 49.1046 16 48V8Z"
@@ -61,7 +61,7 @@ export function EmptyState({
       </div>
 
       {/* Headline */}
-      <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground text-center mb-2 tracking-tight">
+      <h2 className="text-2xl sm:text-3xl font-bold text-foreground text-center mb-2 tracking-tight">
         {title}
       </h2>
 
@@ -75,10 +75,12 @@ export function EmptyState({
         onClick={handleClick}
         className={cn(
           'px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200',
-          'bg-gradient-to-r from-brand-400 to-pink-600',
-          'hover:shadow-lg hover:shadow-brand-400/50 hover:scale-105',
-          'text-white font-display',
-          'flex items-center gap-2'
+          'bg-gradient-to-br from-brand-400 to-brand-500',
+          'hover:from-brand-300 hover:to-brand-400',
+          'hover:shadow-lg hover:shadow-brand-500/30 hover:scale-105',
+          'text-white',
+          'flex items-center gap-2',
+          'shadow-lg shadow-brand-500/20'
         )}
       >
         <Plus size={18} />
@@ -86,7 +88,7 @@ export function EmptyState({
       </button>
 
       {/* Decorative elements */}
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-t from-brand-400/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-96 bg-gradient-to-t from-brand-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
     </div>
   );
 }

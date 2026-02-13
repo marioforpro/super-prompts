@@ -33,11 +33,11 @@ export interface PromptCardProps {
 
 const getGradientBackground = (seed: string): string => {
   const colors = [
-    'from-purple-900 to-pink-900',
-    'from-blue-900 to-indigo-900',
-    'from-cyan-900 to-blue-900',
-    'from-emerald-900 to-teal-900',
-    'from-orange-900 to-red-900',
+    'from-orange-900 to-amber-900',
+    'from-amber-900 to-yellow-900',
+    'from-orange-950 to-red-900',
+    'from-stone-800 to-orange-900',
+    'from-zinc-800 to-amber-900',
   ];
 
   const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -147,18 +147,28 @@ export function PromptCard({
               >
                 {displayMedia.map((media, idx) => (
                   <div key={idx} className="relative min-w-full h-full flex-shrink-0 overflow-hidden">
-                    <Image
-                      src={media.url}
-                      alt={`${title} - ${idx + 1}`}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
-                        objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
-                        transform: `scale(${media.cropScale ?? 1})`,
-                        transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
-                      } : undefined}
-                      sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                    />
+                    {media.type === 'video' ? (
+                      <video
+                        src={media.url}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        muted
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <Image
+                        src={media.url}
+                        alt={`${title} - ${idx + 1}`}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
+                          objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
+                          transform: `scale(${media.cropScale ?? 1})`,
+                          transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
+                        } : undefined}
+                        sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                      />
+                    )}
                     {media.type === 'video' && !isHovered && idx === currentMediaIndex && (
                       <div className="absolute bottom-3 left-3 flex items-center justify-center w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200">
                         <Play size={18} className="text-white fill-white" />
