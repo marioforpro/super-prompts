@@ -86,6 +86,15 @@ export function PromptGrid({
     return () => document.removeEventListener('click', handleClick);
   }, [sortOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (dragPreviewRef.current) {
+        dragPreviewRef.current.remove();
+        dragPreviewRef.current = null;
+      }
+    };
+  }, []);
+
   if (prompts.length === 0) {
     return null;
   }
@@ -151,6 +160,10 @@ export function PromptGrid({
             key={prompt.id}
             draggable
             onDragStart={(event) => {
+              if (dragPreviewRef.current) {
+                dragPreviewRef.current.remove();
+                dragPreviewRef.current = null;
+              }
               const draggedIds = selectedIds.includes(prompt.id) && selectedIds.length > 0
                 ? selectedIds
                 : [prompt.id];

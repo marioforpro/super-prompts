@@ -95,6 +95,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [dropToast, setDropToast] = useState<string | null>(null);
   const navScrollRef = useRef<HTMLElement>(null);
   const dragOverRafRef = useRef<number | null>(null);
+  const dragOverClientYRef = useRef<number | null>(null);
 
   // Focus input when creating folder
   useEffect(() => {
@@ -346,6 +347,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
     if (dropFolderId !== folderId) setDropFolderId(folderId);
+    dragOverClientYRef.current = event.clientY;
 
     // Auto-scroll sidebar when dragging near top/bottom edges.
     if (dragOverRafRef.current !== null) return;
@@ -353,12 +355,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       dragOverRafRef.current = null;
       const navEl = navScrollRef.current;
       if (!navEl) return;
+      const clientY = dragOverClientYRef.current;
+      if (clientY == null) return;
       const rect = navEl.getBoundingClientRect();
       const threshold = 48;
       const step = 14;
-      if (event.clientY < rect.top + threshold) {
+      if (clientY < rect.top + threshold) {
         navEl.scrollTop -= step;
-      } else if (event.clientY > rect.bottom - threshold) {
+      } else if (clientY > rect.bottom - threshold) {
         navEl.scrollTop += step;
       }
     });
@@ -368,6 +372,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const promptIds = getDraggedPromptIds(event);
     event.preventDefault();
     setDropFolderId(null);
+    dragOverClientYRef.current = null;
     if (promptIds.length === 0) return;
 
     try {
@@ -388,6 +393,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     } finally {
       setDraggedPromptId(null);
       setDraggedPromptIds([]);
+      if (dragOverRafRef.current !== null) {
+        cancelAnimationFrame(dragOverRafRef.current);
+        dragOverRafRef.current = null;
+      }
     }
   };
 
