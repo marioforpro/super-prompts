@@ -426,8 +426,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const getPillClass = (active: boolean) =>
     active
-      ? "inline-flex min-w-[1.5rem] justify-center rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white"
-      : "inline-flex min-w-[1.5rem] justify-center rounded-full bg-surface-200 px-2 py-0.5 text-[11px] font-semibold text-text-dim";
+      ? "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-white/20 px-2 text-[11px] font-semibold text-white"
+      : "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-surface-200 px-2 text-[11px] font-semibold text-text-dim";
 
   // Chevron component for collapsible sections
   const SectionChevron = ({ open }: { open: boolean }) => (
@@ -693,7 +693,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
                               </svg>
                               <span className="truncate flex-1 text-left">{folder.name}</span>
-                              <span className={getPillClass(selectedFolderId === folder.id)}>
+                              <span className={`${getPillClass(selectedFolderId === folder.id)} mr-5`}>
                                 {folderPromptCounts[folder.id] || 0}
                               </span>
                               <span
@@ -825,7 +825,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
 
               {modelsOpen && (
-                <div className="mt-1 space-y-0.5 pl-2">
+                <div className="mt-1 space-y-0.5">
                   {sortedModels.length === 0 ? (
                     <p className="px-4 py-2 text-xs text-text-dim">No models yet</p>
                   ) : (
@@ -842,7 +842,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             setShowFavoritesOnly(false);
                           })
                         }
-                        className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
+                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer ${
                           selectedModelSlug === model.slug
                             ? "bg-surface-200 text-foreground"
                             : "text-text-muted hover:text-foreground hover:bg-surface-100"

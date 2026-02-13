@@ -63,6 +63,7 @@ export function DashboardContent({
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [selectedForBulk, setSelectedForBulk] = useState<string[]>([]);
   const [bulkMoveFolderId, setBulkMoveFolderId] = useState<string>("");
+  const [editMode, setEditMode] = useState(false);
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
   const toastIdRef = useRef(0);
   const paletteInputRef = useRef<HTMLInputElement>(null);
@@ -469,6 +470,7 @@ export function DashboardContent({
   );
   const selectedCount = activeSelectedForBulk.length;
   const canBulkSelect = viewMode === "grid" && filteredPrompts.length > 0;
+  const isEditModeActive = editMode && canBulkSelect;
 
   const toggleBulkSelection = (id: string) => {
     setSelectedForBulk((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -502,6 +504,7 @@ export function DashboardContent({
       );
       setBulkMoveFolderId("");
       setSelectedForBulk([]);
+      setEditMode(false);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to move prompts", "error");
     }
@@ -522,6 +525,7 @@ export function DashboardContent({
         setPrompts((prev) => prev.filter((p) => !deletedIds.includes(p.id)));
       }
       setSelectedForBulk([]);
+      setEditMode(false);
       showToast(`Deleted ${deletedIds.length} prompt${deletedIds.length === 1 ? "" : "s"}`, "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to delete prompts", "error");
@@ -635,79 +639,67 @@ export function DashboardContent({
       )}
 
       {/* Main Content */}
-      <div className="space-y-8 animate-fadeIn">
-        {/* Active Search Chip */}
-        {(searchQuery.trim() || hasActiveFilters) && (
-          <div className="flex items-center gap-2 flex-wrap justify-between">
-            {searchQuery.trim() ? (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
-            >
-              Search: &quot;{searchQuery}&quot;
-              <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            ) : <span />}
-            {hasActiveFilters && (
-              <button
-                onClick={clearAllFilters}
-                className="px-3 py-1.5 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300 transition-colors"
-              >
-                Reset view
-              </button>
-            )}
-          </div>
-        )}
-
+      <div className="space-y-5 animate-fadeIn">
         {canBulkSelect && (
-          <div className="sticky top-[57px] z-30 rounded-xl border border-surface-200/90 bg-background/85 px-3 py-2 backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center justify-end">
+            {!isEditModeActive ? (
               <button
-                onClick={selectedCount === filteredPromptIds.length ? clearBulkSelection : selectAllVisible}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300"
+                onClick={() => setEditMode(true)}
+                className="h-8 px-3 rounded-lg border border-surface-200 bg-surface-100 text-xs text-text-muted hover:text-foreground hover:border-surface-300 transition-colors"
               >
-                <span>{selectedCount === filteredPromptIds.length ? "Clear all" : "Select all"}</span>
+                Edit mode
               </button>
-              <div className="inline-flex items-center gap-1 rounded-lg border border-surface-200 bg-surface-100 px-2 py-1.5">
-                <span className="text-[11px] text-text-dim">Selected</span>
-                <span className="text-xs font-semibold text-foreground">{selectedCount}</span>
+            ) : (
+              <div className="w-full rounded-lg border border-surface-200 bg-surface-100/70 px-2.5 py-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={selectedCount === filteredPromptIds.length ? clearBulkSelection : selectAllVisible}
+                    className="h-8 px-2.5 rounded-md border border-surface-200 bg-background text-xs text-text-muted hover:text-foreground hover:border-surface-300"
+                  >
+                    {selectedCount === filteredPromptIds.length ? "Clear all" : "Select all"}
+                  </button>
+                  <span className="text-xs text-text-dim">
+                    {selectedCount} selected
+                  </span>
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <select
+                      value={bulkMoveFolderId}
+                      onChange={(e) => setBulkMoveFolderId(e.target.value)}
+                      className="h-8 min-w-[160px] rounded-md border border-surface-200 bg-background px-2 text-xs text-text-muted focus:outline-none focus:border-brand-400"
+                    >
+                      <option value="">Move to folder...</option>
+                      {sortedFolders.map((folder) => (
+                        <option key={folder.id} value={folder.id}>{folder.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={moveSelectedToFolder}
+                      disabled={selectedCount === 0 || !bulkMoveFolderId}
+                      className="h-8 px-3 rounded-md bg-brand-500/15 border border-brand-500/25 text-xs text-brand-300 hover:bg-brand-500/25 disabled:opacity-40"
+                    >
+                      Move
+                    </button>
+                    <button
+                      onClick={deleteSelectedPrompts}
+                      disabled={selectedCount === 0}
+                      className="h-8 px-3 rounded-md bg-red-500/15 border border-red-500/30 text-xs text-red-300 hover:bg-red-500/25 disabled:opacity-40"
+                    >
+                      Delete selected
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditMode(false);
+                        clearBulkSelection();
+                        setBulkMoveFolderId("");
+                      }}
+                      className="h-8 px-3 rounded-md border border-surface-200 bg-background text-xs text-text-muted hover:text-foreground hover:border-surface-300"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                <select
-                  value={bulkMoveFolderId}
-                  onChange={(e) => setBulkMoveFolderId(e.target.value)}
-                  className="h-8 min-w-[160px] rounded-lg border border-surface-200 bg-surface-100 px-2 text-xs text-text-muted focus:outline-none focus:border-brand-400"
-                >
-                  <option value="">Move to folder...</option>
-                  {sortedFolders.map((folder) => (
-                    <option key={folder.id} value={folder.id}>{folder.name}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={moveSelectedToFolder}
-                  disabled={selectedCount === 0 || !bulkMoveFolderId}
-                  className="h-8 px-3 rounded-lg bg-brand-500/15 border border-brand-500/25 text-xs text-brand-300 hover:bg-brand-500/25 disabled:opacity-40"
-                >
-                  Move
-                </button>
-                <button
-                  onClick={deleteSelectedPrompts}
-                  disabled={selectedCount === 0}
-                  className="h-8 px-3 rounded-lg bg-red-500/15 border border-red-500/30 text-xs text-red-300 hover:bg-red-500/25 disabled:opacity-40"
-                >
-                  Delete selected
-                </button>
-                <button
-                  onClick={clearBulkSelection}
-                  disabled={selectedCount === 0}
-                  className="h-8 px-3 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300 disabled:opacity-40"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -754,7 +746,7 @@ export function DashboardContent({
             onFavoritePrompt={handleFavoritePrompt}
             selectedPromptId={effectiveSelectedPromptId}
             onSelectPrompt={setSelectedPromptId}
-            selectable={canBulkSelect}
+            selectable={isEditModeActive}
             selectedIds={activeSelectedForBulk}
             onToggleSelect={toggleBulkSelection}
             folders={contextFolders.map((f) => ({ id: f.id, name: f.name }))}
