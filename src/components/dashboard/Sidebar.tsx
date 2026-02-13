@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
-import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
+import { createFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { assignPromptToFolder } from "@/lib/actions/prompts";
 import type { Folder } from "@/lib/types";
 
@@ -31,7 +31,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const {
     folders,
     addFolder,
-    removeFolder,
     updateFolder,
     models,
     selectedFolderId,
@@ -59,47 +58,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [folderError, setFolderError] = useState("");
   const folderInputRef = useRef<HTMLInputElement>(null);
 
-  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
-  const [editingFolderName, setEditingFolderName] = useState("");
-  const [folderMenuId, setFolderMenuId] = useState<string | null>(null);
-  const [colorPickerId, setColorPickerId] = useState<string | null>(null);
-  const editFolderInputRef = useRef<HTMLInputElement>(null);
-
-  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
-
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragAfterIndex, setDragAfterIndex] = useState<number | null>(null);
   const folderListRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
   const dragStartY = useRef(0);
+  const isDragging = useRef(false);
 
   const [modelOrder, setModelOrder] = useState<string[]>([]);
   const [modelDragId, setModelDragId] = useState<string | null>(null);
   const [modelDragOverId, setModelDragOverId] = useState<string | null>(null);
   const [modelDragAfterIndex, setModelDragAfterIndex] = useState<number | null>(null);
   const modelListRef = useRef<HTMLDivElement>(null);
-  const isModelDragging = useRef(false);
   const modelDragStartY = useRef(0);
+  const isModelDragging = useRef(false);
 
   const [dropFolderId, setDropFolderId] = useState<string | null>(null);
-  const [dropToast, setDropToast] = useState<string | null>(null);
   const navScrollRef = useRef<HTMLElement>(null);
   const dragOverRafRef = useRef<number | null>(null);
   const dragOverClientYRef = useRef<number | null>(null);
-
-  const folderMenuRef = useRef<HTMLDivElement>(null);
-  const colorPickerRef = useRef<HTMLDivElement>(null);
-  const plusMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("superprompts:model-order");
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) setModelOrder(parsed.filter((id) => typeof id === "string"));
+      if (Array.isArray(parsed)) {
+        setModelOrder(parsed.filter((item) => typeof item === "string"));
+      }
     } catch {
-      // ignore
+      // Ignore invalid local cache.
     }
   }, []);
 
@@ -112,34 +100,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [isCreatingFolder]);
 
   useEffect(() => {
-    if (editingFolderId && editFolderInputRef.current) {
-      editFolderInputRef.current.focus();
-      editFolderInputRef.current.select();
-    }
-  }, [editingFolderId]);
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
-      if (colorPickerRef.current && colorPickerRef.current.contains(e.target as Node)) return;
-      if (plusMenuRef.current && plusMenuRef.current.contains(e.target as Node)) return;
-      setFolderMenuId(null);
-      setColorPickerId(null);
-      setPlusMenuOpen(false);
-    };
-
-    const timer = setTimeout(() => document.addEventListener("click", handleClick), 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("click", handleClick);
-    };
-  }, []);
-
-  useEffect(() => {
     return () => {
       if (dragOverRafRef.current !== null) cancelAnimationFrame(dragOverRafRef.current);
     };
   }, []);
+
+  const handleNavClick = (action: () => void) => {
+    action();
+    if (window.innerWidth < 768) onClose();
+  };
 
   const isAllActive =
     !selectedFolderId && !selectedModelSlug && selectedTags.length === 0 && !selectedContentType && !showFavoritesOnly;
@@ -147,17 +116,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const sortedModels = useMemo(() => {
-    const base = [...models].sort((a, b) => a.name.localeCompare(b.name));
-    if (modelOrder.length === 0) return base;
-    const bySlug = new Map(base.map((m) => [m.slug, m]));
-    const ordered: typeof base = [];
+    const byName = [...models].sort((a, b) => a.name.localeCompare(b.name));
+    if (modelOrder.length === 0) return byName;
+
+    const bySlug = new Map(byName.map((m) => [m.slug, m]));
+    const ordered: typeof byName = [];
+
     for (const slug of modelOrder) {
       const model = bySlug.get(slug);
-      if (model) {
-        ordered.push(model);
-        bySlug.delete(slug);
-      }
+      if (!model) continue;
+      ordered.push(model);
+      bySlug.delete(slug);
     }
+
     ordered.push(...Array.from(bySlug.values()));
     return ordered;
   }, [models, modelOrder]);
@@ -171,7 +142,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const folderPromptCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const item of promptIndex) {
-      for (const folderId of item.folderIds) counts[folderId] = (counts[folderId] || 0) + 1;
+      for (const folderId of item.folderIds) {
+        counts[folderId] = (counts[folderId] || 0) + 1;
+      }
     }
     return counts;
   }, [promptIndex]);
@@ -190,14 +163,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       ? "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-white/20 px-2 text-[11px] font-semibold text-white"
       : "inline-flex h-5 min-w-[1.5rem] items-center justify-center rounded-full bg-surface-200 px-2 text-[11px] font-semibold text-text-dim";
 
-  const handleNavClick = (action: () => void) => {
-    action();
-    if (window.innerWidth < 768) onClose();
-  };
-
-  const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
-    if (isCreatingRef.current) return;
     const name = newFolderName.trim();
     if (!name) {
       setIsCreatingFolder(false);
@@ -205,201 +171,136 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       return;
     }
 
-    isCreatingRef.current = true;
     setFolderError("");
-    const tempId = `temp-${Date.now()}`;
-    setNewFolderName("");
-    setIsCreatingFolder(false);
-
-    const tempFolder: Folder = {
-      id: tempId,
-      name,
-      color: "#e8764b",
-      sort_order: folders.length,
-      user_id: "",
-      created_at: new Date().toISOString(),
-    };
-
-    addFolder(tempFolder);
     try {
       const folder = await createFolder(name);
-      removeFolder(tempId);
       addFolder(folder);
+      setNewFolderName("");
+      setIsCreatingFolder(false);
     } catch (err) {
-      removeFolder(tempId);
       setFolderError(err instanceof Error ? err.message : "Failed to create folder");
-    } finally {
-      isCreatingRef.current = false;
     }
   };
 
-  const handleRenameFolder = async () => {
-    if (!editingFolderId || !editingFolderName.trim()) {
-      setEditingFolderId(null);
-      setEditingFolderName("");
-      return;
-    }
-    try {
-      const updated = await renameFolder(editingFolderId, editingFolderName.trim());
-      updateFolder(editingFolderId, { name: updated.name });
-      setEditingFolderId(null);
-      setEditingFolderName("");
-    } catch (err) {
-      setFolderError(err instanceof Error ? err.message : "Failed to rename folder");
-      setEditingFolderId(null);
-    }
-  };
-
-  const handleDeleteFolderAction = async (folderId: string) => {
-    setFolderMenuId(null);
-    if (selectedFolderId === folderId) setSelectedFolderId(null);
-    removeFolder(folderId);
-    try {
-      await deleteFolder(folderId);
-    } catch (err) {
-      setFolderError(err instanceof Error ? err.message : "Failed to delete folder");
-    }
-  };
-
-  const handleFolderColorChange = async (folderId: string, newColor: string) => {
-    try {
-      updateFolder(folderId, { color: newColor });
-      await updateFolderAction(folderId, { color: newColor });
-      setColorPickerId(null);
-      setFolderMenuId(null);
-    } catch (err) {
-      setFolderError(err instanceof Error ? err.message : "Failed to update folder color");
-    }
-  };
-
-  const reorderFolders = (newOrder: typeof folders) => {
-    newOrder.forEach((f, i) => updateFolder(f.id, { sort_order: i }));
+  const reorderFolders = (newOrder: Folder[]) => {
+    newOrder.forEach((folder, index) => updateFolder(folder.id, { sort_order: index }));
     for (let i = 0; i < newOrder.length; i++) {
       updateFolderAction(newOrder[i].id, { sort_order: i }).catch(() => {});
     }
   };
 
-  const handleMoveFolder = (folderId: string, direction: "up" | "down") => {
-    const sorted = [...sortedFolders];
-    const idx = sorted.findIndex((f) => f.id === folderId);
-    if (idx === -1) return;
-    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (targetIdx < 0 || targetIdx >= sorted.length) return;
-    [sorted[idx], sorted[targetIdx]] = [sorted[targetIdx], sorted[idx]];
-    reorderFolders(sorted);
-    setFolderMenuId(null);
-  };
-
-  const handleFolderDragStart = (e: React.PointerEvent, folderId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleFolderDragStart = (event: React.PointerEvent, folderId: string) => {
+    event.preventDefault();
+    event.stopPropagation();
     setDragId(folderId);
-    dragStartY.current = e.clientY;
+    dragStartY.current = event.clientY;
     isDragging.current = false;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   };
 
-  const handleFolderDragMove = (e: React.PointerEvent) => {
+  const handleFolderDragMove = (event: React.PointerEvent) => {
     if (!dragId || !folderListRef.current) return;
-    if (!isDragging.current && Math.abs(e.clientY - dragStartY.current) < 3) return;
+    if (!isDragging.current && Math.abs(event.clientY - dragStartY.current) < 3) return;
     isDragging.current = true;
 
-    const els = folderListRef.current.querySelectorAll<HTMLElement>("[data-folder-drag]");
+    const rows = folderListRef.current.querySelectorAll<HTMLElement>("[data-folder-drag]");
     let closestId: string | null = null;
     let closestDist = Infinity;
     let closestCy = 0;
     let closestIndex = -1;
 
-    els.forEach((el, idx) => {
-      const fid = el.dataset.folderDrag || null;
-      if (fid === dragId) return;
-      const rect = el.getBoundingClientRect();
+    rows.forEach((row, index) => {
+      const rowId = row.dataset.folderDrag || null;
+      if (rowId === dragId) return;
+      const rect = row.getBoundingClientRect();
       const cy = rect.top + rect.height / 2;
-      const dist = Math.abs(e.clientY - cy);
+      const dist = Math.abs(event.clientY - cy);
       if (dist < closestDist) {
         closestDist = dist;
-        closestId = fid;
+        closestId = rowId;
         closestCy = cy;
-        closestIndex = idx;
+        closestIndex = index;
       }
     });
 
-    const insertAfter = e.clientY > closestCy;
+    const insertAfter = event.clientY > closestCy;
     setDragOverId(closestId);
     setDragAfterIndex(insertAfter ? closestIndex + 1 : closestIndex);
   };
 
   const handleFolderDragEnd = () => {
     if (dragId && dragOverId && isDragging.current) {
-      const sorted = [...sortedFolders];
-      const fromIdx = sorted.findIndex((f) => f.id === dragId);
-      const toIdx = sorted.findIndex((f) => f.id === dragOverId);
-      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-        const [moved] = sorted.splice(fromIdx, 1);
-        const adjustedIdx = sorted.findIndex((f) => f.id === dragOverId);
-        const insertIdx = dragAfterIndex !== null ? Math.min(dragAfterIndex, sorted.length) : adjustedIdx;
-        sorted.splice(insertIdx, 0, moved);
-        reorderFolders(sorted);
+      const ordered = [...sortedFolders];
+      const from = ordered.findIndex((folder) => folder.id === dragId);
+      const to = ordered.findIndex((folder) => folder.id === dragOverId);
+      if (from !== -1 && to !== -1 && from !== to) {
+        const [moved] = ordered.splice(from, 1);
+        const adjustedTo = ordered.findIndex((folder) => folder.id === dragOverId);
+        const insertAt = dragAfterIndex !== null ? Math.min(dragAfterIndex, ordered.length) : adjustedTo;
+        ordered.splice(insertAt, 0, moved);
+        reorderFolders(ordered);
       }
     }
+
     setDragId(null);
     setDragOverId(null);
     setDragAfterIndex(null);
     isDragging.current = false;
   };
 
-  const handleModelDragStart = (e: React.PointerEvent, modelSlug: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleModelDragStart = (event: React.PointerEvent, modelSlug: string) => {
+    event.preventDefault();
+    event.stopPropagation();
     setModelDragId(modelSlug);
-    modelDragStartY.current = e.clientY;
+    modelDragStartY.current = event.clientY;
     isModelDragging.current = false;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   };
 
-  const handleModelDragMove = (e: React.PointerEvent) => {
+  const handleModelDragMove = (event: React.PointerEvent) => {
     if (!modelDragId || !modelListRef.current) return;
-    if (!isModelDragging.current && Math.abs(e.clientY - modelDragStartY.current) < 3) return;
+    if (!isModelDragging.current && Math.abs(event.clientY - modelDragStartY.current) < 3) return;
     isModelDragging.current = true;
 
-    const els = modelListRef.current.querySelectorAll<HTMLElement>("[data-model-drag]");
+    const rows = modelListRef.current.querySelectorAll<HTMLElement>("[data-model-drag]");
     let closestId: string | null = null;
     let closestDist = Infinity;
     let closestCy = 0;
     let closestIndex = -1;
 
-    els.forEach((el, idx) => {
-      const fid = el.dataset.modelDrag || null;
-      if (fid === modelDragId) return;
-      const rect = el.getBoundingClientRect();
+    rows.forEach((row, index) => {
+      const rowId = row.dataset.modelDrag || null;
+      if (rowId === modelDragId) return;
+      const rect = row.getBoundingClientRect();
       const cy = rect.top + rect.height / 2;
-      const dist = Math.abs(e.clientY - cy);
+      const dist = Math.abs(event.clientY - cy);
       if (dist < closestDist) {
         closestDist = dist;
-        closestId = fid;
+        closestId = rowId;
         closestCy = cy;
-        closestIndex = idx;
+        closestIndex = index;
       }
     });
 
-    const insertAfter = e.clientY > closestCy;
+    const insertAfter = event.clientY > closestCy;
     setModelDragOverId(closestId);
     setModelDragAfterIndex(insertAfter ? closestIndex + 1 : closestIndex);
   };
 
   const handleModelDragEnd = () => {
     if (modelDragId && modelDragOverId && isModelDragging.current) {
-      const ordered = [...sortedModels].map((m) => m.slug);
-      const fromIdx = ordered.findIndex((slug) => slug === modelDragId);
-      const toIdx = ordered.findIndex((slug) => slug === modelDragOverId);
-      if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
-        const [moved] = ordered.splice(fromIdx, 1);
-        const adjustedIdx = ordered.findIndex((slug) => slug === modelDragOverId);
-        const insertIdx = modelDragAfterIndex !== null ? Math.min(modelDragAfterIndex, ordered.length) : adjustedIdx;
-        ordered.splice(insertIdx, 0, moved);
-        setModelOrder(ordered);
+      const orderedSlugs = [...sortedModels].map((model) => model.slug);
+      const from = orderedSlugs.findIndex((slug) => slug === modelDragId);
+      const to = orderedSlugs.findIndex((slug) => slug === modelDragOverId);
+      if (from !== -1 && to !== -1 && from !== to) {
+        const [moved] = orderedSlugs.splice(from, 1);
+        const adjustedTo = orderedSlugs.findIndex((slug) => slug === modelDragOverId);
+        const insertAt = modelDragAfterIndex !== null ? Math.min(modelDragAfterIndex, orderedSlugs.length) : adjustedTo;
+        orderedSlugs.splice(insertAt, 0, moved);
+        setModelOrder(orderedSlugs);
       }
     }
+
     setModelDragId(null);
     setModelDragOverId(null);
     setModelDragAfterIndex(null);
@@ -426,7 +327,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           if (valid.length > 0) return Array.from(new Set(valid));
         }
       } catch {
-        // ignore
+        // Ignore malformed payload.
       }
     }
     if (draggedPromptIds.length > 0) {
@@ -439,12 +340,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handlePromptDragOverFolder = (event: React.DragEvent, folderId: string) => {
     const promptIds = getDraggedPromptIds(event);
     if (promptIds.length === 0) return;
+
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
     if (dropFolderId !== folderId) setDropFolderId(folderId);
     dragOverClientYRef.current = event.clientY;
 
     if (dragOverRafRef.current !== null) return;
+
     dragOverRafRef.current = requestAnimationFrame(() => {
       dragOverRafRef.current = null;
       const navEl = navScrollRef.current;
@@ -467,20 +370,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (promptIds.length === 0) return;
 
     try {
-      const results = await Promise.allSettled(promptIds.map((promptId) => assignPromptToFolder(promptId, folderId)));
+      const results = await Promise.allSettled(
+        promptIds.map((promptId) => assignPromptToFolder(promptId, folderId))
+      );
       const succeeded = results
-        .map((r, i) => ({ result: r, promptId: promptIds[i] }))
+        .map((result, index) => ({ result, promptId: promptIds[index] }))
         .filter(({ result }) => result.status === "fulfilled");
       succeeded.forEach(({ promptId }) => notifyPromptFolderAssigned(promptId, folderId));
-      const folderName = folders.find((f) => f.id === folderId)?.name || "folder";
-      setDropToast(
-        succeeded.length > 1
-          ? `Added ${succeeded.length} prompts to "${folderName}"`
-          : `Added to "${folderName}"`
-      );
-      setTimeout(() => setDropToast(null), 1800);
-    } catch (err) {
-      setFolderError(err instanceof Error ? err.message : "Failed to add prompt to folder");
+    } catch {
+      // Ignore toast/error spam for this drag action; the UI state remains consistent.
     } finally {
       setDraggedPromptId(null);
       setDraggedPromptIds([]);
@@ -491,11 +389,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
+  const handleFolderKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
       handleCreateFolder();
-    } else if (e.key === "Escape") {
+    } else if (event.key === "Escape") {
       setIsCreatingFolder(false);
       setNewFolderName("");
       setFolderError("");
@@ -590,7 +488,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     ref={folderInputRef}
                     type="text"
                     value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onChange={(event) => setNewFolderName(event.target.value)}
                     onKeyDown={handleFolderKeyDown}
                     placeholder="Folder name..."
                     className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
@@ -623,7 +521,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             )}
 
             <div ref={folderListRef} className="space-y-0.5">
-              {sortedFolders.map((folder, idx) => (
+              {sortedFolders.map((folder, index) => (
                 <div
                   key={folder.id}
                   data-folder-drag={folder.id}
@@ -632,180 +530,55 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }`}
                 >
                   {dragOverId === folder.id && dragId !== folder.id && isDragging.current && (
-                    <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${dragAfterIndex === idx + 1 ? "-bottom-px" : "-top-px"}`} />
+                    <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${dragAfterIndex === index + 1 ? "-bottom-px" : "-top-px"}`} />
                   )}
 
-                  {editingFolderId === folder.id ? (
-                    <div className="px-1 py-1">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          ref={editFolderInputRef}
-                          type="text"
-                          value={editingFolderName}
-                          onChange={(e) => setEditingFolderName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleRenameFolder();
-                            } else if (e.key === "Escape") {
-                              setEditingFolderId(null);
-                              setEditingFolderName("");
-                            }
-                          }}
-                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400"
-                        />
-                        <button onClick={handleRenameFolder} className="p-1.5 rounded-lg bg-brand-500/20 border border-brand-500/30">
-                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
+                  <div
+                    onClick={() =>
+                      handleNavClick(() => {
+                        setSearchQuery("");
+                        setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
+                        if (selectedFolderId !== folder.id) markFolderVisited(folder.id);
+                        setSelectedModelSlug(null);
+                        setSelectedTags([]);
+                        setSelectedContentType(null);
+                        setShowFavoritesOnly(false);
+                      })
+                    }
+                    onDragOver={(event) => handlePromptDragOverFolder(event, folder.id)}
+                    onDrop={(event) => void handlePromptDropOnFolder(event, folder.id)}
+                    onDragLeave={() => {
+                      if (dropFolderId === folder.id) setDropFolderId(null);
+                    }}
+                    className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 cursor-pointer select-none ${
+                      selectedFolderId === folder.id
+                        ? "bg-surface-200 text-foreground"
+                        : dropFolderId === folder.id
+                          ? "bg-brand-500/18 text-foreground ring-2 ring-brand-400/65 shadow-[0_0_0_1px_rgba(232,118,75,0.25)]"
+                          : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                    }`}
+                  >
                     <div
-                      onClick={() =>
-                        handleNavClick(() => {
-                          setSearchQuery("");
-                          setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
-                          if (selectedFolderId !== folder.id) markFolderVisited(folder.id);
-                          setSelectedModelSlug(null);
-                          setSelectedTags([]);
-                          setSelectedContentType(null);
-                          setShowFavoritesOnly(false);
-                        })
-                      }
-                      onDragOver={(event) => handlePromptDragOverFolder(event, folder.id)}
-                      onDrop={(event) => void handlePromptDropOnFolder(event, folder.id)}
-                      onDragLeave={() => {
-                        if (dropFolderId === folder.id) setDropFolderId(null);
-                      }}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
-                      }}
-                      className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 cursor-pointer select-none ${
-                        selectedFolderId === folder.id
-                          ? "bg-surface-200 text-foreground"
-                          : dropFolderId === folder.id
-                            ? "bg-brand-500/18 text-foreground ring-2 ring-brand-400/65 shadow-[0_0_0_1px_rgba(232,118,75,0.25)]"
-                            : "text-text-muted hover:text-foreground hover:bg-surface-100"
-                      }`}
+                      onPointerDown={(event) => handleFolderDragStart(event, folder.id)}
+                      onPointerMove={handleFolderDragMove}
+                      onPointerUp={handleFolderDragEnd}
+                      onPointerCancel={handleFolderDragEnd}
+                      className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center opacity-40 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
                     >
-                      <div
-                        onPointerDown={(e) => handleFolderDragStart(e, folder.id)}
-                        onPointerMove={handleFolderDragMove}
-                        onPointerUp={handleFolderDragEnd}
-                        onPointerCancel={handleFolderDragEnd}
-                        className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center opacity-40 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
-                      >
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
-                          <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
-                          <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
-                          <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
-                        </svg>
-                      </div>
-                      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
-                        <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
+                        <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
+                        <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
+                        <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
                       </svg>
-                      <span className="truncate flex-1 text-sm">{folder.name}</span>
-                      <span className={`${getPillClass(selectedFolderId === folder.id)} mr-5`}>{folderPromptCounts[folder.id] || 0}</span>
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
-                      >
-                        <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-                        </svg>
-                      </span>
                     </div>
-                  )}
 
-                  {folderMenuId === folder.id && (
-                    <div
-                      ref={folderMenuRef}
-                      className="absolute left-8 top-full z-50 mt-1 w-40 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {sortedFolders.indexOf(folder) > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveFolder(folder.id, "up");
-                          }}
-                          className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
-                        >
-                          Move up
-                        </button>
-                      )}
-                      {sortedFolders.indexOf(folder) < sortedFolders.length - 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveFolder(folder.id, "down");
-                          }}
-                          className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
-                        >
-                          Move down
-                        </button>
-                      )}
-                      <div className="h-px bg-surface-200 my-0.5" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingFolderId(folder.id);
-                          setEditingFolderName(folder.name);
-                          setFolderMenuId(null);
-                        }}
-                        className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
-                      >
-                        Rename
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setColorPickerId(folder.id);
-                        }}
-                        className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
-                      >
-                        Change color
-                      </button>
-                      <div className="h-px bg-surface-200 my-0.5" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteFolderAction(folder.id);
-                        }}
-                        className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+                    <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
+                      <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
+                    </svg>
 
-                  {colorPickerId === folder.id && (
-                    <div
-                      ref={colorPickerRef}
-                      className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="grid grid-cols-5 gap-2">
-                        {COLOR_PALETTE.map((color) => (
-                          <button
-                            key={color}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleFolderColorChange(folder.id, color);
-                            }}
-                            className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
-                            style={{ backgroundColor: color, borderColor: folder.color === color ? "#ffffff" : "transparent" }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    <span className="truncate flex-1 text-sm">{folder.name}</span>
+                    <span className={getPillClass(selectedFolderId === folder.id)}>{folderPromptCounts[folder.id] || 0}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -813,7 +586,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <div className="h-px bg-surface-200 my-4" />
 
             <div ref={modelListRef} className="space-y-0.5 pb-6">
-              {sortedModels.map((model, idx) => (
+              {sortedModels.map((model, index) => (
                 <div
                   key={model.id}
                   data-model-drag={model.slug}
@@ -822,7 +595,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   }`}
                 >
                   {modelDragOverId === model.slug && modelDragId !== model.slug && isModelDragging.current && (
-                    <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${modelDragAfterIndex === idx + 1 ? "-bottom-px" : "-top-px"}`} />
+                    <div className={`absolute left-4 right-4 h-0.5 bg-brand-400 rounded-full z-20 ${modelDragAfterIndex === index + 1 ? "-bottom-px" : "-top-px"}`} />
                   )}
 
                   <div
@@ -843,7 +616,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }`}
                   >
                     <div
-                      onPointerDown={(e) => handleModelDragStart(e, model.slug)}
+                      onPointerDown={(event) => handleModelDragStart(event, model.slug)}
                       onPointerMove={handleModelDragMove}
                       onPointerUp={handleModelDragEnd}
                       onPointerCancel={handleModelDragEnd}
@@ -855,10 +628,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
                       </svg>
                     </div>
+
                     <span
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: model.icon_url?.startsWith("#") ? model.icon_url : getModelColor(model.name) }}
                     />
+
                     <span className="truncate flex-1 text-sm">{model.name}</span>
                     <span className={getPillClass(selectedModelSlug === model.slug)}>{modelPromptCounts[model.slug] || 0}</span>
                   </div>
@@ -867,50 +642,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          <div className="border-t border-surface-200 px-3 py-3">
-            <div ref={plusMenuRef} className="relative">
-              {plusMenuOpen && (
-                <div className="absolute bottom-12 left-0 right-0 z-50 bg-surface-100 border border-surface-200 rounded-xl shadow-xl overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setPlusMenuOpen(false);
-                      setIsCreatingFolder(true);
-                      setFolderError("");
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-sm text-text-muted hover:text-foreground hover:bg-surface-200"
-                  >
-                    New folder
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPlusMenuOpen(false);
-                      router.push("/dashboard/settings");
-                    }}
-                    className="w-full text-left px-3 py-2.5 text-sm text-text-muted hover:text-foreground hover:bg-surface-200"
-                  >
-                    Manage AI models
-                  </button>
-                </div>
-              )}
+          <div className="border-t border-surface-200 px-3 py-3 space-y-2">
+            <button
+              onClick={() => {
+                setIsCreatingFolder(true);
+                setFolderError("");
+              }}
+              className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center gap-2"
+              title="New folder"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-sm">New folder</span>
+            </button>
 
-              <button
-                onClick={() => setPlusMenuOpen((prev) => !prev)}
-                className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center"
-                title="Quick actions"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
-            </div>
+            <button
+              onClick={() => router.push("/dashboard/settings")}
+              className="w-full h-10 rounded-xl border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936l.457.2a1 1 0 00.826 0l.457-.2a1 1 0 011.35.936l.06.49a1 1 0 00.6.812l.452.182a1 1 0 01.53 1.3l-.2.457a1 1 0 000 .826l.2.457a1 1 0 01-.53 1.3l-.452.182a1 1 0 00-.6.812l-.06.49a1 1 0 01-1.35.936l-.457-.2a1 1 0 00-.826 0l-.457.2a1 1 0 01-1.35-.936l-.06-.49a1 1 0 00-.6-.812l-.452-.182a1 1 0 01-.53-1.3l.2-.457a1 1 0 000-.826l-.2-.457a1 1 0 01.53-1.3l.452-.182a1 1 0 00.6-.812l.06-.49z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
+              <span className="text-sm">Settings</span>
+            </button>
           </div>
         </div>
-
-        {dropToast && (
-          <div className="absolute left-3 right-3 bottom-16 z-50 rounded-lg border border-brand-500/40 bg-brand-500/18 px-3 py-2 text-xs text-brand-200 shadow-lg backdrop-blur-sm">
-            {dropToast}
-          </div>
-        )}
       </div>
     </>
   );

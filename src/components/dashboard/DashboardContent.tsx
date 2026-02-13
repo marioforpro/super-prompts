@@ -620,7 +620,6 @@ export function DashboardContent({
               try {
                 const updated = await assignPromptToFolder(promptId, folderId);
                 setPrompts((prev) => prev.map((p) => (p.id === promptId ? updated : p)));
-                showToast(`Added to ${contextFolders.find((f) => f.id === folderId)?.name || "folder"}`, "success");
               } catch (err) {
                 showToast(err instanceof Error ? err.message : "Failed to assign folder", "error");
               }
