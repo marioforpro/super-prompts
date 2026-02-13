@@ -10,11 +10,13 @@ import {
   updatePrompt,
   deletePrompt,
   getPrompt,
+  unassignPromptFromFolder,
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
 import { createFolder } from "@/lib/actions/folders";
 import { createPromptMedia, removePromptMedia, updateMediaSettings } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
+import { useDashboard } from "@/contexts/DashboardContext";
 
 interface LocalMediaItem {
   id?: string; // Existing DB media ID
@@ -52,6 +54,7 @@ export function CreatePromptModal({
   onFolderCreate,
 }: CreatePromptModalProps) {
   const router = useRouter();
+  const { selectedFolderId, folders: contextFolders } = useDashboard();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
@@ -231,9 +234,94 @@ export function CreatePromptModal({
   };
 
   const MAX_MEDIA_ITEMS = 3;
+  const MAX_IMAGE_UPLOAD_MB = 40;
+  const MAX_VIDEO_UPLOAD_MB = 200;
+  const IMAGE_OPTIMIZE_THRESHOLD_MB = 12;
+  const IMAGE_MAX_DIMENSION = 5000;
+
+  const readImageDimensions = (file: File): Promise<{ width: number; height: number }> =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new window.Image();
+      img.onload = () => {
+        const width = img.naturalWidth || img.width;
+        const height = img.naturalHeight || img.height;
+        URL.revokeObjectURL(url);
+        resolve({ width, height });
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Failed to read image"));
+      };
+      img.src = url;
+    });
+
+  const maybeOptimizeImage = async (file: File): Promise<File> => {
+    const shouldOptimizeBySize = file.size > IMAGE_OPTIMIZE_THRESHOLD_MB * 1024 * 1024;
+
+    let dimensions: { width: number; height: number } | null = null;
+    try {
+      dimensions = await readImageDimensions(file);
+    } catch {
+      return file;
+    }
+
+    const shouldOptimizeByDimensions =
+      (dimensions.width > IMAGE_MAX_DIMENSION || dimensions.height > IMAGE_MAX_DIMENSION);
+
+    if (!shouldOptimizeBySize && !shouldOptimizeByDimensions) return file;
+
+    const scale = Math.min(
+      1,
+      IMAGE_MAX_DIMENSION / dimensions.width,
+      IMAGE_MAX_DIMENSION / dimensions.height
+    );
+    const targetWidth = Math.max(1, Math.round(dimensions.width * scale));
+    const targetHeight = Math.max(1, Math.round(dimensions.height * scale));
+
+    const sourceUrl = URL.createObjectURL(file);
+    const img = new window.Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to decode image"));
+      img.src = sourceUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      URL.revokeObjectURL(sourceUrl);
+      return file;
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+    const outputType = file.type === "image/png" ? "image/webp" : (file.type || "image/jpeg");
+    const outputBlob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, outputType, 0.92)
+    );
+    URL.revokeObjectURL(sourceUrl);
+
+    if (!outputBlob) return file;
+
+    // Keep original if optimization did not reduce size meaningfully.
+    if (outputBlob.size >= file.size * 0.95 && !shouldOptimizeByDimensions) {
+      return file;
+    }
+
+    const optimizedName = file.name.replace(/\.(png|jpg|jpeg|webp)$/i, "") + (outputType === "image/webp" ? ".webp" : ".jpg");
+    return new File([outputBlob], optimizedName, {
+      type: outputType,
+      lastModified: Date.now(),
+    });
+  };
 
   // Validate and process multiple files
-  const processFiles = (files: FileList | File[]) => {
+  const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const validImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     const validVideoTypes = ["video/mp4", "video/webm", "video/quicktime"];
@@ -248,20 +336,25 @@ export function CreatePromptModal({
     const newItems: LocalMediaItem[] = [];
     let currentMaxOrder = mediaItems.length > 0 ? Math.max(...mediaItems.map(m => m.sortOrder)) + 1 : 0;
 
-    for (const file of fileArray) {
+    for (const originalFile of fileArray) {
       if (newItems.length >= slotsAvailable) {
         setError(`Maximum ${MAX_MEDIA_ITEMS} media files allowed. Only ${slotsAvailable} slot${slotsAvailable !== 1 ? 's' : ''} available.`);
         break;
       }
+      let file = originalFile;
       if (!allValidTypes.includes(file.type)) {
         setError("Unsupported file type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.");
         continue;
       }
       const isVideo = validVideoTypes.includes(file.type);
-      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+      const maxSize = isVideo ? MAX_VIDEO_UPLOAD_MB * 1024 * 1024 : MAX_IMAGE_UPLOAD_MB * 1024 * 1024;
       if (file.size > maxSize) {
-        setError(isVideo ? "Video must be under 50MB" : "Image must be under 5MB");
+        setError(isVideo ? `Video must be under ${MAX_VIDEO_UPLOAD_MB}MB` : `Image must be under ${MAX_IMAGE_UPLOAD_MB}MB`);
         continue;
+      }
+
+      if (!isVideo && file.type !== "image/gif") {
+        file = await maybeOptimizeImage(file);
       }
 
       const preview = URL.createObjectURL(file);
@@ -294,7 +387,7 @@ export function CreatePromptModal({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    processFiles(files);
+    void processFiles(files);
     // Reset input so same file can be selected again
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -320,7 +413,7 @@ export function CreatePromptModal({
     e.stopPropagation();
     setIsDragging(false);
     const files = e.dataTransfer.files;
-    if (files && files.length > 0) processFiles(files);
+    if (files && files.length > 0) void processFiles(files);
   };
 
   // Analyze image with Claude Vision
@@ -681,6 +774,17 @@ export function CreatePromptModal({
 
   const selectedTagObjects = tags.filter((t) => selectedTags.includes(t.id));
   const selectedFolder = folders.find((f) => f.id === folderId) || null;
+  const currentViewFolder = selectedFolderId
+    ? contextFolders.find((f) => f.id === selectedFolderId) || null
+    : null;
+  const canRemoveFromCurrentFolder = !!(
+    prompt &&
+    selectedFolderId &&
+    (
+      (prompt.folder_ids && prompt.folder_ids.includes(selectedFolderId)) ||
+      prompt.folder_id === selectedFolderId
+    )
+  );
 
   return (
     <>
@@ -744,6 +848,7 @@ export function CreatePromptModal({
                           src={item.preview}
                           alt={`Media ${index + 1}`}
                           fill
+                          quality={92}
                           className="object-cover pointer-events-none"
                           style={{
                             objectPosition: `${item.cropX}% ${item.cropY}%`,
@@ -1159,6 +1264,36 @@ export function CreatePromptModal({
               <h3 className="text-sm font-semibold text-foreground">Organization</h3>
               <span className="text-[11px] text-text-dim">Folder and tags</span>
             </div>
+
+            {canRemoveFromCurrentFolder && currentViewFolder && (
+              <div className="flex items-center justify-between rounded-lg border border-brand-500/30 bg-brand-500/8 px-3 py-2">
+                <p className="text-xs text-text-muted">
+                  In this view: <span className="text-foreground font-medium">{currentViewFolder.name}</span>
+                </p>
+                <button
+                  type="button"
+                  disabled={isLoading || !prompt || !selectedFolderId}
+                  onClick={async () => {
+                    if (!prompt || !selectedFolderId) return;
+                    setIsLoading(true);
+                    setError("");
+                    try {
+                      const updated = await unassignPromptFromFolder(prompt.id, selectedFolderId);
+                      onSuccess?.(updated);
+                      onClose();
+                      resetForm();
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : "Failed to remove from folder");
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  className="px-2.5 py-1.5 text-xs font-medium text-brand-300 hover:text-brand-200 hover:bg-brand-500/15 rounded-md transition-colors disabled:opacity-50"
+                >
+                  Remove from this folder
+                </button>
+              </div>
+            )}
 
             {/* Folder Picker */}
             <div>

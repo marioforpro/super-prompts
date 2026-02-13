@@ -330,3 +330,59 @@ export async function assignPromptToFolder(promptId: string, folderId: string): 
 
   return getPrompt(promptId);
 }
+
+export async function unassignPromptFromFolder(promptId: string, folderId: string): Promise<Prompt> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: prompt, error: promptError } = await supabase
+    .from("prompts")
+    .select("id,user_id,folder_id")
+    .eq("id", promptId)
+    .single();
+
+  if (promptError || !prompt) throw new Error("Prompt not found");
+  if (prompt.user_id !== user.id) throw new Error("Unauthorized to update this prompt");
+
+  const { data: folder, error: folderError } = await supabase
+    .from("folders")
+    .select("id,user_id")
+    .eq("id", folderId)
+    .single();
+
+  if (folderError || !folder) throw new Error("Folder not found");
+  if (folder.user_id !== user.id) throw new Error("Unauthorized folder");
+
+  const { error: unlinkError } = await supabase
+    .from("prompt_folders")
+    .delete()
+    .eq("prompt_id", promptId)
+    .eq("folder_id", folderId);
+
+  if (unlinkError) throw unlinkError;
+
+  // Keep legacy prompts.folder_id aligned with remaining folder links.
+  if (prompt.folder_id === folderId) {
+    const { data: remaining } = await supabase
+      .from("prompt_folders")
+      .select("folder_id")
+      .eq("prompt_id", promptId)
+      .limit(1)
+      .maybeSingle();
+
+    const { error: updateError } = await supabase
+      .from("prompts")
+      .update({
+        folder_id: remaining?.folder_id || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", promptId)
+      .eq("user_id", user.id);
+
+    if (updateError) throw updateError;
+  }
+
+  return getPrompt(promptId);
+}

@@ -169,6 +169,7 @@ export function PromptCard({
                         src={media.url}
                         alt={`${title} - ${idx + 1}`}
                         fill
+                        quality={92}
                         draggable={false}
                         className="object-cover transition-transform duration-300 group-hover:scale-110"
                         style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
