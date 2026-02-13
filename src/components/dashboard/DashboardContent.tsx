@@ -715,10 +715,10 @@ export function DashboardContent({
         )}
 
         {(selectedFolder || selectedModel) && (
-          <div className="pt-2">
+          <div className="fixed bottom-5 left-1/2 z-30 -translate-x-1/2">
             <button
               onClick={selectedFolder ? handleDeleteSelectedFolder : handleDeleteSelectedModel}
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-red-500/45 bg-red-500/10 px-3 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/20 hover:text-red-200"
+              className="inline-flex h-8 items-center justify-center rounded-lg border border-red-500/25 bg-red-500/10 px-3 text-xs font-medium text-red-300/85 backdrop-blur-sm transition-colors hover:bg-red-500/15 hover:text-red-200"
             >
               {selectedFolder ? "Delete folder" : "Delete AI model"}
             </button>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { X, ImagePlus, Upload } from "lucide-react";
 import Image from "next/image";
 import type { Prompt, AiModel, Folder, Tag, FrameFit, ContentType } from "@/lib/types";
@@ -60,7 +59,6 @@ export function CreatePromptModal({
   onTagsChange,
   onFolderCreate,
 }: CreatePromptModalProps) {
-  const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
@@ -760,26 +758,6 @@ export function CreatePromptModal({
               <p className="text-xs text-text-dim mt-0.5 truncate max-w-[320px]">{breadcrumb}</p>
             )}
           </div>
-          {prompt && (onPrev || onNext) && (
-            <div className="flex items-center gap-1 mr-2">
-              <button
-                type="button"
-                onClick={onPrev}
-                disabled={!canGoPrev || isLoading}
-                className="px-2.5 py-1.5 text-xs rounded-md border border-surface-200 text-text-muted hover:text-foreground hover:bg-surface-100 disabled:opacity-40"
-              >
-                Prev
-              </button>
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={!canGoNext || isLoading}
-                className="px-2.5 py-1.5 text-xs rounded-md border border-surface-200 text-text-muted hover:text-foreground hover:bg-surface-100 disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
           <button
             onClick={onClose}
             className="p-1 hover:bg-surface-100 rounded-lg transition-colors"
@@ -1207,7 +1185,7 @@ export function CreatePromptModal({
                     type="button"
                     onClick={() => {
                       setModelDropdownOpen(false);
-                      router.push('/dashboard/settings');
+                      window.location.assign('/dashboard/settings');
                     }}
                     className="w-full text-left px-3 py-2 text-sm text-brand-400 hover:bg-surface-200 transition-colors"
                   >
@@ -1228,11 +1206,23 @@ export function CreatePromptModal({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
             <span>Advanced options</span>
-            {selectedTagObjects.length > 0 && (
-              <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/25">
-                {selectedTagObjects.length} tag{selectedTagObjects.length === 1 ? "" : "s"}
-              </span>
-            )}
+            <span className="ml-auto flex items-center gap-1.5">
+              {negativePrompt.trim().length > 0 && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/25">
+                  Negative
+                </span>
+              )}
+              {notes.trim().length > 0 && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/25">
+                  Notes
+                </span>
+              )}
+              {selectedTagObjects.length > 0 && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/25">
+                  {selectedTagObjects.length} tag{selectedTagObjects.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </span>
           </button>
 
           {showAdvanced && (
