@@ -134,18 +134,7 @@ export async function updatePrompt(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Verify ownership
-  const { data: existingPrompt, error: fetchError } = await supabase
-    .from("prompts")
-    .select("user_id")
-    .eq("id", id)
-    .single();
-
-  if (fetchError || !existingPrompt) throw new Error("Prompt not found");
-  if (existingPrompt.user_id !== user.id)
-    throw new Error("Unauthorized to update this prompt");
-
-  // Update basic fields
+  // Build update data
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
@@ -172,32 +161,31 @@ export async function updatePrompt(
   if (input.is_favorite !== undefined) updateData.is_favorite = input.is_favorite;
   if (input.is_public !== undefined) updateData.is_public = input.is_public;
 
-  const { error: updateError } = await supabase
+  // Run update and tag operations in parallel
+  const updatePromise = supabase
     .from("prompts")
     .update(updateData)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id);
 
-  if (updateError) throw updateError;
+  const tagPromise = input.tag_ids !== undefined
+    ? (async () => {
+        await supabase.from("prompt_tags").delete().eq("prompt_id", id);
+        if (input.tag_ids!.length > 0) {
+          const tagRecords = input.tag_ids!.map((tagId) => ({
+            prompt_id: id,
+            tag_id: tagId,
+          }));
+          const { error: tagError } = await supabase
+            .from("prompt_tags")
+            .insert(tagRecords);
+          if (tagError) throw tagError;
+        }
+      })()
+    : Promise.resolve();
 
-  // Update tags if provided
-  if (input.tag_ids !== undefined) {
-    // Delete existing tags
-    await supabase.from("prompt_tags").delete().eq("prompt_id", id);
-
-    // Add new tags if any
-    if (input.tag_ids.length > 0) {
-      const tagRecords = input.tag_ids.map((tagId) => ({
-        prompt_id: id,
-        tag_id: tagId,
-      }));
-
-      const { error: tagError } = await supabase
-        .from("prompt_tags")
-        .insert(tagRecords);
-
-      if (tagError) throw tagError;
-    }
-  }
+  const [updateResult] = await Promise.all([updatePromise, tagPromise]);
+  if (updateResult.error) throw updateResult.error;
 
   return getPrompt(id);
 }

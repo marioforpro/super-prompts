@@ -56,6 +56,7 @@ export default function SettingsClient({ models: initialModels }: SettingsClient
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [newModelColor, setNewModelColor] = useState(COLOR_PALETTE[0]);
 
   const handleAddModel = async () => {
     if (!newModelName.trim()) {
@@ -75,9 +76,14 @@ export default function SettingsClient({ models: initialModels }: SettingsClient
 
       const newModel = await createModel(newModelName, slug, "custom", newModelContentType);
 
+      // Set the chosen color
+      await updateModel(newModel.id, { icon_url: newModelColor });
+      newModel.icon_url = newModelColor;
+
       setModels([...models, newModel].sort((a, b) => a.name.localeCompare(b.name)));
       setNewModelName("");
       setNewModelContentType("TEXT");
+      setNewModelColor(COLOR_PALETTE[0]);
       setIsAdding(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create model");
@@ -162,11 +168,11 @@ export default function SettingsClient({ models: initialModels }: SettingsClient
   const getContentTypeBadgeColor = (contentType: ContentType | null) => {
     switch (contentType) {
       case "IMAGE":
-        return "bg-blue-500/15 text-blue-400";
+        return "bg-yellow-500/15 text-yellow-400";
       case "VIDEO":
-        return "bg-purple-500/15 text-purple-400";
+        return "bg-blue-500/15 text-blue-400";
       case "AUDIO":
-        return "bg-amber-500/15 text-amber-400";
+        return "bg-purple-500/15 text-purple-400";
       case "TEXT":
         return "bg-emerald-500/15 text-emerald-400";
       default:
@@ -235,6 +241,25 @@ export default function SettingsClient({ models: initialModels }: SettingsClient
                 disabled={isLoading}
                 autoFocus
               />
+              <div>
+                <label className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2 block">
+                  Color
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_PALETTE.map((palColor) => (
+                    <button
+                      key={palColor}
+                      type="button"
+                      onClick={() => setNewModelColor(palColor)}
+                      disabled={isLoading}
+                      className={`w-7 h-7 rounded-full cursor-pointer transition-all duration-200 ${
+                        newModelColor === palColor ? 'ring-2 ring-white scale-110' : 'ring-2 ring-transparent hover:ring-surface-300'
+                      }`}
+                      style={{ backgroundColor: palColor }}
+                    />
+                  ))}
+                </div>
+              </div>
               <div>
                 <label className="text-xs font-medium text-text-muted uppercase tracking-wide mb-2 block">
                   Content Type

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
@@ -30,6 +31,7 @@ function getModelColor(name: string): string {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const router = useRouter();
   const {
     folders,
     addFolder,
@@ -745,7 +747,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </button>
                 <button
                   onClick={() => {
-                    window.location.href = '/dashboard/settings';
+                    router.push('/dashboard/settings');
                   }}
                   className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
                   title="Manage AI models"

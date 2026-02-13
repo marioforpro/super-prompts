@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { X, ImagePlus, Upload } from "lucide-react";
 import Image from "next/image";
 import type { Prompt, AiModel, Folder, Tag, FrameFit, ContentType } from "@/lib/types";
@@ -12,7 +13,6 @@ import {
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
 import { createFolder } from "@/lib/actions/folders";
-import { createModel } from "@/lib/actions/models";
 import { createPromptMedia, removePromptMedia, updateMediaSettings } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
 
@@ -38,7 +38,6 @@ interface CreatePromptModalProps {
   tags: Tag[];
   onTagsChange?: (tags: Tag[]) => void;
   onFolderCreate?: (folder: Folder) => void;
-  onModelCreate?: (model: AiModel) => void;
 }
 
 export function CreatePromptModal({
@@ -51,8 +50,8 @@ export function CreatePromptModal({
   tags,
   onTagsChange,
   onFolderCreate,
-  onModelCreate,
 }: CreatePromptModalProps) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
@@ -78,12 +77,6 @@ export function CreatePromptModal({
   const [newFolderName, setNewFolderName] = useState("");
   const [folderCreateError, setFolderCreateError] = useState("");
   const newFolderInputRef = useRef<HTMLInputElement>(null);
-
-  // Inline model creation
-  const [isCreatingModel, setIsCreatingModel] = useState(false);
-  const [newModelName, setNewModelName] = useState("");
-  const [modelCreateError, setModelCreateError] = useState("");
-  const newModelInputRef = useRef<HTMLInputElement>(null);
 
   // Media gallery state
   const [mediaItems, setMediaItems] = useState<LocalMediaItem[]>([]);
@@ -448,33 +441,7 @@ export function CreatePromptModal({
     }
   }, [isCreatingFolder]);
 
-  // Focus inline model input when creating
-  useEffect(() => {
-    if (isCreatingModel && newModelInputRef.current) {
-      newModelInputRef.current.focus();
-    }
-  }, [isCreatingModel]);
-
-  // Handle inline model creation
-  const handleInlineModelCreate = async () => {
-    if (!newModelName.trim()) {
-      setIsCreatingModel(false);
-      setNewModelName("");
-      return;
-    }
-    setModelCreateError("");
-    try {
-      const slug = newModelName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      const model = await createModel(newModelName.trim(), slug);
-      onModelCreate?.(model);
-      setModelId(model.id);
-      setIsCreatingModel(false);
-      setNewModelName("");
-    } catch (err) {
-      setModelCreateError(err instanceof Error ? err.message : "Failed to create model");
-    }
-  };
-
+  // Handle inline folder creation
   // Handle inline folder creation
   const handleInlineFolderCreate = async () => {
     if (!newFolderName.trim()) {
@@ -1096,9 +1063,9 @@ export function CreatePromptModal({
                         <span className="text-sm text-foreground truncate">{sel.name}</span>
                         {sel.content_type && (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
-                            sel.content_type === 'IMAGE' ? 'bg-blue-500/15 text-blue-400' :
-                            sel.content_type === 'VIDEO' ? 'bg-purple-500/15 text-purple-400' :
-                            sel.content_type === 'AUDIO' ? 'bg-amber-500/15 text-amber-400' :
+                            sel.content_type === 'IMAGE' ? 'bg-yellow-500/15 text-yellow-400' :
+                            sel.content_type === 'VIDEO' ? 'bg-blue-500/15 text-blue-400' :
+                            sel.content_type === 'AUDIO' ? 'bg-purple-500/15 text-purple-400' :
                             'bg-emerald-500/15 text-emerald-400'
                           }`}>
                             {sel.content_type === 'IMAGE' ? 'Image' : sel.content_type === 'VIDEO' ? 'Video' : sel.content_type === 'AUDIO' ? 'Audio' : 'Text'}
@@ -1150,9 +1117,9 @@ export function CreatePromptModal({
                       <span className="truncate flex-1 text-left">{model.name}</span>
                       {model.content_type && (
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
-                          model.content_type === 'IMAGE' ? 'bg-blue-500/15 text-blue-400' :
-                          model.content_type === 'VIDEO' ? 'bg-purple-500/15 text-purple-400' :
-                          model.content_type === 'AUDIO' ? 'bg-amber-500/15 text-amber-400' :
+                          model.content_type === 'IMAGE' ? 'bg-yellow-500/15 text-yellow-400' :
+                          model.content_type === 'VIDEO' ? 'bg-blue-500/15 text-blue-400' :
+                          model.content_type === 'AUDIO' ? 'bg-purple-500/15 text-purple-400' :
                           'bg-emerald-500/15 text-emerald-400'
                         }`}>
                           {model.content_type === 'IMAGE' ? 'Image' : model.content_type === 'VIDEO' ? 'Video' : model.content_type === 'AUDIO' ? 'Audio' : 'Text'}
@@ -1161,55 +1128,20 @@ export function CreatePromptModal({
                     </button>
                   ))}
                   <div className="h-px bg-surface-200" />
-                  {/* Create new */}
+                  {/* Manage models in Settings */}
                   <button
                     type="button"
                     onClick={() => {
-                      setIsCreatingModel(true);
                       setModelDropdownOpen(false);
+                      router.push('/dashboard/settings');
                     }}
                     className="w-full text-left px-3 py-2 text-sm text-brand-400 hover:bg-surface-200 transition-colors"
                   >
-                    + Create new model...
+                    + Manage models...
                   </button>
                 </div>
               )}
             </div>
-
-            {/* Inline model creation */}
-            {isCreatingModel && (
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  ref={newModelInputRef}
-                  type="text"
-                  value={newModelName}
-                  onChange={(e) => setNewModelName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); handleInlineModelCreate(); }
-                    else if (e.key === "Escape") { setIsCreatingModel(false); setNewModelName(""); setModelCreateError(""); }
-                  }}
-                  placeholder="Model name..."
-                  className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={handleInlineModelCreate}
-                  className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsCreatingModel(false); setNewModelName(""); setModelCreateError(""); }}
-                  className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            {modelCreateError && (
-              <p className="text-xs text-red-400 mt-1">{modelCreateError}</p>
-            )}
           </div>
 
           {/* Folder */}

@@ -244,7 +244,6 @@ export function DashboardContent({
         tags={tags}
         onTagsChange={setTags}
         onFolderCreate={addFolder}
-        onModelCreate={addModel}
       />
 
       {/* Main Content */}
