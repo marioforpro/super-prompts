@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { PromptCard, type MediaItem } from './PromptCard';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
+import { useDashboard } from '@/contexts/DashboardContext';
 
 export type GridSortField = 'newest' | 'oldest' | 'title_az' | 'title_za';
 
@@ -41,6 +42,7 @@ export function PromptGrid({
   onFavoritePrompt,
   onClickPrompt,
 }: PromptGridProps) {
+  const { setDraggedPromptId } = useDashboard();
   const [mounted, setMounted] = useState(false);
   const [sortBy, setSortBy] = useState<GridSortField>('newest');
   const [sortOpen, setSortOpen] = useState(false);
@@ -132,7 +134,9 @@ export function PromptGrid({
               event.dataTransfer.setData('application/x-superprompts-prompt-id', prompt.id);
               event.dataTransfer.setData('text/plain', prompt.id);
               event.dataTransfer.effectAllowed = 'copyMove';
+              setDraggedPromptId(prompt.id);
             }}
+            onDragEnd={() => setDraggedPromptId(null)}
             className={cn(
               'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing',
               mounted

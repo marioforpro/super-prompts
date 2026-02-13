@@ -54,6 +54,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setShowFavoritesOnly,
     removeTag: removeTagFromContext,
     notifyPromptFolderAssigned,
+    draggedPromptId,
+    setDraggedPromptId,
   } = useDashboard();
 
   // Collapsible sections
@@ -294,7 +296,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const getDraggedPromptId = (event: React.DragEvent): string | null => {
     const custom = event.dataTransfer.getData("application/x-superprompts-prompt-id");
     const text = event.dataTransfer.getData("text/plain");
-    return custom || text || null;
+    const candidate = custom || text || draggedPromptId || null;
+    if (!candidate) return null;
+    const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidLike.test(candidate) ? candidate : null;
   };
 
   const handlePromptDragOverFolder = (event: React.DragEvent, folderId: string) => {
@@ -316,6 +321,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       notifyPromptFolderAssigned(promptId, folderId);
     } catch (err) {
       setFolderError(err instanceof Error ? err.message : "Failed to add prompt to folder");
+    } finally {
+      setDraggedPromptId(null);
     }
   };
 
