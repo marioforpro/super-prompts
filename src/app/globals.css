@@ -300,3 +300,30 @@ html {
 .zoom-slider:focus-visible::-webkit-slider-thumb {
   box-shadow: 0 0 0 3px rgba(232, 118, 75, 0.3);
 }
+
+/* ===== SIDEBAR SCROLL INDICATORS ===== */
+.sidebar-scroll {
+  mask-image: linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent);
+}
+
+/* ===== LIGHT MODE OVERRIDES ===== */
+[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .glass-subtle {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Card overlays in light mode */
+[data-theme="light"] .group:hover .bg-gradient-to-t {
+  --tw-gradient-from: rgba(0,0,0,0.60);
+}
+
+/* Focus visible ring offset matches theme background */
+[data-theme="light"] *:focus-visible {
+  --tw-ring-offset-color: var(--bg);
+}

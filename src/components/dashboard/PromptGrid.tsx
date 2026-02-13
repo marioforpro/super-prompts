@@ -123,7 +123,7 @@ export function PromptGrid({
       </div>
 
       {/* Grid — auto-fill with minmax to prevent cards from squishing on resize */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2 sm:gap-3">
         {sortedPrompts.map((prompt, index) => (
           <div
             key={prompt.id}

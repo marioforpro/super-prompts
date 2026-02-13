@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/icons/Logo";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
@@ -13,6 +14,7 @@ interface TopbarProps {
 }
 
 export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
+  const router = useRouter();
   const { openCreateModal } = useCreatePromptModal();
   const {
     viewMode,
@@ -25,7 +27,13 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'error' } | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (message: string, type: 'info' | 'error' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("sp-theme") as "dark" | "light" | null;
@@ -57,7 +65,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (!prompts || prompts.length === 0) {
-        alert("No prompts to export.");
+        showToast("No prompts to export", "info");
         return;
       }
       const blob = new Blob([JSON.stringify(prompts, null, 2)], { type: "application/json" });
@@ -68,7 +76,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert("Export failed. Please try again.");
+      showToast("Export failed. Please try again.", "error");
     }
   };
 
@@ -249,6 +257,21 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
                         </svg>
                         <span>Show welcome guide</span>
                       </button>
+
+                      {/* Settings */}
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          router.push('/dashboard/settings');
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Settings</span>
+                      </button>
                     </div>
 
                     {/* Sign out */}
@@ -305,6 +328,17 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           </div>
         </div>
       </div>
+
+      {/* Inline toast */}
+      {toast && (
+        <div className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-lg text-sm shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300 ${
+          toast.type === 'error'
+            ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+            : 'bg-brand-500/20 border border-brand-500/30 text-brand-300'
+        }`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
-import { createModel as createModelAction, updateModel as updateModelAction, deleteModel as deleteModelAction } from "@/lib/actions/models";
-import { deleteTag } from "@/lib/actions/tags";
+import { createTag, deleteTag } from "@/lib/actions/tags";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,22 +31,21 @@ function getModelColor(name: string): string {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const router = useRouter();
   const {
     folders,
     addFolder,
     removeFolder,
     updateFolder,
     models,
-    addModel,
-    removeModel,
-    updateModelCtx,
     tags,
     selectedFolderId,
     setSelectedFolderId,
     selectedModelSlug,
     setSelectedModelSlug,
-    selectedTag,
-    setSelectedTag,
+    selectedTags,
+    setSelectedTags,
+    addTag,
     selectedContentType,
     setSelectedContentType,
     showFavoritesOnly,
@@ -71,18 +70,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
 
-  // Model management
-  const [isCreatingModel, setIsCreatingModel] = useState(false);
-  const [newModelName, setNewModelName] = useState("");
-  const [modelError, setModelError] = useState("");
-  const modelInputRef = useRef<HTMLInputElement>(null);
-  const [modelMenuId, setModelMenuId] = useState<string | null>(null);
-  const [editingModelId, setEditingModelId] = useState<string | null>(null);
-  const [editingModelName, setEditingModelName] = useState("");
-  const [modelColorPickerId, setModelColorPickerId] = useState<string | null>(null);
-  const editModelInputRef = useRef<HTMLInputElement>(null);
-  const modelMenuRef = useRef<HTMLDivElement>(null);
-  const modelColorPickerRef = useRef<HTMLDivElement>(null);
+
+  // Tag management
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
+  const [tagError, setTagError] = useState("");
+  const [confirmDeleteTagId, setConfirmDeleteTagId] = useState<string | null>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   // Drag-to-reorder state (indicator position is now managed via dragAfterIndex state)
   const [dragId, setDragId] = useState<string | null>(null);
@@ -105,36 +99,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [editingFolderId]);
 
-  // Focus model input
-  useEffect(() => {
-    if (isCreatingModel && modelInputRef.current) {
-      modelInputRef.current.focus();
-    }
-  }, [isCreatingModel]);
 
-  // Focus model rename input
+  // Focus tag input
   useEffect(() => {
-    if (editingModelId && editModelInputRef.current) {
-      editModelInputRef.current.focus();
-      editModelInputRef.current.select();
+    if (isCreatingTag && tagInputRef.current) {
+      tagInputRef.current.focus();
     }
-  }, [editingModelId]);
+  }, [isCreatingTag]);
 
   // Close folder context menu on outside click
   const folderMenuRef = useRef<HTMLDivElement>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!folderMenuId && !colorPickerId && !modelMenuId && !modelColorPickerId) return;
+    if (!folderMenuId && !colorPickerId) return;
     const handleClick = (e: MouseEvent) => {
       if (folderMenuRef.current && folderMenuRef.current.contains(e.target as Node)) return;
       if (colorPickerRef.current && colorPickerRef.current.contains(e.target as Node)) return;
-      if (modelMenuRef.current && modelMenuRef.current.contains(e.target as Node)) return;
-      if (modelColorPickerRef.current && modelColorPickerRef.current.contains(e.target as Node)) return;
       setFolderMenuId(null);
       setColorPickerId(null);
-      setModelMenuId(null);
-      setModelColorPickerId(null);
     };
     const timer = setTimeout(() => {
       document.addEventListener("click", handleClick);
@@ -143,7 +126,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       clearTimeout(timer);
       document.removeEventListener("click", handleClick);
     };
-  }, [folderMenuId, colorPickerId, modelMenuId, modelColorPickerId]);
+  }, [folderMenuId, colorPickerId]);
 
   const isCreatingRef = useRef(false);
   const handleCreateFolder = async () => {
@@ -296,89 +279,53 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     isDragging.current = false;
   };
 
-  // Model CRUD
-  const isCreatingModelRef = useRef(false);
-  const handleCreateModel = async () => {
-    if (isCreatingModelRef.current) return;
-    const name = newModelName.trim();
+
+  // Create tag handler
+  const isCreatingTagRef = useRef(false);
+  const handleCreateTag = async () => {
+    if (isCreatingTagRef.current) return;
+    const name = newTagName.trim();
     if (!name) {
-      setIsCreatingModel(false);
-      setNewModelName("");
+      setIsCreatingTag(false);
+      setNewTagName("");
       return;
     }
-    isCreatingModelRef.current = true;
-    setModelError("");
-    const slug = name.toLowerCase().replace(/\s+/g, "-");
-    setNewModelName("");
-    setIsCreatingModel(false);
+    isCreatingTagRef.current = true;
+    setTagError("");
+    setNewTagName("");
+    setIsCreatingTag(false);
     try {
-      const model = await createModelAction(name, slug);
-      addModel(model);
+      const tag = await createTag(name);
+      addTag(tag);
     } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to create model");
+      setTagError(err instanceof Error ? err.message : "Failed to create tag");
     } finally {
-      isCreatingModelRef.current = false;
-    }
-  };
-
-  const handleRenameModel = async () => {
-    if (!editingModelId || !editingModelName.trim()) {
-      setEditingModelId(null);
-      setEditingModelName("");
-      return;
-    }
-    try {
-      const slug = editingModelName.trim().toLowerCase().replace(/\s+/g, "-");
-      const updated = await updateModelAction(editingModelId, { name: editingModelName.trim(), slug });
-      updateModelCtx(editingModelId, { name: updated.name, slug: updated.slug });
-      setEditingModelId(null);
-      setEditingModelName("");
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to rename model");
-      setEditingModelId(null);
-    }
-  };
-
-  const handleDeleteModel = async (modelId: string) => {
-    setModelMenuId(null);
-    if (selectedModelSlug) {
-      const m = models.find(mm => mm.id === modelId);
-      if (m && m.slug === selectedModelSlug) setSelectedModelSlug(null);
-    }
-    removeModel(modelId);
-    try {
-      await deleteModelAction(modelId);
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to delete model");
-    }
-  };
-
-  // Model color change handler
-  const handleModelColorChange = async (modelId: string, newColor: string) => {
-    // Close picker immediately (optimistic)
-    setModelColorPickerId(null);
-    setModelMenuId(null);
-    updateModelCtx(modelId, { icon_url: newColor });
-    try {
-      await updateModelAction(modelId, { icon_url: newColor });
-    } catch (err) {
-      setModelError(err instanceof Error ? err.message : "Failed to update model color");
+      isCreatingTagRef.current = false;
     }
   };
 
   // Delete tag handler
   const handleDeleteTag = async (tagId: string) => {
-    if (selectedTag) {
-      const tagObj = tags.find(t => t.id === tagId);
-      if (tagObj && tagObj.name === selectedTag) {
-        setSelectedTag(null);
-      }
+    const tagObj = tags.find(t => t.id === tagId);
+    if (tagObj) {
+      setSelectedTags(selectedTags.filter(t => t !== tagObj.name));
     }
     removeTagFromContext(tagId);
     try {
       await deleteTag(tagId);
     } catch (err) {
       console.error("Failed to delete tag:", err);
+    }
+  };
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCreateTag();
+    } else if (e.key === "Escape") {
+      setIsCreatingTag(false);
+      setNewTagName("");
+      setTagError("");
     }
   };
 
@@ -393,16 +340,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  const handleModelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleCreateModel();
-    } else if (e.key === "Escape") {
-      setIsCreatingModel(false);
-      setNewModelName("");
-      setModelError("");
-    }
-  };
 
   const handleNavClick = (action: () => void) => {
     action();
@@ -410,7 +347,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const isAllActive =
-    !selectedFolderId && !selectedModelSlug && !selectedTag && !selectedContentType && !showFavoritesOnly;
+    !selectedFolderId && !selectedModelSlug && selectedTags.length === 0 && !selectedContentType && !showFavoritesOnly;
 
   const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const sortedModels = [...models].sort((a, b) => a.name.localeCompare(b.name));
@@ -433,7 +370,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <div
-        className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface z-50 border-r border-surface-200 transition-transform duration-300 transform md:transform-none ${
+        className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface z-50 border-r border-surface-200 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform md:transform-none ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -456,14 +393,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1">
+          <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1 sidebar-scroll">
             {/* All Prompts */}
             <button
               onClick={() =>
                 handleNavClick(() => {
                   setSelectedFolderId(null);
                   setSelectedModelSlug(null);
-                  setSelectedTag(null);
+                  setSelectedTags([]);
                   setSelectedContentType(null);
                   setShowFavoritesOnly(false);
                 })
@@ -486,7 +423,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 handleNavClick(() => {
                   setSelectedFolderId(null);
                   setSelectedModelSlug(null);
-                  setSelectedTag(null);
+                  setSelectedTags([]);
                   setShowFavoritesOnly(true);
                 })
               }
@@ -502,50 +439,40 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span className="text-sm font-medium">Favorites</span>
             </button>
 
-            {/* Divider */}
-            <div className="h-px bg-surface-200 my-4" />
-
-            {/* CONTENT TYPE — inline filter pills */}
-            <div className="px-2">
-              <div className="flex items-center gap-1.5 px-2 py-1 mb-1">
-                <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
-                  Type
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 px-1">
-                {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
-                  const isActive = selectedContentType === type;
-                  const label = type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
-                  const icon = type === 'IMAGE' ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  ) : type === 'VIDEO' ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                  ) : type === 'AUDIO' ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-                  ) : (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                  );
-                  return (
-                    <button
-                      key={type}
-                      onClick={() =>
-                        handleNavClick(() => {
-                          setSelectedContentType(isActive ? null : type);
-                          setShowFavoritesOnly(false);
-                        })
-                      }
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-150 cursor-pointer border ${
-                        isActive
-                          ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
-                          : 'bg-surface-100 border-surface-200 text-text-dim hover:text-text-muted hover:border-surface-300'
-                      }`}
-                    >
-                      {icon}
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Content type filter pills — icon-only for compact fit */}
+            <div className="grid grid-cols-4 gap-1.5 mt-2 px-1">
+              {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
+                const isActive = selectedContentType === type;
+                const label = type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
+                const icon = type === 'IMAGE' ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                ) : type === 'VIDEO' ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                ) : type === 'AUDIO' ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                );
+                return (
+                  <button
+                    key={type}
+                    title={label}
+                    onClick={() =>
+                      handleNavClick(() => {
+                        setSelectedContentType(isActive ? null : type);
+                        setShowFavoritesOnly(false);
+                      })
+                    }
+                    className={`flex items-center justify-center py-2.5 rounded-md transition-all duration-150 cursor-pointer border ${
+                      isActive
+                        ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
+                        : 'bg-surface-100 border-surface-200 text-text-dim hover:text-text-muted hover:border-surface-300'
+                    }`}
+                  >
+                    {icon}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Divider */}
@@ -692,7 +619,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 onPointerMove={handleDragMove}
                                 onPointerUp={handleDragEnd}
                                 onPointerCancel={handleDragEnd}
-                                className="absolute left-0 top-0 bottom-0 w-4 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
+                                className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center opacity-40 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
                               >
                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
                                   <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
@@ -709,7 +636,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   e.stopPropagation();
                                   setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
+                                className="opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
                               >
                                 <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
@@ -807,7 +734,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Divider */}
             <div className="h-px bg-surface-200 my-4" />
 
-            {/* AI MODELS — collapsible with CRUD */}
+            {/* AI MODELS — collapsible, filter-only */}
             <div>
               <div className="flex items-center justify-between px-4 py-2 gap-2">
                 <button
@@ -821,12 +748,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </button>
                 <button
                   onClick={() => {
-                    setIsCreatingModel(true);
-                    setModelError("");
-                    if (!modelsOpen) setModelsOpen(true);
+                    router.push('/dashboard/settings');
                   }}
                   className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
-                  title="Add AI model"
+                  title="Manage AI models"
                 >
                   <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -835,187 +760,34 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
 
               {modelsOpen && (
-                <>
-                  {/* Inline model creation */}
-                  {isCreatingModel && (
-                    <div className="px-4 mt-1 mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          ref={modelInputRef}
-                          type="text"
-                          value={newModelName}
-                          onChange={(e) => setNewModelName(e.target.value)}
-                          onKeyDown={handleModelKeyDown}
-                          placeholder="Model name..."
-                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                <div className="mt-1 space-y-0.5 pl-2">
+                  {sortedModels.length === 0 ? (
+                    <p className="px-4 py-2 text-xs text-text-dim">No models yet</p>
+                  ) : (
+                    sortedModels.map((model) => (
+                      <div
+                        key={model.id}
+                        onClick={() =>
+                          handleNavClick(() => {
+                            setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
+                            setShowFavoritesOnly(false);
+                          })
+                        }
+                        className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
+                          selectedModelSlug === model.slug
+                            ? "bg-surface-200 text-foreground"
+                            : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                        }`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
                         />
-                        <button
-                          onClick={handleCreateModel}
-                          className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
-                          title="Add model"
-                        >
-                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => { setIsCreatingModel(false); setNewModelName(""); setModelError(""); }}
-                          className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
-                          title="Cancel"
-                        >
-                          <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        <span className="truncate flex-1">{model.name}</span>
                       </div>
-                      {modelError && (
-                        <p className="text-xs text-red-400 mt-1">{modelError}</p>
-                      )}
-                    </div>
+                    ))
                   )}
-
-                  <div className="mt-1 space-y-0.5 pl-2">
-                    {sortedModels.length === 0 && !isCreatingModel ? (
-                      <p className="px-4 py-2 text-xs text-text-dim">No models yet</p>
-                    ) : (
-                      sortedModels.map((model) => (
-                        <div key={model.id} className="relative group">
-                          {editingModelId === model.id ? (
-                            <div className="px-4 py-1">
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  ref={editModelInputRef}
-                                  type="text"
-                                  value={editingModelName}
-                                  onChange={(e) => setEditingModelName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") { e.preventDefault(); handleRenameModel(); }
-                                    else if (e.key === "Escape") { setEditingModelId(null); setEditingModelName(""); }
-                                  }}
-                                  className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                                />
-                                <button
-                                  onClick={handleRenameModel}
-                                  className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
-                                  title="Confirm rename"
-                                >
-                                  <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => { setEditingModelId(null); setEditingModelName(""); }}
-                                  className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
-                                  title="Cancel"
-                                >
-                                  <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div
-                              onClick={() =>
-                                handleNavClick(() => {
-                                  setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
-                                  setShowFavoritesOnly(false);
-                                })
-                              }
-                              onContextMenu={(e) => {
-                                e.preventDefault();
-                                setModelMenuId(modelMenuId === model.id ? null : model.id);
-                              }}
-                              className={`w-full flex items-center gap-2.5 px-4 py-1.5 text-xs rounded-lg transition-all duration-150 cursor-pointer ${
-                                selectedModelSlug === model.slug
-                                  ? "bg-surface-200 text-foreground"
-                                  : "text-text-muted hover:text-foreground hover:bg-surface-100"
-                              }`}
-                            >
-                              <span
-                                className="w-2 h-2 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
-                              />
-                              <span className="truncate flex-1">{model.name}</span>
-                              <span
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setModelMenuId(modelMenuId === model.id ? null : model.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
-                              >
-                                <svg className="w-3.5 h-3.5 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-                                </svg>
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Model context menu */}
-                          {modelMenuId === model.id && (
-                            <div
-                              ref={modelMenuRef}
-                              className="absolute left-8 top-full z-50 mt-1 w-36 bg-surface-100 border border-surface-200 rounded-lg shadow-xl overflow-hidden"
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setEditingModelId(model.id); setEditingModelName(model.name); setModelMenuId(null); }}
-                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
-                              >
-                                Rename
-                              </button>
-                              <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); setModelColorPickerId(model.id); }}
-                                className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-foreground hover:bg-surface-200 transition-colors cursor-pointer"
-                              >
-                                Change color
-                              </button>
-                              <div className="h-px bg-surface-200 my-0.5" />
-                              <button
-                                onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleDeleteModel(model.id); }}
-                                className="w-full text-left px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-surface-200 transition-colors cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Model color picker */}
-                          {modelColorPickerId === model.id && (
-                            <div
-                              ref={modelColorPickerRef}
-                              className="absolute left-8 top-full z-50 mt-1 p-3 bg-surface-100 border border-surface-200 rounded-lg shadow-xl"
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
-                            >
-                              <div className="grid grid-cols-5 gap-2">
-                                {MODEL_COLORS.map((color) => {
-                                  const currentColor = (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name);
-                                  return (
-                                    <button
-                                      key={color}
-                                      onClick={(e) => { e.stopPropagation(); handleModelColorChange(model.id, color); }}
-                                      className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer"
-                                      style={{
-                                        backgroundColor: color,
-                                        borderColor: currentColor === color ? '#ffffff' : 'transparent'
-                                      }}
-                                      title={color}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
+                </div>
               )}
             </div>
 
@@ -1034,46 +806,120 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     Tags
                   </span>
                 </button>
+                <button
+                  onClick={() => {
+                    setIsCreatingTag(true);
+                    setTagError("");
+                    if (!tagsOpen) setTagsOpen(true);
+                  }}
+                  className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
+                  title="Create tag"
+                >
+                  <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
               </div>
 
               {tagsOpen && (
-                <div className="mt-1 flex flex-wrap gap-2 px-2">
-                  {tags.length === 0 ? (
-                    <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
-                  ) : (
-                    tags.map((tag) => (
-                      <div key={tag.id} className="relative group/tag inline-flex">
+                <>
+                  {/* Inline tag creation */}
+                  {isCreatingTag && (
+                    <div className="px-4 mt-1 mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          ref={tagInputRef}
+                          type="text"
+                          value={newTagName}
+                          onChange={(e) => setNewTagName(e.target.value)}
+                          onKeyDown={handleTagKeyDown}
+                          placeholder="Tag name..."
+                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
+                        />
                         <button
-                          onClick={() =>
-                            handleNavClick(() => {
-                              setSelectedTag(selectedTag === tag.name ? null : tag.name);
-                              setShowFavoritesOnly(false);
-                            })
-                          }
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
-                            selectedTag === tag.name
-                              ? "bg-brand-500/15 border border-brand-400/50 text-brand-300 pr-6"
-                              : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground group-hover/tag:pr-6"
-                          }`}
+                          onClick={handleCreateTag}
+                          className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
+                          title="Create tag"
                         >
-                          #{tag.name}
+                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
                         </button>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteTag(tag.id);
-                          }}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300 transition-all cursor-pointer"
-                          title="Delete tag"
+                          onClick={() => { setIsCreatingTag(false); setNewTagName(""); setTagError(""); }}
+                          className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
+                          title="Cancel"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
-                    ))
+                      {tagError && (
+                        <p className="text-xs text-red-400 mt-1">{tagError}</p>
+                      )}
+                    </div>
                   )}
-                </div>
+
+                  <div className="mt-1 flex flex-wrap gap-2 px-2">
+                    {tags.length === 0 && !isCreatingTag ? (
+                      <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
+                    ) : (
+                      tags.map((tag) => (
+                        <div key={tag.id} className="relative group/tag inline-flex">
+                          <button
+                            onClick={() =>
+                              handleNavClick(() => {
+                                const isSelected = selectedTags.includes(tag.name);
+                                if (isSelected) {
+                                  setSelectedTags(selectedTags.filter(t => t !== tag.name));
+                                } else {
+                                  setSelectedTags([...selectedTags, tag.name]);
+                                }
+                                setShowFavoritesOnly(false);
+                              })
+                            }
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
+                              selectedTags.includes(tag.name)
+                                ? "bg-brand-500/15 border border-brand-400/50 text-brand-300 pr-6"
+                                : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground group-hover/tag:pr-6"
+                            }`}
+                          >
+                            #{tag.name}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirmDeleteTagId === tag.id) {
+                                handleDeleteTag(tag.id);
+                                setConfirmDeleteTagId(null);
+                              } else {
+                                setConfirmDeleteTagId(tag.id);
+                                setTimeout(() => setConfirmDeleteTagId(null), 3000);
+                              }
+                            }}
+                            className={`absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full transition-all cursor-pointer ${
+                              confirmDeleteTagId === tag.id
+                                ? 'opacity-100 bg-red-500/30 text-red-300'
+                                : 'opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300'
+                            }`}
+                            title={confirmDeleteTagId === tag.id ? "Click again to confirm delete" : "Delete tag"}
+                          >
+                            {confirmDeleteTagId === tag.id ? (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </nav>

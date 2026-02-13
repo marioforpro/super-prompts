@@ -120,12 +120,20 @@ export default function Hero() {
           </h1>
 
           {/* Subheadline */}
-          <p className="anim-fade-up anim-d3 text-base sm:text-xl leading-relaxed text-text-muted mb-12">
+          <p className="anim-fade-up anim-d2 text-base sm:text-xl leading-relaxed text-text-muted mb-12">
             Save, organize, and discover the best prompts for image, video, and sound generation.
           </p>
 
+          {/* Waitlist */}
+          <div className="anim-fade-up anim-d3 flex justify-center items-center w-full mb-4">
+            <WaitlistForm />
+          </div>
+          <p className="anim-fade-up anim-d3 text-sm text-text-dim mt-1">
+            Join creatives on the waitlist. No spam, ever.
+          </p>
+
           {/* Model ticker — glass pills: wrap on mobile, single line on desktop */}
-          <div className="anim-fade-up anim-d3 flex flex-wrap sm:flex-nowrap justify-center gap-2 mb-12 px-2 sm:overflow-x-auto min-w-0 overflow-y-visible py-0.5">
+          <div className="anim-fade-up anim-d4 flex flex-wrap sm:flex-nowrap justify-center gap-2 mb-6 px-2 sm:overflow-x-auto min-w-0 overflow-y-visible py-0.5">
             {models.map((model) => (
               <span
                 key={model}
@@ -142,14 +150,6 @@ export default function Hero() {
               +20 more
             </span>
           </div>
-
-          {/* Waitlist */}
-          <div className="anim-fade-up anim-d4 flex justify-center items-center w-full mb-4">
-            <WaitlistForm />
-          </div>
-          <p className="anim-fade-up anim-d5 text-sm text-text-dim mt-1">
-            Join creatives on the waitlist. No spam, ever.
-          </p>
         </div>
 
         {/* Scroll indicator */}

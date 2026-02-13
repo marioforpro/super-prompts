@@ -39,6 +39,15 @@ const getGradientBackground = (seed: string): string => {
     'from-orange-950 to-red-900',
     'from-stone-800 to-orange-900',
     'from-zinc-800 to-amber-900',
+    'from-indigo-900 to-blue-900',
+    'from-violet-900 to-purple-900',
+    'from-emerald-900 to-teal-900',
+    'from-rose-900 to-pink-900',
+    'from-cyan-900 to-sky-900',
+    'from-fuchsia-900 to-violet-900',
+    'from-slate-800 to-zinc-900',
+    'from-teal-900 to-emerald-900',
+    'from-blue-900 to-indigo-900',
   ];
 
   const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -46,21 +55,14 @@ const getGradientBackground = (seed: string): string => {
 };
 
 /**
- * Returns the aspect ratio class based on model category:
- * - image: 3:4 portrait (default)
- * - video: 16:9 landscape
- * - audio: 1:1 square
- * - text/other: 3:4 portrait
+ * Returns the aspect ratio class for consistent grid layout.
+ * Standardized aspect ratio for all content types.
+ * Individual aspect ratios are shown in the detail/modal view.
  */
 function getAspectRatio(category?: string | null): string {
-  switch (category) {
-    case 'video':
-      return 'aspect-video'; // 16:9
-    case 'audio':
-      return 'aspect-square'; // 1:1
-    default:
-      return 'aspect-[3/4]'; // portrait
-  }
+  // Standardized aspect ratio for consistent grid layout
+  // Individual aspect ratios are shown in the detail/modal view
+  return 'aspect-[4/5]';
 }
 
 export function PromptCard({
@@ -83,6 +85,7 @@ export function PromptCard({
   const [isHovered, setIsHovered] = useState(false);
   const [isFavoritedLocally, setIsFavoritedLocally] = useState(isFavorite);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [showCopied, setShowCopied] = useState(false);
 
   // Use mediaItems if provided, otherwise fall back to coverUrl/coverType
   const displayMedia = mediaItems && mediaItems.length > 0
@@ -100,6 +103,8 @@ export function PromptCard({
   const handleCopyClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onCopy?.();
+    setShowCopied(true);
+    setTimeout(() => setShowCopied(false), 1500);
   };
 
   const handlePrevious = (e: React.MouseEvent) => {
@@ -126,7 +131,7 @@ export function PromptCard({
 
   return (
     <div
-      className="group relative overflow-hidden rounded-lg bg-surface cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
+      className="group relative overflow-hidden rounded-lg bg-surface cursor-pointer transition-transform duration-300 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={(e) => {
@@ -134,8 +139,10 @@ export function PromptCard({
         if (target.closest('button')) return;
         onClick?.();
       }}
+      onKeyDown={(e) => { if (e.key === 'Enter') onClick?.(); }}
       role="article"
       aria-label={`Prompt: ${title}`}
+      tabIndex={0}
     >
       {/* Cover Image/Video or Gradient Placeholder */}
       <div className={cn('relative w-full bg-background overflow-hidden', aspectClass)}>
@@ -276,7 +283,7 @@ export function PromptCard({
         <div
           className={cn(
             'absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-200 pointer-events-none',
-            isHovered ? 'opacity-100' : 'opacity-0'
+            isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-100'
           )}
         />
 
@@ -284,7 +291,7 @@ export function PromptCard({
         <div
           className={cn(
             'absolute top-3 right-3 z-20 flex items-center gap-1.5 pointer-events-auto transition-all duration-200',
-            isHovered ? 'opacity-100' : 'opacity-0'
+            isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-70'
           )}
         >
           <button
@@ -293,7 +300,13 @@ export function PromptCard({
             aria-label="Copy prompt"
             title="Copy prompt"
           >
-            <Copy size={14} className="text-white" />
+            {showCopied ? (
+              <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <Copy size={14} className="text-white" />
+            )}
           </button>
           <button
             onClick={handleFavoriteClick}
@@ -317,7 +330,7 @@ export function PromptCard({
         <div
           className={cn(
             'absolute inset-x-0 bottom-0 z-20 px-4 pb-7 pt-10 transition-all duration-200 pointer-events-none',
-            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
+            isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100'
           )}
         >
           <h3 className="text-sm font-semibold text-white line-clamp-2 text-center">

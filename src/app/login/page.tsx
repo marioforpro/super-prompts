@@ -157,7 +157,7 @@ function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full bg-surface-100 border border-surface-300 rounded-lg px-4 py-3 text-white placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-sm"
+                className="w-full bg-surface-100 border border-surface-300 rounded-lg px-4 py-3 text-foreground placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-sm"
               />
             </div>
             <div>
@@ -170,7 +170,7 @@ function LoginForm() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Your password"
                 required
-                className="w-full bg-surface-100 border border-surface-300 rounded-lg px-4 py-3 text-white placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-sm"
+                className="w-full bg-surface-100 border border-surface-300 rounded-lg px-4 py-3 text-foreground placeholder:text-text-dim focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-sm"
               />
             </div>
             <button

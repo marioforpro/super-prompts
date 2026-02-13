@@ -109,12 +109,10 @@ export function PromptListView({
   return (
     <div className="w-full">
       {/* Header — grid layout for perfect column alignment */}
-      <div className="px-4 py-3 border-b border-white/5 grid items-center gap-3" style={{ gridTemplateColumns: '48px 1fr 120px 72px 120px 100px 64px' }}>
+      <div className="px-4 py-3 border-b border-white/5 grid items-center gap-3" style={{ gridTemplateColumns: '48px 1fr 120px 100px 64px' }}>
         <div /> {/* Thumbnail spacer */}
         <SortButton label="TITLE" field="title" />
         <div className="hidden md:block"><SortButton label="MODEL" field="model" /></div>
-        <div className="hidden md:block text-xs font-medium text-text-muted">TYPE</div>
-        <div className="hidden lg:block text-xs font-medium text-text-muted">TAGS</div>
         <div className="hidden sm:block"><SortButton label="DATE" field="date" /></div>
         <div /> {/* Actions spacer */}
       </div>
@@ -128,8 +126,10 @@ export function PromptListView({
             <div
               key={prompt.id}
               className="px-4 py-3 grid items-center gap-3 group transition-colors duration-200 cursor-pointer hover:bg-white/5"
-              style={{ gridTemplateColumns: '48px 1fr 120px 72px 120px 100px 64px' }}
+              style={{ gridTemplateColumns: '48px 1fr 120px 100px 64px' }}
               onClick={() => onClickPrompt?.(prompt.id)}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') onClickPrompt?.(prompt.id); }}
             >
               {/* Thumbnail */}
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden flex-shrink-0 bg-surface">
@@ -163,17 +163,30 @@ export function PromptListView({
                 )}
               </div>
 
-              {/* Title */}
+              {/* Title + metadata */}
               <div className="min-w-0">
                 <h4 className="text-sm font-medium text-foreground truncate">
                   {prompt.title}
                 </h4>
-                {/* Show model below title on mobile */}
-                {prompt.modelName && (
-                  <span className="md:hidden text-xs text-text-dim mt-0.5 block">
-                    {prompt.modelName}
-                  </span>
-                )}
+                <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                  {/* Show model below title on mobile */}
+                  {prompt.modelName && (
+                    <span className="md:hidden text-xs text-text-dim shrink-0">
+                      {prompt.modelName}
+                    </span>
+                  )}
+                  {prompt.contentType && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-text-dim">
+                      {prompt.contentType.toLowerCase()}
+                    </span>
+                  )}
+                  {prompt.tags && prompt.tags.length > 0 && (
+                    <span className="text-xs text-text-dim truncate">
+                      {prompt.tags.slice(0, 2).join(', ')}
+                      {prompt.tags.length > 2 && ` +${prompt.tags.length - 2}`}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Model */}
@@ -181,29 +194,6 @@ export function PromptListView({
                 {prompt.modelName ? (
                   <span className="text-xs font-medium text-text-muted bg-white/5 px-2 py-1 rounded">
                     {prompt.modelName}
-                  </span>
-                ) : (
-                  <span className="text-xs text-text-muted opacity-40">—</span>
-                )}
-              </div>
-
-              {/* Content Type */}
-              <div className="hidden md:block">
-                {prompt.contentType ? (
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-dim bg-white/5 px-2 py-0.5 rounded">
-                    {prompt.contentType.toLowerCase()}
-                  </span>
-                ) : (
-                  <span className="text-xs text-text-muted opacity-40">—</span>
-                )}
-              </div>
-
-              {/* Tags */}
-              <div className="hidden lg:block">
-                {prompt.tags && prompt.tags.length > 0 ? (
-                  <span className="text-xs text-text-muted truncate block">
-                    {prompt.tags.slice(0, 2).join(', ')}
-                    {prompt.tags.length > 2 && ` +${prompt.tags.length - 2}`}
                   </span>
                 ) : (
                   <span className="text-xs text-text-muted opacity-40">—</span>
@@ -220,7 +210,7 @@ export function PromptListView({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="flex items-center gap-1 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={(e) => handleCopyClick(prompt.id, prompt.content, e)}
                   className="p-1.5 rounded hover:bg-white/10 transition-colors duration-200"

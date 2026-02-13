@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { X, ImagePlus, Upload } from "lucide-react";
 import Image from "next/image";
 import type { Prompt, AiModel, Folder, Tag, FrameFit, ContentType } from "@/lib/types";
@@ -12,7 +13,6 @@ import {
 } from "@/lib/actions/prompts";
 import { createTag } from "@/lib/actions/tags";
 import { createFolder } from "@/lib/actions/folders";
-import { createModel } from "@/lib/actions/models";
 import { createPromptMedia, removePromptMedia, updateMediaSettings } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
 
@@ -38,7 +38,6 @@ interface CreatePromptModalProps {
   tags: Tag[];
   onTagsChange?: (tags: Tag[]) => void;
   onFolderCreate?: (folder: Folder) => void;
-  onModelCreate?: (model: AiModel) => void;
 }
 
 export function CreatePromptModal({
@@ -51,12 +50,14 @@ export function CreatePromptModal({
   tags,
   onTagsChange,
   onFolderCreate,
-  onModelCreate,
 }: CreatePromptModalProps) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
   const [contentType, setContentType] = useState<ContentType | null>(null);
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [negativePromptOpen, setNegativePromptOpen] = useState(false);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -67,6 +68,8 @@ export function CreatePromptModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSearchingModels, setIsSearchingModels] = useState(false);
   const [filteredModels, setFilteredModels] = useState<AiModel[]>(models);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   // Inline folder creation
@@ -74,12 +77,6 @@ export function CreatePromptModal({
   const [newFolderName, setNewFolderName] = useState("");
   const [folderCreateError, setFolderCreateError] = useState("");
   const newFolderInputRef = useRef<HTMLInputElement>(null);
-
-  // Inline model creation
-  const [isCreatingModel, setIsCreatingModel] = useState(false);
-  const [newModelName, setNewModelName] = useState("");
-  const [modelCreateError, setModelCreateError] = useState("");
-  const newModelInputRef = useRef<HTMLInputElement>(null);
 
   // Media gallery state
   const [mediaItems, setMediaItems] = useState<LocalMediaItem[]>([]);
@@ -96,6 +93,9 @@ export function CreatePromptModal({
   const [isDetectingText, setIsDetectingText] = useState(false);
   const [detectedTextPreview, setDetectedTextPreview] = useState("");
 
+  // Progressive disclosure state
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   // Initialize form with existing prompt data
   useEffect(() => {
     if (prompt) {
@@ -103,6 +103,8 @@ export function CreatePromptModal({
       setContent(prompt.content);
       setModelId(prompt.model_id || null);
       setContentType(prompt.content_type || null);
+      setNegativePrompt(prompt.negative_prompt || "");
+      setNegativePromptOpen(!!prompt.negative_prompt);
       setFolderId(prompt.folder_id || null);
       setNotes(prompt.notes || "");
       setSourceUrl(prompt.source_url || "");
@@ -137,6 +139,8 @@ export function CreatePromptModal({
         setMediaItems([]);
       }
       setRemovedMediaIds([]);
+      // Show advanced section if any advanced fields have content
+      setShowAdvanced(!!(prompt.negative_prompt || prompt.notes || prompt.source_url));
     } else {
       resetForm();
     }
@@ -178,11 +182,25 @@ export function CreatePromptModal({
     }
   }, [tagInput, models, isSearchingModels]);
 
+  // Close model dropdown on outside click
+  useEffect(() => {
+    if (!modelDropdownOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setModelDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [modelDropdownOpen]);
+
   const resetForm = () => {
     setTitle("");
     setContent("");
     setModelId(null);
     setContentType(null);
+    setNegativePrompt("");
+    setNegativePromptOpen(false);
     setFolderId(null);
     setNotes("");
     setSourceUrl("");
@@ -191,6 +209,7 @@ export function CreatePromptModal({
     setMediaItems([]);
     setRemovedMediaIds([]);
     setAnalysisError("");
+    setShowAdvanced(false);
     setShowAnalysisPrompt(false);
     setIsDetectingText(false);
     setDetectedTextPreview("");
@@ -428,33 +447,7 @@ export function CreatePromptModal({
     }
   }, [isCreatingFolder]);
 
-  // Focus inline model input when creating
-  useEffect(() => {
-    if (isCreatingModel && newModelInputRef.current) {
-      newModelInputRef.current.focus();
-    }
-  }, [isCreatingModel]);
-
-  // Handle inline model creation
-  const handleInlineModelCreate = async () => {
-    if (!newModelName.trim()) {
-      setIsCreatingModel(false);
-      setNewModelName("");
-      return;
-    }
-    setModelCreateError("");
-    try {
-      const slug = newModelName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      const model = await createModel(newModelName.trim(), slug);
-      onModelCreate?.(model);
-      setModelId(model.id);
-      setIsCreatingModel(false);
-      setNewModelName("");
-    } catch (err) {
-      setModelCreateError(err instanceof Error ? err.message : "Failed to create model");
-    }
-  };
-
+  // Handle inline folder creation
   // Handle inline folder creation
   const handleInlineFolderCreate = async () => {
     if (!newFolderName.trim()) {
@@ -615,6 +608,7 @@ export function CreatePromptModal({
       const input = {
         title: title.trim(),
         content: content.trim(),
+        negative_prompt: negativePrompt.trim() || undefined,
         model_id: modelId,
         folder_id: folderId,
         content_type: contentType,
@@ -697,7 +691,8 @@ export function CreatePromptModal({
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-6">
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
               {error}
@@ -1016,127 +1011,111 @@ export function CreatePromptModal({
             />
           </div>
 
-          {/* AI Model */}
+          {/* AI Model — always visible */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
               AI Model
             </label>
-            <select
-              value={modelId || ""}
-              onChange={(e) => {
-                if (e.target.value === "__new__") {
-                  setIsCreatingModel(true);
-                  e.target.value = modelId || "";
-                } else {
-                  const newModelId = e.target.value || null;
-                  setModelId(newModelId);
-                  // Auto-suggest content type from model category
-                  if (newModelId && !contentType) {
-                    const selectedModel = models.find(m => m.id === newModelId);
-                    if (selectedModel?.category) {
-                      const categoryMap: Record<string, ContentType> = {
-                        image: 'IMAGE',
-                        video: 'VIDEO',
-                        audio: 'AUDIO',
-                        text: 'TEXT',
-                      };
-                      const suggested = categoryMap[selectedModel.category];
-                      if (suggested) setContentType(suggested);
-                    }
-                  }
-                }
-              }}
-              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
-              disabled={isLoading}
-            >
-              <option value="">Select a model...</option>
-              {models.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
-              <option value="__new__">+ Create new model...</option>
-            </select>
-
-            {/* Inline model creation */}
-            {isCreatingModel && (
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  ref={newModelInputRef}
-                  type="text"
-                  value={newModelName}
-                  onChange={(e) => setNewModelName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") { e.preventDefault(); handleInlineModelCreate(); }
-                    else if (e.key === "Escape") { setIsCreatingModel(false); setNewModelName(""); setModelCreateError(""); }
-                  }}
-                  placeholder="Model name..."
-                  className="flex-1 px-3 py-2 text-sm bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={handleInlineModelCreate}
-                  className="px-3 py-2 text-sm font-medium bg-brand-500/20 text-brand-400 border border-brand-500/30 rounded-lg hover:bg-brand-500/30 transition-colors"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsCreatingModel(false); setNewModelName(""); setModelCreateError(""); }}
-                  className="px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            {modelCreateError && (
-              <p className="text-xs text-red-400 mt-1">{modelCreateError}</p>
-            )}
-          </div>
-
-          {/* Content Type */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Content Type
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {([null, 'IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
-                const isSelected = contentType === type;
-                const label = type === null ? 'Auto' : type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
-                const icon = type === null ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                ) : type === 'IMAGE' ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                ) : type === 'VIDEO' ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                ) : type === 'AUDIO' ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+            <div ref={modelDropdownRef} className="relative">
+              {/* Trigger button */}
+              <button
+                type="button"
+                onClick={() => !isLoading && setModelDropdownOpen(!modelDropdownOpen)}
+                className={`w-full flex items-center justify-between px-4 py-2.5 bg-surface-100 border rounded-lg text-left transition-all disabled:opacity-50 ${
+                  modelDropdownOpen
+                    ? 'border-brand-400 ring-1 ring-brand-400/30'
+                    : 'border-surface-200 hover:border-surface-300'
+                }`}
+                disabled={isLoading}
+              >
+                {modelId ? (
+                  (() => {
+                    const sel = models.find(m => m.id === modelId);
+                    if (!sel) return <span className="text-text-dim text-sm">Select a model...</span>;
+                    return (
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm text-foreground truncate">{sel.name}</span>
+                        {sel.content_type && (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
+                            sel.content_type === 'IMAGE' ? 'bg-yellow-500/15 text-yellow-400' :
+                            sel.content_type === 'VIDEO' ? 'bg-blue-500/15 text-blue-400' :
+                            sel.content_type === 'AUDIO' ? 'bg-purple-500/15 text-purple-400' :
+                            'bg-emerald-500/15 text-emerald-400'
+                          }`}>
+                            {sel.content_type === 'IMAGE' ? 'Image' : sel.content_type === 'VIDEO' ? 'Video' : sel.content_type === 'AUDIO' ? 'Audio' : 'Text'}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()
                 ) : (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                );
-                return (
+                  <span className="text-text-dim text-sm">Select a model...</span>
+                )}
+                <svg className={`w-4 h-4 text-text-dim transition-transform flex-shrink-0 ${modelDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown menu */}
+              {modelDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-100 border border-surface-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                  {/* None option */}
                   <button
-                    key={type ?? 'auto'}
                     type="button"
-                    onClick={() => setContentType(type)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer border ${
-                      isSelected
-                        ? 'bg-brand-500/20 border-brand-500/40 text-brand-300'
-                        : 'bg-surface-100 border-surface-200 text-text-muted hover:border-brand-400/40 hover:text-foreground'
+                    onClick={() => {
+                      setModelId(null);
+                      setContentType(null);
+                      setModelDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
+                      !modelId ? 'text-brand-400' : 'text-text-muted'
                     }`}
-                    disabled={isLoading}
                   >
-                    {icon}
-                    {label}
+                    None
                   </button>
-                );
-              })}
+                  <div className="h-px bg-surface-200" />
+                  {/* Model options */}
+                  {models.map((model) => (
+                    <button
+                      key={model.id}
+                      type="button"
+                      onClick={() => {
+                        setModelId(model.id);
+                        if (model.content_type) setContentType(model.content_type);
+                        setModelDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
+                        modelId === model.id ? 'text-brand-400 bg-brand-500/5' : 'text-foreground'
+                      }`}
+                    >
+                      <span className="truncate flex-1 text-left">{model.name}</span>
+                      {model.content_type && (
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
+                          model.content_type === 'IMAGE' ? 'bg-yellow-500/15 text-yellow-400' :
+                          model.content_type === 'VIDEO' ? 'bg-blue-500/15 text-blue-400' :
+                          model.content_type === 'AUDIO' ? 'bg-purple-500/15 text-purple-400' :
+                          'bg-emerald-500/15 text-emerald-400'
+                        }`}>
+                          {model.content_type === 'IMAGE' ? 'Image' : model.content_type === 'VIDEO' ? 'Video' : model.content_type === 'AUDIO' ? 'Audio' : 'Text'}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                  <div className="h-px bg-surface-200" />
+                  {/* Manage models in Settings */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModelDropdownOpen(false);
+                      router.push('/dashboard/settings');
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-brand-400 hover:bg-surface-200 transition-colors"
+                  >
+                    + Manage models...
+                  </button>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-text-dim mt-1.5">
-              {contentType === null
-                ? 'Will be inferred from AI model if set'
-                : `This prompt generates ${contentType.toLowerCase()} content`}
-            </p>
           </div>
 
           {/* Folder */}
@@ -1238,6 +1217,36 @@ export function CreatePromptModal({
             )}
           </div>
 
+          {/* Advanced Options Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center gap-2 py-2 text-sm text-text-muted hover:text-foreground transition-colors cursor-pointer"
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${showAdvanced ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            <span>Advanced options</span>
+          </button>
+
+          {showAdvanced && (
+            <>
+          {/* Negative Prompt */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Negative Prompt
+            </label>
+            <textarea
+              value={negativePrompt}
+              onChange={(e) => setNegativePrompt(e.target.value)}
+              placeholder="Things to avoid or exclude from the output..."
+              rows={3}
+              className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all resize-none disabled:opacity-50 text-sm"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-text-dim mt-1">Optional — specify what to exclude from the AI output</p>
+          </div>
+
           {/* Notes */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-foreground mb-2">
@@ -1267,10 +1276,11 @@ export function CreatePromptModal({
               disabled={isLoading}
             />
           </div>
-        </form>
-
-        {/* Footer */}
-        <div className="border-t border-surface-200 p-6 bg-surface/50 backdrop-blur-sm flex items-center justify-between gap-3">
+            </>
+          )}
+        </div>
+        {/* Sticky Footer */}
+        <div className="border-t border-surface-200 p-4 bg-surface flex items-center gap-3 shrink-0">
           {prompt && (
             <button
               type="button"
@@ -1297,9 +1307,7 @@ export function CreatePromptModal({
               className="px-4 py-2.5 bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 disabled:from-brand-500/50 disabled:to-brand-500/50 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 disabled:shadow-brand-500/10 font-medium text-sm"
             >
               {isLoading
-                ? isUploadingMedia
-                  ? "Uploading..."
-                  : "Saving..."
+                ? "Saving..."
                 : prompt
                   ? "Update"
                   : "Create"}
@@ -1309,6 +1317,7 @@ export function CreatePromptModal({
             </button>
           </div>
         </div>
+        </form>
       </div>
 
       {/* Delete Confirmation Modal */}
