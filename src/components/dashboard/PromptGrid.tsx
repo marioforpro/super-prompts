@@ -34,6 +34,9 @@ export interface PromptGridProps {
   selectedFolderId?: string | null;
   onAssignPromptToFolder?: (promptId: string, folderId: string) => void;
   onRemovePromptFromCurrentFolder?: (promptId: string) => void;
+  selectable?: boolean;
+  selectedIds?: string[];
+  onToggleSelect?: (promptId: string) => void;
 }
 
 const SORT_OPTIONS: { value: GridSortField; label: string }[] = [
@@ -54,6 +57,9 @@ export function PromptGrid({
   selectedFolderId = null,
   onAssignPromptToFolder,
   onRemovePromptFromCurrentFolder,
+  selectable = false,
+  selectedIds = [],
+  onToggleSelect,
 }: PromptGridProps) {
   const { setDraggedPromptId } = useDashboard();
   const [mounted, setMounted] = useState(false);
@@ -209,6 +215,9 @@ export function PromptGrid({
               folderIds={prompt.folderIds || []}
               onAssignToFolder={(folderId) => onAssignPromptToFolder?.(prompt.id, folderId)}
               onRemoveFromCurrentFolder={onRemovePromptFromCurrentFolder ? () => onRemovePromptFromCurrentFolder(prompt.id) : undefined}
+              selectable={selectable}
+              selected={selectedIds.includes(prompt.id)}
+              onToggleSelected={() => onToggleSelect?.(prompt.id)}
               onCopy={() => onCopyPrompt?.(prompt.id, prompt.content)}
               onFavorite={() => onFavoritePrompt?.(prompt.id)}
               onClick={() => {

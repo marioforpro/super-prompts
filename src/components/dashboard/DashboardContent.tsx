@@ -60,6 +60,7 @@ export function DashboardContent({
   const [paletteQuery, setPaletteQuery] = useState("");
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [selectedForBulk, setSelectedForBulk] = useState<string[]>([]);
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
   const toastIdRef = useRef(0);
   const paletteInputRef = useRef<HTMLInputElement>(null);
@@ -242,6 +243,10 @@ export function DashboardContent({
   }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTags, selectedContentType, contextFolders, models]);
 
   const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTags.length > 0 || selectedContentType || showFavoritesOnly);
+  const sortedFolders = useMemo(
+    () => [...contextFolders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    [contextFolders]
+  );
 
   const effectiveSelectedPromptId = selectedPromptId && filteredPrompts.some((p) => p.id === selectedPromptId)
     ? selectedPromptId
@@ -413,18 +418,41 @@ export function DashboardContent({
 
       if (isInput || isModalOpen) return;
 
-      if (key === "j") {
+      if (key === "arrowdown") {
         e.preventDefault();
         if (filteredPrompts.length === 0) return;
         const idx = filteredPrompts.findIndex((p) => p.id === effectiveSelectedPromptId);
         const next = filteredPrompts[Math.min(filteredPrompts.length - 1, Math.max(0, idx + 1))];
         setSelectedPromptId(next.id);
-      } else if (key === "k") {
+      } else if (key === "arrowup") {
         e.preventDefault();
         if (filteredPrompts.length === 0) return;
         const idx = filteredPrompts.findIndex((p) => p.id === effectiveSelectedPromptId);
         const prev = filteredPrompts[Math.max(0, idx <= 0 ? 0 : idx - 1)];
         setSelectedPromptId(prev.id);
+      } else if (key === "arrowright") {
+        if (sortedFolders.length === 0) return;
+        e.preventDefault();
+        const currentIdx = selectedFolderId ? sortedFolders.findIndex((f) => f.id === selectedFolderId) : -1;
+        const nextIdx = Math.min(sortedFolders.length - 1, Math.max(0, currentIdx + 1));
+        const folder = sortedFolders[nextIdx];
+        if (folder) {
+          setSelectedFolderId(folder.id);
+          setShowFavoritesOnly(false);
+        }
+      } else if (key === "arrowleft") {
+        e.preventDefault();
+        if (!selectedFolderId) {
+          clearAllFilters();
+          return;
+        }
+        const currentIdx = sortedFolders.findIndex((f) => f.id === selectedFolderId);
+        if (currentIdx <= 0) {
+          setSelectedFolderId(null);
+        } else {
+          const prevFolder = sortedFolders[currentIdx - 1];
+          if (prevFolder) setSelectedFolderId(prevFolder.id);
+        }
       } else if (key === "enter" && effectiveSelectedPromptId) {
         e.preventDefault();
         const p = filteredPrompts.find((item) => item.id === effectiveSelectedPromptId);
@@ -437,7 +465,40 @@ export function DashboardContent({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [paletteOpen, paletteItems, paletteIndex, isModalOpen, filteredPrompts, effectiveSelectedPromptId, handleEditPrompt]);
+  }, [paletteOpen, paletteItems, paletteIndex, isModalOpen, filteredPrompts, effectiveSelectedPromptId, handleEditPrompt, sortedFolders, selectedFolderId]);
+
+  const filteredPromptIds = useMemo(() => filteredPrompts.map((p) => p.id), [filteredPrompts]);
+  const activeSelectedForBulk = useMemo(
+    () => selectedForBulk.filter((id) => filteredPromptIds.includes(id)),
+    [selectedForBulk, filteredPromptIds]
+  );
+  const selectedCount = activeSelectedForBulk.length;
+  const canBulkInFolder = !!selectedFolderId && viewMode === "grid";
+
+  const toggleBulkSelection = (id: string) => {
+    setSelectedForBulk((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+
+  const selectAllInFolder = () => {
+    setSelectedForBulk(filteredPromptIds);
+  };
+
+  const clearBulkSelection = () => {
+    setSelectedForBulk([]);
+  };
+
+  const removeFromCurrentFolder = async (ids: string[]) => {
+    if (!selectedFolderId || ids.length === 0) return;
+    try {
+      const updates = await Promise.all(ids.map((id) => unassignPromptFromFolder(id, selectedFolderId)));
+      const byId = new Map(updates.map((u) => [u.id, u]));
+      setPrompts((prev) => prev.map((p) => byId.get(p.id) || p));
+      setSelectedForBulk([]);
+      showToast(`Removed ${ids.length} prompt${ids.length === 1 ? "" : "s"} from folder`, "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to remove prompts", "error");
+    }
+  };
 
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({
@@ -565,20 +626,41 @@ export function DashboardContent({
           </div>
         </div>
 
-        <div className="sticky top-[57px] z-30 bg-background/95 backdrop-blur-sm border border-surface-200 rounded-lg px-3 py-2 flex items-center gap-2 text-xs">
-          <span className="text-text-dim">Context:</span>
-          <span className="text-foreground font-medium">{activeFilterLabel}</span>
-          <span className="text-text-dim ml-1">{filteredPrompts.length} shown</span>
-          {hasActiveFilters && (
+        {canBulkInFolder && (
+          <div className="sticky top-[57px] z-30 bg-background/95 backdrop-blur-sm border border-surface-200 rounded-lg px-3 py-2 flex items-center gap-2 text-xs">
+            <span className="text-text-dim">Folder actions:</span>
             <button
-              onClick={clearAllFilters}
+              onClick={selectAllInFolder}
+              className="px-2 py-1 rounded-md bg-surface-100 border border-surface-200 text-text-muted hover:text-foreground hover:border-surface-300"
+            >
+              Select all
+            </button>
+            <button
+              onClick={() => removeFromCurrentFolder(activeSelectedForBulk)}
+              disabled={selectedCount === 0}
+              className="px-2 py-1 rounded-md bg-brand-500/12 border border-brand-500/25 text-brand-300 hover:bg-brand-500/20 disabled:opacity-40"
+            >
+              Remove selected ({selectedCount})
+            </button>
+            <button
+              onClick={async () => {
+                if (!selectedFolderId || filteredPromptIds.length === 0) return;
+                if (!window.confirm("Remove all prompts from this folder?")) return;
+                await removeFromCurrentFolder(filteredPromptIds);
+              }}
+              disabled={filteredPromptIds.length === 0}
+              className="px-2 py-1 rounded-md bg-red-500/12 border border-red-500/25 text-red-300 hover:bg-red-500/20 disabled:opacity-40"
+            >
+              Remove all
+            </button>
+            <button
+              onClick={clearBulkSelection}
               className="ml-auto px-2 py-1 rounded-md bg-surface-100 border border-surface-200 text-text-muted hover:text-foreground hover:border-surface-300"
             >
-              Clear all
+              Clear selection
             </button>
-          )}
-          {!hasActiveFilters && <span className="ml-auto text-text-dim">Press J/K then Enter to open</span>}
-        </div>
+          </div>
+        )}
 
         {/* Active Filters Chips */}
         {hasActiveFilters && (
@@ -696,6 +778,9 @@ export function DashboardContent({
             onFavoritePrompt={handleFavoritePrompt}
             selectedPromptId={effectiveSelectedPromptId}
             onSelectPrompt={setSelectedPromptId}
+            selectable={canBulkInFolder}
+            selectedIds={selectedForBulk}
+            onToggleSelect={toggleBulkSelection}
             folders={contextFolders.map((f) => ({ id: f.id, name: f.name }))}
             selectedFolderId={selectedFolderId}
             onAssignPromptToFolder={async (promptId, folderId) => {

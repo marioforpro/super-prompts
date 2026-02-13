@@ -32,6 +32,9 @@ export interface PromptCardProps {
   selectedFolderId?: string | null;
   onAssignToFolder?: (folderId: string) => void;
   onRemoveFromCurrentFolder?: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelected?: () => void;
   onCopy?: () => void;
   onFavorite?: () => void;
   onClick?: () => void;
@@ -87,6 +90,9 @@ export function PromptCard({
   selectedFolderId = null,
   onAssignToFolder,
   onRemoveFromCurrentFolder,
+  selectable = false,
+  selected = false,
+  onToggleSelected,
   onCopy,
   onFavorite,
   onClick,
@@ -412,6 +418,29 @@ export function PromptCard({
             </h3>
           </div>
         </div>
+
+        {selectable && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelected?.();
+            }}
+            className={cn(
+              'absolute right-3 bottom-3 z-30 w-5 h-5 rounded-sm border-2 transition-colors',
+              selected
+                ? 'bg-brand-500 border-brand-400'
+                : 'bg-black/40 border-white/70 hover:border-brand-300'
+            )}
+            aria-label={selected ? 'Deselect prompt' : 'Select prompt'}
+            title={selected ? 'Deselect prompt' : 'Select prompt'}
+          >
+            {selected && (
+              <svg className="w-3 h-3 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
