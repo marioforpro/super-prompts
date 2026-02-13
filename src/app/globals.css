@@ -288,18 +288,15 @@ html {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Thumb hover */
+/* Thumb hover — glow only, no scale to avoid clipping */
 .zoom-slider:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
-  box-shadow: 0 0 6px rgba(232, 118, 75, 0.5);
+  box-shadow: 0 0 8px rgba(232, 118, 75, 0.6);
 }
 .zoom-slider:hover::-moz-range-thumb {
-  transform: scale(1.2);
-  box-shadow: 0 0 6px rgba(232, 118, 75, 0.5);
+  box-shadow: 0 0 8px rgba(232, 118, 75, 0.6);
 }
 
 /* Focus ring */
 .zoom-slider:focus-visible::-webkit-slider-thumb {
-  outline: 2px solid var(--brand-400);
-  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(232, 118, 75, 0.3);
 }

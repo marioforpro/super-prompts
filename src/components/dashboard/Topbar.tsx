@@ -5,6 +5,7 @@ import { PlusIcon } from "@/components/icons/Logo";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { signOut } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 
 interface TopbarProps {
   onMenuToggle: () => void;
@@ -22,7 +23,47 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
     userInitial,
   } = useDashboard();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("sp-theme") as "dark" | "light" | null;
+    if (stored) setTheme(stored);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("sp-theme", next);
+  };
+
+  const handleExportPrompts = async () => {
+    setUserMenuOpen(false);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: prompts } = await supabase
+        .from("prompts")
+        .select("title, content, notes, source_url, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (!prompts || prompts.length === 0) {
+        alert("No prompts to export.");
+        return;
+      }
+      const blob = new Blob([JSON.stringify(prompts, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `superprompts-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Export failed. Please try again.");
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -126,14 +167,77 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-surface-100 border border-surface-200 rounded-lg shadow-2xl shadow-black/40 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-64 bg-surface-100 border border-surface-200 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
+                {/* User info */}
                 <div className="px-4 py-3 border-b border-surface-200">
-                  <p className="text-sm font-medium text-foreground truncate">{userEmail}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {userInitial}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{userEmail}</p>
+                      <p className="text-xs text-text-dim">Free plan</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="border-t border-surface-200 py-2">
+
+                {/* Settings options */}
+                <div className="py-1.5">
+                  {/* Theme toggle */}
+                  <button
+                    onClick={toggleTheme}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {theme === "dark" ? (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        ) : (
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        )}
+                      </svg>
+                      <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+                    </div>
+                    <span className="text-xs text-text-dim bg-surface-200 px-1.5 py-0.5 rounded">{theme === "dark" ? "Dark" : "Light"}</span>
+                  </button>
+
+                  {/* Export prompts */}
+                  <button
+                    onClick={handleExportPrompts}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Export prompts</span>
+                  </button>
+
+                  {/* Keyboard shortcuts */}
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      alert("Keyboard Shortcuts:\n\n⌘K — Focus search\n⌘N — New prompt\nEsc — Close modal\n\nMore coming soon!");
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                      </svg>
+                      <span>Keyboard shortcuts</span>
+                    </div>
+                    <span className="text-xs text-text-dim">⌘K</span>
+                  </button>
+                </div>
+
+                {/* Sign out */}
+                <div className="border-t border-surface-200 py-1.5">
                   <form action={signOut}>
-                    <button type="submit" className="w-full text-left px-4 py-2 text-sm text-text-muted hover:bg-surface-200 hover:text-white transition-colors cursor-pointer">
-                      Sign Out
+                    <button type="submit" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Sign out</span>
                     </button>
                   </form>
                 </div>

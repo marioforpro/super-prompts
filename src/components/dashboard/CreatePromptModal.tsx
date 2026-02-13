@@ -92,6 +92,8 @@ export function CreatePromptModal({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
   const [showAnalysisPrompt, setShowAnalysisPrompt] = useState(false);
+  const [isDetectingText, setIsDetectingText] = useState(false);
+  const [detectedTextPreview, setDetectedTextPreview] = useState("");
 
   // Initialize form with existing prompt data
   useEffect(() => {
@@ -187,6 +189,8 @@ export function CreatePromptModal({
     setRemovedMediaIds([]);
     setAnalysisError("");
     setShowAnalysisPrompt(false);
+    setIsDetectingText(false);
+    setDetectedTextPreview("");
   };
 
   const MAX_MEDIA_ITEMS = 3;
@@ -239,10 +243,12 @@ export function CreatePromptModal({
     if (newItems.length > 0) {
       setMediaItems(prev => [...prev, ...newItems]);
       setError("");
-      // Show analysis prompt if a new image was added
-      if (newItems.some(item => item.type === 'image')) {
-        setShowAnalysisPrompt(true);
+      // Smart text detection: auto-detect if image contains text/prompts
+      const firstImage = newItems.find(item => item.type === 'image' && item.file);
+      if (firstImage?.file) {
+        setDetectedTextPreview("");
         setAnalysisError("");
+        detectTextInImage(firstImage.file);
       }
     }
   };
@@ -363,6 +369,31 @@ export function CreatePromptModal({
       setIsAnalyzing(false);
     }
   };
+
+  // Smart text detection — runs automatically on new image upload
+  const detectTextInImage = useCallback(async (file: File) => {
+    setIsDetectingText(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const base64Data = btoa(
+        new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      const response = await fetch('/api/detect-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Data, mediaType: file.type }),
+      });
+      const result = await response.json();
+      if (result.hasText) {
+        setDetectedTextPreview(result.textPreview || "Text detected in image");
+        setShowAnalysisPrompt(true);
+      }
+    } catch {
+      // Silently fail — text detection is optional enhancement
+    } finally {
+      setIsDetectingText(false);
+    }
+  }, []);
 
   // Remove media at index
   const handleRemoveMedia = (index: number) => {
@@ -686,7 +717,7 @@ export function CreatePromptModal({
             {mediaItems.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mb-3">
                 {mediaItems.map((item, index) => (
-                  <div key={`${item.id || ''}-${item.preview}-${index}`} className="relative group min-w-0 overflow-hidden">
+                  <div key={`${item.id || ''}-${item.preview}-${index}`} className="relative group min-w-0">
                     {/* Thumbnail — draggable for crop repositioning in crop mode */}
                     <div className="relative aspect-square rounded-lg overflow-hidden border border-surface-200 bg-surface-100">
                       {item.type === 'video' ? (
@@ -887,27 +918,47 @@ export function CreatePromptModal({
               </div>
             )}
 
-            {/* Inline analysis prompt — appears after uploading a new image */}
-            {showAnalysisPrompt && !isAnalyzing && (
-              <div className="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-lg border border-brand-400/30 bg-brand-500/8">
-                <svg className="w-4 h-4 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span className="text-sm text-text-muted flex-1">Extract prompt from this image?</span>
-                <button
-                  type="button"
-                  onClick={analyzeImage}
-                  className="px-3 py-1 rounded-md text-xs font-medium bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 hover:text-brand-200 border border-brand-500/30 transition-all cursor-pointer"
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAnalysisPrompt(false)}
-                  className="px-3 py-1 rounded-md text-xs font-medium text-text-dim hover:text-text-muted hover:bg-surface-200 transition-all cursor-pointer"
-                >
-                  No
-                </button>
+            {/* Smart text detection in progress */}
+            {isDetectingText && (
+              <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-surface-200 bg-surface-50">
+                <div className="w-3 h-3 border-2 border-brand-400/40 border-t-brand-400 rounded-full animate-spin" />
+                <span className="text-xs text-text-dim">Scanning image for text...</span>
+              </div>
+            )}
+
+            {/* Inline analysis prompt — appears when text is detected or manually triggered */}
+            {showAnalysisPrompt && !isAnalyzing && !isDetectingText && (
+              <div className="mt-3 rounded-lg border border-brand-400/30 bg-brand-500/8 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <svg className="w-4 h-4 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="text-sm text-text-muted flex-1">
+                    {detectedTextPreview
+                      ? <>Text detected! Extract prompt?</>
+                      : <>Extract prompt from this image?</>
+                    }
+                  </span>
+                  <button
+                    type="button"
+                    onClick={analyzeImage}
+                    className="px-3 py-1 rounded-md text-xs font-medium bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 hover:text-brand-200 border border-brand-500/30 transition-all cursor-pointer"
+                  >
+                    Extract
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowAnalysisPrompt(false); setDetectedTextPreview(""); }}
+                    className="px-3 py-1 rounded-md text-xs font-medium text-text-dim hover:text-text-muted hover:bg-surface-200 transition-all cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                </div>
+                {detectedTextPreview && (
+                  <div className="px-3 pb-2.5 -mt-0.5">
+                    <p className="text-xs text-text-dim italic truncate">&ldquo;{detectedTextPreview}&rdquo;</p>
+                  </div>
+                )}
               </div>
             )}
 

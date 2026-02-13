@@ -5,6 +5,7 @@ import { PromptGrid } from "./PromptGrid";
 import { PromptListView } from "./PromptListView";
 import { EmptyState } from "./EmptyState";
 import { CreatePromptModal } from "./CreatePromptModal";
+import WelcomeGuide from "./WelcomeGuide";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import { toggleFavorite } from "@/lib/actions/prompts";
 import { useDashboard } from "@/contexts/DashboardContext";
@@ -287,6 +288,11 @@ export function DashboardContent({
               </span>
             )}
           </div>
+        )}
+
+        {/* Welcome guide for new users */}
+        {prompts.length === 0 && !hasActiveFilters && (
+          <WelcomeGuide onCreatePrompt={handleOpenModal} />
         )}
 
         {/* Content View */}
