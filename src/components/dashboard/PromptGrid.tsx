@@ -207,7 +207,6 @@ export function PromptGrid({
             }}
             className={cn(
               'transition-all duration-700 ease-out cursor-grab active:cursor-grabbing rounded-lg',
-              selectedPromptId === prompt.id ? 'ring-4 ring-brand-400/75 ring-offset-2 ring-offset-background shadow-[0_0_0_1px_rgba(232,118,75,0.25)]' : '',
               mounted
                 ? 'opacity-100 translate-y-0'
                 : 'opacity-0 translate-y-4'

@@ -3,6 +3,13 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 import type { AiModel, Folder, Tag, ContentType } from "@/lib/types";
 
+interface PromptIndexItem {
+  id: string;
+  isFavorite: boolean;
+  modelSlug: string | null;
+  folderIds: string[];
+}
+
 interface DashboardState {
   // View
   viewMode: "grid" | "list";
@@ -51,6 +58,8 @@ interface DashboardState {
   markFolderVisited: (folderId: string | null) => void;
   recentPromptIds: string[];
   markPromptVisited: (promptId: string) => void;
+  promptIndex: PromptIndexItem[];
+  setPromptIndex: (items: PromptIndexItem[]) => void;
 }
 
 const DashboardContext = createContext<DashboardState | null>(null);
@@ -84,6 +93,7 @@ export function DashboardProvider({
   const [promptFolderAssignHandler, setPromptFolderAssignHandler] = useState<((promptId: string, folderId: string) => void) | null>(null);
   const [recentFolderIds, setRecentFolderIds] = useState<string[]>([]);
   const [recentPromptIds, setRecentPromptIds] = useState<string[]>([]);
+  const [promptIndex, setPromptIndex] = useState<PromptIndexItem[]>([]);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const userInitial = userEmail ? userEmail[0].toUpperCase() : "U";
@@ -185,6 +195,8 @@ export function DashboardProvider({
         markFolderVisited,
         recentPromptIds,
         markPromptVisited,
+        promptIndex,
+        setPromptIndex,
       }}
     >
       {children}

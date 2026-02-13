@@ -49,6 +49,7 @@ export function DashboardContent({
     markFolderVisited,
     markPromptVisited,
     recentPromptIds,
+    setPromptIndex,
   } = useDashboard();
 
   const [prompts, setPrompts] = useState<Prompt[]>(initialPrompts);
@@ -86,6 +87,17 @@ export function DashboardContent({
 
     return () => registerPromptFolderAssignHandler(null);
   }, [registerPromptFolderAssignHandler]);
+
+  useEffect(() => {
+    setPromptIndex(
+      prompts.map((p) => ({
+        id: p.id,
+        isFavorite: p.is_favorite,
+        modelSlug: p.ai_model?.slug || null,
+        folderIds: p.folder_ids || (p.folder_id ? [p.folder_id] : []),
+      }))
+    );
+  }, [prompts, setPromptIndex]);
 
   const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'info') => {
     const id = ++toastIdRef.current;
@@ -353,7 +365,12 @@ export function DashboardContent({
         hint: "Folder",
         group: "Folders",
         action: () => {
+          setSearchQuery("");
           setSelectedFolderId(f.id);
+          setSelectedModelSlug(null);
+          setSelectedTags([]);
+          setSelectedContentType(null);
+          setShowFavoritesOnly(false);
           setPaletteOpen(false);
         },
       }, [f.name, "folder"]);
@@ -365,22 +382,15 @@ export function DashboardContent({
         hint: "Model",
         group: "Models",
         action: () => {
+          setSearchQuery("");
           setSelectedModelSlug(m.slug);
+          setSelectedFolderId(null);
+          setSelectedTags([]);
+          setSelectedContentType(null);
+          setShowFavoritesOnly(false);
           setPaletteOpen(false);
         },
       }, [m.name, "model"]);
-    }
-    for (const t of tags) {
-      pushIfMatch({
-        id: `tag:${t.id}`,
-        label: `#${t.name}`,
-        hint: "Tag",
-        group: "Tags",
-        action: () => {
-          if (!selectedTags.includes(t.name)) setSelectedTags([...selectedTags, t.name]);
-          setPaletteOpen(false);
-        },
-      }, [t.name, "tag"]);
     }
 
     return items.slice(0, 60);
@@ -670,32 +680,18 @@ export function DashboardContent({
           </div>
         )}
 
-        {/* Active Filters Chips */}
-        {(searchQuery.trim() || selectedTags.length > 0) && (
+        {/* Active Search Chip */}
+        {searchQuery.trim() && (
           <div className="flex items-center gap-2 flex-wrap">
-            {searchQuery.trim() && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
-              >
-                Search: &quot;{searchQuery}&quot;
-                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-            {selectedTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
-              >
-                #{tag}
-                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            ))}
+            <button
+              onClick={() => setSearchQuery('')}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
+            >
+              Search: &quot;{searchQuery}&quot;
+              <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 

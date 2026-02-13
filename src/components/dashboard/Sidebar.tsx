@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
-import { createTag, deleteTag } from "@/lib/actions/tags";
 import { assignPromptToFolder } from "@/lib/actions/prompts";
 import type { Folder } from "@/lib/types";
 
@@ -40,31 +39,29 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     removeFolder,
     updateFolder,
     models,
-    tags,
     selectedFolderId,
     setSelectedFolderId,
     selectedModelSlug,
     setSelectedModelSlug,
     selectedTags,
     setSelectedTags,
-    addTag,
     selectedContentType,
     setSelectedContentType,
     showFavoritesOnly,
     setShowFavoritesOnly,
-    removeTag: removeTagFromContext,
     notifyPromptFolderAssigned,
     draggedPromptId,
     setDraggedPromptId,
     draggedPromptIds,
     setDraggedPromptIds,
     markFolderVisited,
+    setSearchQuery,
+    promptIndex,
   } = useDashboard();
 
   // Collapsible sections
   const [foldersOpen, setFoldersOpen] = useState(true);
   const [modelsOpen, setModelsOpen] = useState(true);
-  const [tagsOpen, setTagsOpen] = useState(true);
 
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -77,14 +74,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [folderMenuId, setFolderMenuId] = useState<string | null>(null);
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const editFolderInputRef = useRef<HTMLInputElement>(null);
-
-
-  // Tag management
-  const [isCreatingTag, setIsCreatingTag] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [tagError, setTagError] = useState("");
-  const [confirmDeleteTagId, setConfirmDeleteTagId] = useState<string | null>(null);
-  const tagInputRef = useRef<HTMLInputElement>(null);
 
   // Drag-to-reorder state (indicator position is now managed via dragAfterIndex state)
   const [dragId, setDragId] = useState<string | null>(null);
@@ -116,14 +105,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       editFolderInputRef.current.select();
     }
   }, [editingFolderId]);
-
-
-  // Focus tag input
-  useEffect(() => {
-    if (isCreatingTag && tagInputRef.current) {
-      tagInputRef.current.focus();
-    }
-  }, [isCreatingTag]);
 
   // Close folder context menu on outside click
   const folderMenuRef = useRef<HTMLDivElement>(null);
@@ -263,7 +244,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     if (!isDragging.current && Math.abs(e.clientY - dragStartY.current) < 3) return;
     isDragging.current = true;
 
-    const sorted = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
     const els = folderListRef.current.querySelectorAll<HTMLElement>('[data-folder-drag]');
     let closestId: string | null = null;
     let closestDist = Infinity;
@@ -286,8 +266,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     // Determine if we're inserting after or before based on cursor position
     const insertAfter = e.clientY > closestCy;
-    const finalIndex = insertAfter ? closestIndex + 1 : closestIndex;
-    
+
     setDragOverId(closestId);
     setDragAfterIndex(insertAfter ? closestIndex + 1 : closestIndex);
   };
@@ -400,56 +379,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-
-  // Create tag handler
-  const isCreatingTagRef = useRef(false);
-  const handleCreateTag = async () => {
-    if (isCreatingTagRef.current) return;
-    const name = newTagName.trim();
-    if (!name) {
-      setIsCreatingTag(false);
-      setNewTagName("");
-      return;
-    }
-    isCreatingTagRef.current = true;
-    setTagError("");
-    setNewTagName("");
-    setIsCreatingTag(false);
-    try {
-      const tag = await createTag(name);
-      addTag(tag);
-    } catch (err) {
-      setTagError(err instanceof Error ? err.message : "Failed to create tag");
-    } finally {
-      isCreatingTagRef.current = false;
-    }
-  };
-
-  // Delete tag handler
-  const handleDeleteTag = async (tagId: string) => {
-    const tagObj = tags.find(t => t.id === tagId);
-    if (tagObj) {
-      setSelectedTags(selectedTags.filter(t => t !== tagObj.name));
-    }
-    removeTagFromContext(tagId);
-    try {
-      await deleteTag(tagId);
-    } catch (err) {
-      console.error("Failed to delete tag:", err);
-    }
-  };
-
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleCreateTag();
-    } else if (e.key === "Escape") {
-      setIsCreatingTag(false);
-      setNewTagName("");
-      setTagError("");
-    }
-  };
-
   const handleFolderKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -472,6 +401,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const sortedFolders = [...folders].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const sortedModels = [...models].sort((a, b) => a.name.localeCompare(b.name));
+  const totalPromptCount = promptIndex.length;
+  const favoritesCount = useMemo(
+    () => promptIndex.reduce((acc, item) => acc + (item.isFavorite ? 1 : 0), 0),
+    [promptIndex]
+  );
+  const folderPromptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of promptIndex) {
+      for (const folderId of item.folderIds) {
+        counts[folderId] = (counts[folderId] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [promptIndex]);
+  const modelPromptCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of promptIndex) {
+      if (!item.modelSlug) continue;
+      counts[item.modelSlug] = (counts[item.modelSlug] || 0) + 1;
+    }
+    return counts;
+  }, [promptIndex]);
+
+  const getPillClass = (active: boolean) =>
+    active
+      ? "inline-flex min-w-[1.5rem] justify-center rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold text-white"
+      : "inline-flex min-w-[1.5rem] justify-center rounded-full bg-surface-200 px-2 py-0.5 text-[11px] font-semibold text-text-dim";
 
   // Chevron component for collapsible sections
   const SectionChevron = ({ open }: { open: boolean }) => (
@@ -519,6 +475,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button
               onClick={() =>
                 handleNavClick(() => {
+                  setSearchQuery("");
                   setSelectedFolderId(null);
                   setSelectedModelSlug(null);
                   setSelectedTags([]);
@@ -526,22 +483,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   setShowFavoritesOnly(false);
                 })
               }
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+              className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
                 isAllActive
                   ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
                   : "text-text-muted hover:text-foreground hover:bg-surface-100"
               }`}
             >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              <span className="text-sm font-medium">All Prompts</span>
+              <span className="flex items-center gap-3 min-w-0">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span className="text-sm font-medium truncate">All Prompts</span>
+              </span>
+              <span className={getPillClass(isAllActive)}>{totalPromptCount}</span>
             </button>
 
             {/* Favorites */}
             <button
               onClick={() =>
                 handleNavClick(() => {
+                  setSearchQuery("");
                   setSelectedFolderId(null);
                   setSelectedModelSlug(null);
                   setSelectedTags([]);
@@ -549,56 +510,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   setShowFavoritesOnly(true);
                 })
               }
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
+              className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer ${
                 showFavoritesOnly
                   ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
                   : "text-text-muted hover:text-foreground hover:bg-surface-100"
               }`}
             >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-              <span className="text-sm font-medium">Favorites</span>
+              <span className="flex items-center gap-3 min-w-0">
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span className="text-sm font-medium truncate">Favorites</span>
+              </span>
+              <span className={getPillClass(showFavoritesOnly)}>{favoritesCount}</span>
             </button>
-
-            {/* Content type filter pills — icon-only for compact fit */}
-            <div className="grid grid-cols-4 gap-1.5 mt-2 px-1">
-              {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
-                const isActive = selectedContentType === type;
-                const label = type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
-                const icon = type === 'IMAGE' ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                ) : type === 'VIDEO' ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                ) : type === 'AUDIO' ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-                ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                );
-                return (
-                  <button
-                    key={type}
-                    title={label}
-                    onClick={() =>
-                      handleNavClick(() => {
-                        setSelectedFolderId(null);
-                        setSelectedModelSlug(null);
-                        setSelectedTags([]);
-                        setSelectedContentType(isActive ? null : type);
-                        setShowFavoritesOnly(false);
-                      })
-                    }
-                    className={`flex items-center justify-center py-2.5 rounded-md transition-all duration-150 cursor-pointer border ${
-                      isActive
-                        ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
-                        : 'bg-surface-100 border-surface-200 text-text-dim hover:text-text-muted hover:border-surface-300'
-                    }`}
-                  >
-                    {icon}
-                  </button>
-                );
-              })}
-            </div>
 
             {/* Divider */}
             <div className="h-px bg-surface-200 my-4" />
@@ -724,6 +649,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             <div
                               onClick={() =>
                                 handleNavClick(() => {
+                                  setSearchQuery("");
                                   setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
                                   if (selectedFolderId !== folder.id) markFolderVisited(folder.id);
                                   setSelectedModelSlug(null);
@@ -767,6 +693,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
                               </svg>
                               <span className="truncate flex-1 text-left">{folder.name}</span>
+                              <span className={getPillClass(selectedFolderId === folder.id)}>
+                                {folderPromptCounts[folder.id] || 0}
+                              </span>
                               <span
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -905,6 +834,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         key={model.id}
                         onClick={() =>
                           handleNavClick(() => {
+                            setSearchQuery("");
                             setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
                             setSelectedFolderId(null);
                             setSelectedTags([]);
@@ -923,6 +853,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
                         />
                         <span className="truncate flex-1">{model.name}</span>
+                        <span className={getPillClass(selectedModelSlug === model.slug)}>
+                          {modelPromptCounts[model.slug] || 0}
+                        </span>
                       </div>
                     ))
                   )}
@@ -930,140 +863,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-surface-200 my-4" />
-
-            {/* TAGS — collapsible */}
-            <div>
-              <div className="flex items-center justify-between px-4 py-2 gap-2">
-                <button
-                  onClick={() => setTagsOpen(!tagsOpen)}
-                  className="flex items-center gap-1.5 flex-1 cursor-pointer"
-                >
-                  <SectionChevron open={tagsOpen} />
-                  <span className="text-xs font-bold tracking-widest text-text-dim uppercase" style={{ fontFamily: "var(--font-mono)" }}>
-                    Tags
-                  </span>
-                </button>
-                <button
-                  onClick={() => {
-                    setIsCreatingTag(true);
-                    setTagError("");
-                    if (!tagsOpen) setTagsOpen(true);
-                  }}
-                  className="p-1 hover:bg-surface-100 rounded transition-colors cursor-pointer"
-                  title="Create tag"
-                >
-                  <svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-              </div>
-
-              {tagsOpen && (
-                <>
-                  {/* Inline tag creation */}
-                  {isCreatingTag && (
-                    <div className="px-4 mt-1 mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          ref={tagInputRef}
-                          type="text"
-                          value={newTagName}
-                          onChange={(e) => setNewTagName(e.target.value)}
-                          onKeyDown={handleTagKeyDown}
-                          placeholder="Tag name..."
-                          className="flex-1 px-3 py-1.5 text-xs bg-surface-100 border border-surface-200 rounded-lg text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all"
-                        />
-                        <button
-                          onClick={handleCreateTag}
-                          className="p-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 border border-brand-500/30 transition-colors cursor-pointer"
-                          title="Create tag"
-                        >
-                          <svg className="w-3.5 h-3.5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => { setIsCreatingTag(false); setNewTagName(""); setTagError(""); }}
-                          className="p-1.5 rounded-lg hover:bg-surface-200 transition-colors cursor-pointer"
-                          title="Cancel"
-                        >
-                          <svg className="w-3.5 h-3.5 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      {tagError && (
-                        <p className="text-xs text-red-400 mt-1">{tagError}</p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-1 flex flex-wrap gap-2 px-2">
-                    {tags.length === 0 && !isCreatingTag ? (
-                      <p className="px-4 py-2 text-xs text-text-dim w-full">No tags yet</p>
-                    ) : (
-                      tags.map((tag) => (
-                        <div key={tag.id} className="relative group/tag inline-flex">
-                          <button
-                            onClick={() =>
-                              handleNavClick(() => {
-                                const isSelected = selectedTags.includes(tag.name);
-                                setSelectedFolderId(null);
-                                setSelectedModelSlug(null);
-                                setSelectedContentType(null);
-                                if (isSelected) {
-                                  setSelectedTags(selectedTags.filter(t => t !== tag.name));
-                                } else {
-                                  setSelectedTags([...selectedTags, tag.name]);
-                                }
-                                setShowFavoritesOnly(false);
-                              })
-                            }
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs transition-all cursor-pointer ${
-                              selectedTags.includes(tag.name)
-                                ? "bg-brand-500/15 border border-brand-400/50 text-brand-300 pr-6"
-                                : "bg-surface-100 border border-brand-400/30 text-text-muted hover:border-brand-400/60 hover:text-foreground group-hover/tag:pr-6"
-                            }`}
-                          >
-                            #{tag.name}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirmDeleteTagId === tag.id) {
-                                handleDeleteTag(tag.id);
-                                setConfirmDeleteTagId(null);
-                              } else {
-                                setConfirmDeleteTagId(tag.id);
-                                setTimeout(() => setConfirmDeleteTagId(null), 3000);
-                              }
-                            }}
-                            className={`absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full transition-all cursor-pointer ${
-                              confirmDeleteTagId === tag.id
-                                ? 'opacity-100 bg-red-500/30 text-red-300'
-                                : 'opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300'
-                            }`}
-                            title={confirmDeleteTagId === tag.id ? "Click again to confirm delete" : "Delete tag"}
-                          >
-                            {confirmDeleteTagId === tag.id ? (
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
           </nav>
 
           {/* Footer */}
