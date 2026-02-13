@@ -5,6 +5,8 @@ import { getFolders } from "@/lib/actions/folders";
 import { getTags } from "@/lib/actions/tags";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Dashboard — Super Prompts",
   description: "Manage your AI prompts with Super Prompts",

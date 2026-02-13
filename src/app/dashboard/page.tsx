@@ -5,6 +5,8 @@ import { getFolders } from "@/lib/actions/folders";
 import { getTags } from "@/lib/actions/tags";
 import { DashboardPageClient } from "@/components/dashboard/DashboardPageClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   try {
     const supabase = await createClient();
