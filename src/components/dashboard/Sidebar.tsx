@@ -77,6 +77,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navScrollRef = useRef<HTMLElement>(null);
   const dragOverRafRef = useRef<number | null>(null);
   const dragOverClientYRef = useRef<number | null>(null);
+  const suppressFolderClickRef = useRef(false);
+  const suppressModelClickRef = useRef(false);
 
   useEffect(() => {
     const raw = localStorage.getItem("superprompts:model-order");
@@ -190,6 +192,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleFolderDragStart = (event: React.PointerEvent, folderId: string) => {
+    if (selectedFolderId !== folderId) return;
     event.preventDefault();
     event.stopPropagation();
     setDragId(folderId);
@@ -229,6 +232,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleFolderDragEnd = () => {
+    const wasDragging = isDragging.current;
     if (dragId && dragOverId && isDragging.current) {
       const ordered = [...sortedFolders];
       const from = ordered.findIndex((folder) => folder.id === dragId);
@@ -246,9 +250,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setDragOverId(null);
     setDragAfterIndex(null);
     isDragging.current = false;
+    if (wasDragging) {
+      suppressFolderClickRef.current = true;
+      setTimeout(() => {
+        suppressFolderClickRef.current = false;
+      }, 0);
+    }
   };
 
   const handleModelDragStart = (event: React.PointerEvent, modelSlug: string) => {
+    if (selectedModelSlug !== modelSlug) return;
     event.preventDefault();
     event.stopPropagation();
     setModelDragId(modelSlug);
@@ -288,6 +299,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   };
 
   const handleModelDragEnd = () => {
+    const wasDragging = isModelDragging.current;
     if (modelDragId && modelDragOverId && isModelDragging.current) {
       const orderedSlugs = [...sortedModels].map((model) => model.slug);
       const from = orderedSlugs.findIndex((slug) => slug === modelDragId);
@@ -305,6 +317,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     setModelDragOverId(null);
     setModelDragAfterIndex(null);
     isModelDragging.current = false;
+    if (wasDragging) {
+      suppressModelClickRef.current = true;
+      setTimeout(() => {
+        suppressModelClickRef.current = false;
+      }, 0);
+    }
   };
 
   const getDraggedPromptId = (event: React.DragEvent): string | null => {
@@ -536,6 +554,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <div
                     onClick={() =>
                       handleNavClick(() => {
+                        if (suppressFolderClickRef.current) return;
                         setSearchQuery("");
                         setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
                         if (selectedFolderId !== folder.id) markFolderVisited(folder.id);
@@ -550,28 +569,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     onDragLeave={() => {
                       if (dropFolderId === folder.id) setDropFolderId(null);
                     }}
-                    className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 cursor-pointer select-none ${
+                    onPointerDown={(event) => handleFolderDragStart(event, folder.id)}
+                    onPointerMove={handleFolderDragMove}
+                    onPointerUp={handleFolderDragEnd}
+                    onPointerCancel={handleFolderDragEnd}
+                    className={`relative w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-150 select-none touch-none ${
                       selectedFolderId === folder.id
-                        ? "bg-surface-200 text-foreground"
+                        ? "bg-surface-200 text-foreground cursor-grab active:cursor-grabbing"
                         : dropFolderId === folder.id
                           ? "bg-brand-500/18 text-foreground ring-2 ring-brand-400/65 shadow-[0_0_0_1px_rgba(232,118,75,0.25)]"
-                          : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                          : "text-text-muted hover:text-foreground hover:bg-surface-100 cursor-pointer"
                     }`}
                   >
-                    <div
-                      onPointerDown={(event) => handleFolderDragStart(event, folder.id)}
-                      onPointerMove={handleFolderDragMove}
-                      onPointerUp={handleFolderDragEnd}
-                      onPointerCancel={handleFolderDragEnd}
-                      className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center opacity-40 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
-                    >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
-                        <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
-                        <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
-                        <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
-                      </svg>
-                    </div>
-
                     <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" style={{ color: folder.color || "#e8764b" }}>
                       <path d="M2 6a3 3 0 013-3h4.172a3 3 0 012.12.879L12.415 5H19a3 3 0 013 3v9a3 3 0 01-3 3H5a3 3 0 01-3-3V6z" />
                     </svg>
@@ -601,6 +610,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <div
                     onClick={() =>
                       handleNavClick(() => {
+                        if (suppressModelClickRef.current) return;
                         setSearchQuery("");
                         setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
                         setSelectedFolderId(null);
@@ -609,26 +619,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         setShowFavoritesOnly(false);
                       })
                     }
-                    className={`relative w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                    onPointerDown={(event) => handleModelDragStart(event, model.slug)}
+                    onPointerMove={handleModelDragMove}
+                    onPointerUp={handleModelDragEnd}
+                    onPointerCancel={handleModelDragEnd}
+                    className={`relative w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-150 touch-none ${
                       selectedModelSlug === model.slug
-                        ? "bg-surface-200 text-foreground"
-                        : "text-text-muted hover:text-foreground hover:bg-surface-100"
+                        ? "bg-surface-200 text-foreground cursor-grab active:cursor-grabbing"
+                        : "text-text-muted hover:text-foreground hover:bg-surface-100 cursor-pointer"
                     }`}
                   >
-                    <div
-                      onPointerDown={(event) => handleModelDragStart(event, model.slug)}
-                      onPointerMove={handleModelDragMove}
-                      onPointerUp={handleModelDragEnd}
-                      onPointerCancel={handleModelDragEnd}
-                      className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center opacity-40 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
-                    >
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
-                        <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
-                        <circle cx="5" cy="8" r="1.3" /><circle cx="11" cy="8" r="1.3" />
-                        <circle cx="5" cy="13" r="1.3" /><circle cx="11" cy="13" r="1.3" />
-                      </svg>
-                    </div>
-
                     <span
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ backgroundColor: model.icon_url?.startsWith("#") ? model.icon_url : getModelColor(model.name) }}
