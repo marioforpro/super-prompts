@@ -18,6 +18,7 @@ export interface PromptGridProps {
     modelName?: string | null;
     modelSlug?: string | null;
     modelCategory?: string | null;
+    contentType?: string | null;
     isFavorite?: boolean;
     tags?: string[];
     createdAt?: string;
@@ -146,6 +147,7 @@ export function PromptGrid({
               modelName={prompt.modelName}
               modelSlug={prompt.modelSlug}
               modelCategory={prompt.modelCategory}
+              contentType={prompt.contentType}
               isFavorite={prompt.isFavorite}
               tags={prompt.tags}
               onCopy={() => onCopyPrompt?.(prompt.id, prompt.content)}

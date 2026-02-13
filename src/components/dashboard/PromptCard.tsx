@@ -24,6 +24,7 @@ export interface PromptCardProps {
   modelName?: string | null;
   modelSlug?: string | null;
   modelCategory?: string | null;
+  contentType?: string | null;
   isFavorite?: boolean;
   tags?: string[];
   onCopy?: () => void;
@@ -72,6 +73,7 @@ export function PromptCard({
   modelName,
   modelSlug,
   modelCategory,
+  contentType,
   isFavorite = false,
   tags = [],
   onCopy,
@@ -247,12 +249,28 @@ export function PromptCard({
           </div>
         )}
 
-        {/* Model Badge — vertically centered with action buttons */}
-        {modelName && (
-          <div className="absolute top-3 left-3 h-[30px] flex items-center px-3 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-200">
-            {modelName}
-          </div>
-        )}
+        {/* Badges — top-left */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          {modelName && (
+            <div className="h-[30px] flex items-center px-3 rounded-full text-xs font-medium bg-black/40 backdrop-blur-md border border-white/10 text-white/90 transition-all duration-200">
+              {modelName}
+            </div>
+          )}
+          {contentType && (
+            <div className="h-[26px] flex items-center gap-1 px-2 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-black/40 backdrop-blur-md border border-white/10 text-white/70">
+              {contentType === 'IMAGE' ? (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              ) : contentType === 'VIDEO' ? (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              ) : contentType === 'AUDIO' ? (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+              ) : (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              )}
+              {contentType.toLowerCase()}
+            </div>
+          )}
+        </div>
 
         {/* Hover Overlay */}
         <div

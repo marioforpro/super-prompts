@@ -1,8 +1,11 @@
+export type ContentType = 'IMAGE' | 'VIDEO' | 'AUDIO' | 'TEXT';
+
 export interface Prompt {
   id: string;
   user_id: string;
   folder_id: string | null;
   model_id: string | null;
+  content_type: ContentType | null;
   title: string;
   content: string;
   notes: string | null;
@@ -74,6 +77,7 @@ export interface CreatePromptInput {
   content: string;
   model_id?: string | null;
   folder_id?: string | null;
+  content_type?: ContentType | null;
   notes?: string | null;
   source_url?: string | null;
   tag_ids?: string[];
@@ -84,6 +88,7 @@ export interface UpdatePromptInput {
   content?: string;
   model_id?: string | null;
   folder_id?: string | null;
+  content_type?: ContentType | null;
   notes?: string | null;
   source_url?: string | null;
   tag_ids?: string[];

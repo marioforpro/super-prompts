@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import type { AiModel, Folder, Tag } from "@/lib/types";
+import type { AiModel, Folder, Tag, ContentType } from "@/lib/types";
 
 interface DashboardState {
   // View
@@ -17,6 +17,8 @@ interface DashboardState {
   setSelectedModelSlug: (slug: string | null) => void;
   selectedTag: string | null;
   setSelectedTag: (tag: string | null) => void;
+  selectedContentType: ContentType | null;
+  setSelectedContentType: (type: ContentType | null) => void;
   showFavoritesOnly: boolean;
   setShowFavoritesOnly: (show: boolean) => void;
   // Sidebar
@@ -59,6 +61,7 @@ export function DashboardProvider({
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedModelSlug, setSelectedModelSlug] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedContentType, setSelectedContentType] = useState<ContentType | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [folders, setFolders] = useState<Folder[]>(initialFolders);
@@ -113,6 +116,8 @@ export function DashboardProvider({
         setSelectedModelSlug,
         selectedTag,
         setSelectedTag,
+        selectedContentType,
+        setSelectedContentType,
         showFavoritesOnly,
         setShowFavoritesOnly,
         sidebarOpen,

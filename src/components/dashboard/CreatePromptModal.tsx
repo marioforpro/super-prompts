@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { X, ImagePlus, Upload } from "lucide-react";
 import Image from "next/image";
-import type { Prompt, AiModel, Folder, Tag, FrameFit } from "@/lib/types";
+import type { Prompt, AiModel, Folder, Tag, FrameFit, ContentType } from "@/lib/types";
 import {
   createPrompt,
   updatePrompt,
@@ -56,6 +56,7 @@ export function CreatePromptModal({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [modelId, setModelId] = useState<string | null>(null);
+  const [contentType, setContentType] = useState<ContentType | null>(null);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
@@ -101,6 +102,7 @@ export function CreatePromptModal({
       setTitle(prompt.title);
       setContent(prompt.content);
       setModelId(prompt.model_id || null);
+      setContentType(prompt.content_type || null);
       setFolderId(prompt.folder_id || null);
       setNotes(prompt.notes || "");
       setSourceUrl(prompt.source_url || "");
@@ -180,6 +182,7 @@ export function CreatePromptModal({
     setTitle("");
     setContent("");
     setModelId(null);
+    setContentType(null);
     setFolderId(null);
     setNotes("");
     setSourceUrl("");
@@ -614,6 +617,7 @@ export function CreatePromptModal({
         content: content.trim(),
         model_id: modelId,
         folder_id: folderId,
+        content_type: contentType,
         notes: notes.trim() || undefined,
         source_url: sourceUrl.trim() || undefined,
         tag_ids: selectedTags,
@@ -1024,7 +1028,22 @@ export function CreatePromptModal({
                   setIsCreatingModel(true);
                   e.target.value = modelId || "";
                 } else {
-                  setModelId(e.target.value || null);
+                  const newModelId = e.target.value || null;
+                  setModelId(newModelId);
+                  // Auto-suggest content type from model category
+                  if (newModelId && !contentType) {
+                    const selectedModel = models.find(m => m.id === newModelId);
+                    if (selectedModel?.category) {
+                      const categoryMap: Record<string, ContentType> = {
+                        image: 'IMAGE',
+                        video: 'VIDEO',
+                        audio: 'AUDIO',
+                        text: 'TEXT',
+                      };
+                      const suggested = categoryMap[selectedModel.category];
+                      if (suggested) setContentType(suggested);
+                    }
+                  }
                 }
               }}
               className="w-full px-4 py-2.5 bg-surface-100 border border-surface-200 rounded-lg text-foreground focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/30 transition-all disabled:opacity-50"
@@ -1073,6 +1092,51 @@ export function CreatePromptModal({
             {modelCreateError && (
               <p className="text-xs text-red-400 mt-1">{modelCreateError}</p>
             )}
+          </div>
+
+          {/* Content Type */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Content Type
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {([null, 'IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
+                const isSelected = contentType === type;
+                const label = type === null ? 'Auto' : type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
+                const icon = type === null ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                ) : type === 'IMAGE' ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                ) : type === 'VIDEO' ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                ) : type === 'AUDIO' ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                );
+                return (
+                  <button
+                    key={type ?? 'auto'}
+                    type="button"
+                    onClick={() => setContentType(type)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer border ${
+                      isSelected
+                        ? 'bg-brand-500/20 border-brand-500/40 text-brand-300'
+                        : 'bg-surface-100 border-surface-200 text-text-muted hover:border-brand-400/40 hover:text-foreground'
+                    }`}
+                    disabled={isLoading}
+                  >
+                    {icon}
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-text-dim mt-1.5">
+              {contentType === null
+                ? 'Will be inferred from AI model if set'
+                : `This prompt generates ${contentType.toLowerCase()} content`}
+            </p>
           </div>
 
           {/* Folder */}

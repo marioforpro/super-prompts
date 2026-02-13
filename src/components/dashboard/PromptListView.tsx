@@ -14,6 +14,7 @@ export interface PromptListViewProps {
     coverType?: 'image' | 'video';
     modelName?: string | null;
     modelSlug?: string | null;
+    contentType?: string | null;
     isFavorite?: boolean;
     tags?: string[];
     createdAt?: string;
@@ -108,10 +109,11 @@ export function PromptListView({
   return (
     <div className="w-full">
       {/* Header — grid layout for perfect column alignment */}
-      <div className="px-4 py-3 border-b border-white/5 grid items-center gap-3" style={{ gridTemplateColumns: '48px 1fr 120px 120px 100px 64px' }}>
+      <div className="px-4 py-3 border-b border-white/5 grid items-center gap-3" style={{ gridTemplateColumns: '48px 1fr 120px 72px 120px 100px 64px' }}>
         <div /> {/* Thumbnail spacer */}
         <SortButton label="TITLE" field="title" />
         <div className="hidden md:block"><SortButton label="MODEL" field="model" /></div>
+        <div className="hidden md:block text-xs font-medium text-text-muted">TYPE</div>
         <div className="hidden lg:block text-xs font-medium text-text-muted">TAGS</div>
         <div className="hidden sm:block"><SortButton label="DATE" field="date" /></div>
         <div /> {/* Actions spacer */}
@@ -126,7 +128,7 @@ export function PromptListView({
             <div
               key={prompt.id}
               className="px-4 py-3 grid items-center gap-3 group transition-colors duration-200 cursor-pointer hover:bg-white/5"
-              style={{ gridTemplateColumns: '48px 1fr 120px 120px 100px 64px' }}
+              style={{ gridTemplateColumns: '48px 1fr 120px 72px 120px 100px 64px' }}
               onClick={() => onClickPrompt?.(prompt.id)}
             >
               {/* Thumbnail */}
@@ -179,6 +181,17 @@ export function PromptListView({
                 {prompt.modelName ? (
                   <span className="text-xs font-medium text-text-muted bg-white/5 px-2 py-1 rounded">
                     {prompt.modelName}
+                  </span>
+                ) : (
+                  <span className="text-xs text-text-muted opacity-40">—</span>
+                )}
+              </div>
+
+              {/* Content Type */}
+              <div className="hidden md:block">
+                {prompt.contentType ? (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-text-dim bg-white/5 px-2 py-0.5 rounded">
+                    {prompt.contentType.toLowerCase()}
                   </span>
                 ) : (
                   <span className="text-xs text-text-muted opacity-40">—</span>

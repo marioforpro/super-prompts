@@ -32,6 +32,7 @@ export function DashboardContent({
     selectedFolderId,
     selectedModelSlug,
     selectedTag,
+    selectedContentType,
     showFavoritesOnly,
     folders: contextFolders,
     addFolder,
@@ -173,13 +174,18 @@ export function DashboardContent({
       );
     }
 
+    // Content type filter
+    if (selectedContentType) {
+      result = result.filter((p) => p.content_type === selectedContentType);
+    }
+
     // Favorites only
     if (showFavoritesOnly) {
       result = result.filter((p) => p.is_favorite);
     }
 
     return result;
-  }, [prompts, searchQuery, selectedFolderId, selectedModelSlug, selectedTag, showFavoritesOnly]);
+  }, [prompts, searchQuery, selectedFolderId, selectedModelSlug, selectedTag, selectedContentType, showFavoritesOnly]);
 
   // Dynamic heading
   const activeFilterLabel = useMemo(() => {
@@ -193,10 +199,11 @@ export function DashboardContent({
       return model ? model.name : "Model";
     }
     if (selectedTag) return `#${selectedTag}`;
+    if (selectedContentType) return `${selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()} Prompts`;
     return "All Prompts";
-  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTag, contextFolders, models]);
+  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTag, selectedContentType, contextFolders, models]);
 
-  const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTag || showFavoritesOnly);
+  const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTag || selectedContentType || showFavoritesOnly);
 
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({
@@ -218,6 +225,7 @@ export function DashboardContent({
     modelName: p.ai_model?.name || null,
     modelSlug: p.ai_model?.slug || null,
     modelCategory: p.ai_model?.category || null,
+    contentType: p.content_type || null,
     isFavorite: p.is_favorite,
     tags: p.tags?.map((t) => t.name) || [],
     createdAt: p.created_at,
@@ -280,6 +288,11 @@ export function DashboardContent({
             {selectedTag && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
                 #{selectedTag}
+              </span>
+            )}
+            {selectedContentType && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+                Type: {selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()}
               </span>
             )}
             {showFavoritesOnly && (
