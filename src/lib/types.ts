@@ -32,6 +32,7 @@ export interface AiModel {
   name: string;
   slug: string;
   category: string;
+  content_type: ContentType | null;
   icon_url: string | null;
   is_default: boolean;
   created_by: string | null;

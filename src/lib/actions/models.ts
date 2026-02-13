@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import type { AiModel } from "@/lib/types";
+import type { AiModel, ContentType } from "@/lib/types";
 
 export async function getModels(): Promise<AiModel[]> {
   const supabase = await createClient();
@@ -16,7 +16,7 @@ export async function getModels(): Promise<AiModel[]> {
   return (data || []) as AiModel[];
 }
 
-export async function createModel(name: string, slug: string, category: string = "image"): Promise<AiModel> {
+export async function createModel(name: string, slug: string, category: string = "image", contentType: ContentType | null = null): Promise<AiModel> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -27,6 +27,7 @@ export async function createModel(name: string, slug: string, category: string =
       name: name.trim(),
       slug: slug.trim().toLowerCase().replace(/\s+/g, "-"),
       category,
+      content_type: contentType || category.toUpperCase(),
       is_default: false,
       created_by: user.id,
     })
@@ -37,13 +38,14 @@ export async function createModel(name: string, slug: string, category: string =
   return data as AiModel;
 }
 
-export async function updateModel(modelId: string, updates: { name?: string; slug?: string; category?: string; icon_url?: string | null }): Promise<AiModel> {
+export async function updateModel(modelId: string, updates: { name?: string; slug?: string; category?: string; content_type?: ContentType | null; icon_url?: string | null }): Promise<AiModel> {
   const supabase = await createClient();
 
   const updateData: Record<string, unknown> = {};
   if (updates.name !== undefined) updateData.name = updates.name.trim();
   if (updates.slug !== undefined) updateData.slug = updates.slug.trim().toLowerCase().replace(/\s+/g, "-");
   if (updates.category !== undefined) updateData.category = updates.category;
+  if (updates.content_type !== undefined) updateData.content_type = updates.content_type;
   if (updates.icon_url !== undefined) updateData.icon_url = updates.icon_url;
 
   const { data, error } = await supabase

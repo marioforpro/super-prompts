@@ -6,6 +6,7 @@ import Logo from "@/components/icons/Logo";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { createModel as createModelAction, updateModel as updateModelAction, deleteModel as deleteModelAction } from "@/lib/actions/models";
+import type { ContentType } from "@/lib/types";
 import { deleteTag } from "@/lib/actions/tags";
 
 interface SidebarProps {
@@ -80,6 +81,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
   const [editingModelName, setEditingModelName] = useState("");
   const [modelColorPickerId, setModelColorPickerId] = useState<string | null>(null);
+  const [newModelContentType, setNewModelContentType] = useState<ContentType>('IMAGE');
   const editModelInputRef = useRef<HTMLInputElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const modelColorPickerRef = useRef<HTMLDivElement>(null);
@@ -309,10 +311,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     isCreatingModelRef.current = true;
     setModelError("");
     const slug = name.toLowerCase().replace(/\s+/g, "-");
+    const ct = newModelContentType;
     setNewModelName("");
+    setNewModelContentType('IMAGE');
     setIsCreatingModel(false);
     try {
-      const model = await createModelAction(name, slug);
+      const model = await createModelAction(name, slug, ct.toLowerCase(), ct);
       addModel(model);
     } catch (err) {
       setModelError(err instanceof Error ? err.message : "Failed to create model");
@@ -350,6 +354,17 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       await deleteModelAction(modelId);
     } catch (err) {
       setModelError(err instanceof Error ? err.message : "Failed to delete model");
+    }
+  };
+
+  // Model content type change handler
+  const handleModelContentTypeChange = async (modelId: string, newType: ContentType) => {
+    setModelMenuId(null);
+    updateModelCtx(modelId, { content_type: newType, category: newType.toLowerCase() });
+    try {
+      await updateModelAction(modelId, { content_type: newType, category: newType.toLowerCase() });
+    } catch (err) {
+      setModelError(err instanceof Error ? err.message : "Failed to update model type");
     }
   };
 
@@ -858,6 +873,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           </svg>
                         </button>
                       </div>
+                      {/* Content type selector for new model */}
+                      <div className="flex gap-1 mt-1.5">
+                        {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((ct) => (
+                          <button
+                            key={ct}
+                            onClick={() => setNewModelContentType(ct)}
+                            className={`flex-1 py-1 rounded text-[10px] font-medium transition-all cursor-pointer border ${
+                              newModelContentType === ct
+                                ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
+                                : 'bg-surface-100 border-surface-200 text-text-dim hover:border-surface-300'
+                            }`}
+                          >
+                            {ct === 'IMAGE' ? 'Image' : ct === 'VIDEO' ? 'Video' : ct === 'AUDIO' ? 'Audio' : 'Text'}
+                          </button>
+                        ))}
+                      </div>
                       {modelError && (
                         <p className="text-xs text-red-400 mt-1">{modelError}</p>
                       )}
@@ -927,6 +958,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 style={{ backgroundColor: (model.icon_url && model.icon_url.startsWith('#')) ? model.icon_url : getModelColor(model.name) }}
                               />
                               <span className="truncate flex-1">{model.name}</span>
+                              {model.content_type && (
+                                <span className="text-[9px] text-text-dim/60 uppercase tracking-wide flex-shrink-0">{model.content_type === 'IMAGE' ? 'img' : model.content_type === 'VIDEO' ? 'vid' : model.content_type === 'AUDIO' ? 'aud' : 'txt'}</span>
+                              )}
                               <span
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -963,6 +997,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               >
                                 Change color
                               </button>
+                              <div className="px-3 py-1.5">
+                                <p className="text-[10px] text-text-dim mb-1">Content type</p>
+                                <div className="grid grid-cols-4 gap-0.5">
+                                  {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((ct) => (
+                                    <button
+                                      key={ct}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); handleModelContentTypeChange(model.id, ct); }}
+                                      className={`py-1 rounded text-[9px] font-medium transition-all cursor-pointer ${
+                                        model.content_type === ct
+                                          ? 'bg-brand-500/20 text-brand-300'
+                                          : 'text-text-dim hover:text-text-muted hover:bg-surface-200'
+                                      }`}
+                                    >
+                                      {ct === 'IMAGE' ? 'Img' : ct === 'VIDEO' ? 'Vid' : ct === 'AUDIO' ? 'Aud' : 'Txt'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
                               <div className="h-px bg-surface-200 my-0.5" />
                               <button
                                 onMouseDown={(e) => e.stopPropagation()}
