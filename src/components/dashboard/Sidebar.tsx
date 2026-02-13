@@ -494,6 +494,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   setSelectedFolderId(null);
                   setSelectedModelSlug(null);
                   setSelectedTags([]);
+                  setSelectedContentType(null);
                   setShowFavoritesOnly(true);
                 })
               }
@@ -529,6 +530,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     title={label}
                     onClick={() =>
                       handleNavClick(() => {
+                        setSelectedFolderId(null);
+                        setSelectedModelSlug(null);
+                        setSelectedTags([]);
                         setSelectedContentType(isActive ? null : type);
                         setShowFavoritesOnly(false);
                       })
@@ -671,6 +675,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 handleNavClick(() => {
                                   setSelectedFolderId(selectedFolderId === folder.id ? null : folder.id);
                                   if (selectedFolderId !== folder.id) markFolderVisited(folder.id);
+                                  setSelectedModelSlug(null);
+                                  setSelectedTags([]);
+                                  setSelectedContentType(null);
                                   setShowFavoritesOnly(false);
                                 })
                               }
@@ -848,6 +855,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         onClick={() =>
                           handleNavClick(() => {
                             setSelectedModelSlug(selectedModelSlug === model.slug ? null : model.slug);
+                            setSelectedFolderId(null);
+                            setSelectedTags([]);
+                            setSelectedContentType(null);
                             setShowFavoritesOnly(false);
                           })
                         }
@@ -949,6 +959,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                             onClick={() =>
                               handleNavClick(() => {
                                 const isSelected = selectedTags.includes(tag.name);
+                                setSelectedFolderId(null);
+                                setSelectedModelSlug(null);
+                                setSelectedContentType(null);
                                 if (isSelected) {
                                   setSelectedTags(selectedTags.filter(t => t !== tag.name));
                                 } else {

@@ -624,6 +624,14 @@ export function DashboardContent({
                   : `${prompts.length} prompt${prompts.length === 1 ? "" : "s"} total`}
             </p>
           </div>
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-1.5 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300 transition-colors"
+            >
+              Reset filters
+            </button>
+          )}
         </div>
 
         {canBulkInFolder && (
@@ -663,7 +671,7 @@ export function DashboardContent({
         )}
 
         {/* Active Filters Chips */}
-        {hasActiveFilters && (
+        {(searchQuery.trim() || selectedTags.length > 0) && (
           <div className="flex items-center gap-2 flex-wrap">
             {searchQuery.trim() && (
               <button
@@ -671,28 +679,6 @@ export function DashboardContent({
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
               >
                 Search: &quot;{searchQuery}&quot;
-                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-            {selectedFolderId && (
-              <button
-                onClick={() => setSelectedFolderId(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
-              >
-                Folder: {contextFolders.find((f) => f.id === selectedFolderId)?.name}
-                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-            {selectedModelSlug && (
-              <button
-                onClick={() => setSelectedModelSlug(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
-              >
-                Model: {models.find((m) => m.slug === selectedModelSlug)?.name}
                 <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -710,28 +696,6 @@ export function DashboardContent({
                 </svg>
               </button>
             ))}
-            {selectedContentType && (
-              <button
-                onClick={() => setSelectedContentType(null)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
-              >
-                Type: {selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()}
-                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-            {showFavoritesOnly && (
-              <button
-                onClick={() => setShowFavoritesOnly(false)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-brand-400 hover:border-brand-500/40 transition-colors cursor-pointer group/chip"
-              >
-                Favorites only
-                <svg className="w-3 h-3 text-brand-400/60 group-hover/chip:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
           </div>
         )}
 
