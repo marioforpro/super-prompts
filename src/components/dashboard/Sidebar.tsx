@@ -667,7 +667,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 e.preventDefault();
                                 setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                               }}
-                              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
+                              className={`relative w-full flex items-center gap-3 px-4 pr-9 py-2.5 text-sm rounded-lg transition-all duration-150 cursor-pointer select-none ${
                                 selectedFolderId === folder.id
                                   ? "bg-surface-200 text-foreground"
                                   : dropFolderId === folder.id
@@ -701,7 +701,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   e.stopPropagation();
                                   setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                                 }}
-                                className="opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
                               >
                                 <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />

@@ -1293,12 +1293,7 @@ export function CreatePromptModal({
 
           {showAdvanced && (
             <>
-          {/* Organization */}
           <div className="mb-6 rounded-xl border border-surface-200 bg-surface-100/60 p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Organization</h3>
-              <span className="text-[11px] text-text-dim">Folder and tags</span>
-            </div>
 
             {canRemoveFromCurrentFolder && currentViewFolder && (
               <div className="flex items-center justify-between rounded-lg border border-brand-500/30 bg-brand-500/8 px-3 py-2">

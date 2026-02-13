@@ -7,7 +7,7 @@ import { EmptyState } from "./EmptyState";
 import { CreatePromptModal } from "./CreatePromptModal";
 import WelcomeGuide from "./WelcomeGuide";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
-import { assignPromptToFolder, toggleFavorite, unassignPromptFromFolder } from "@/lib/actions/prompts";
+import { assignPromptToFolder, deletePrompt, toggleFavorite, unassignPromptFromFolder } from "@/lib/actions/prompts";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { fuzzySearchFields } from "@/lib/fuzzySearch";
 import { useRouter } from "next/navigation";
@@ -62,6 +62,7 @@ export function DashboardContent({
   const [paletteIndex, setPaletteIndex] = useState(0);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [selectedForBulk, setSelectedForBulk] = useState<string[]>([]);
+  const [bulkMoveFolderId, setBulkMoveFolderId] = useState<string>("");
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
   const toastIdRef = useRef(0);
   const paletteInputRef = useRef<HTMLInputElement>(null);
@@ -237,22 +238,6 @@ export function DashboardContent({
 
     return result;
   }, [prompts, searchQuery, selectedFolderId, selectedModelSlug, selectedTags, selectedContentType, showFavoritesOnly]);
-
-  // Dynamic heading
-  const activeFilterLabel = useMemo(() => {
-    if (showFavoritesOnly) return "Favorites";
-    if (selectedFolderId) {
-      const folder = contextFolders.find((f) => f.id === selectedFolderId);
-      return folder ? folder.name : "Folder";
-    }
-    if (selectedModelSlug) {
-      const model = models.find((m) => m.slug === selectedModelSlug);
-      return model ? model.name : "Model";
-    }
-    if (selectedTags.length > 0) return selectedTags.map(t => '#' + t).join(' + ');
-    if (selectedContentType) return `${selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()} Prompts`;
-    return "All Prompts";
-  }, [showFavoritesOnly, selectedFolderId, selectedModelSlug, selectedTags, selectedContentType, contextFolders, models]);
 
   const hasActiveFilters = !!(searchQuery.trim() || selectedFolderId || selectedModelSlug || selectedTags.length > 0 || selectedContentType || showFavoritesOnly);
   const sortedFolders = useMemo(
@@ -483,13 +468,13 @@ export function DashboardContent({
     [selectedForBulk, filteredPromptIds]
   );
   const selectedCount = activeSelectedForBulk.length;
-  const canBulkInFolder = !!selectedFolderId && viewMode === "grid";
+  const canBulkSelect = viewMode === "grid" && filteredPrompts.length > 0;
 
   const toggleBulkSelection = (id: string) => {
     setSelectedForBulk((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
-  const selectAllInFolder = () => {
+  const selectAllVisible = () => {
     setSelectedForBulk(filteredPromptIds);
   };
 
@@ -497,16 +482,49 @@ export function DashboardContent({
     setSelectedForBulk([]);
   };
 
-  const removeFromCurrentFolder = async (ids: string[]) => {
-    if (!selectedFolderId || ids.length === 0) return;
+  const moveSelectedToFolder = async () => {
+    if (!bulkMoveFolderId || activeSelectedForBulk.length === 0) return;
     try {
-      const updates = await Promise.all(ids.map((id) => unassignPromptFromFolder(id, selectedFolderId)));
-      const byId = new Map(updates.map((u) => [u.id, u]));
-      setPrompts((prev) => prev.map((p) => byId.get(p.id) || p));
+      const results = await Promise.allSettled(
+        activeSelectedForBulk.map((id) => assignPromptToFolder(id, bulkMoveFolderId))
+      );
+      const updatedById = new Map(
+        results
+          .filter((r): r is PromiseFulfilledResult<Prompt> => r.status === "fulfilled")
+          .map((r) => [r.value.id, r.value])
+      );
+      if (updatedById.size > 0) {
+        setPrompts((prev) => prev.map((p) => updatedById.get(p.id) || p));
+      }
+      showToast(
+        `Moved ${updatedById.size} prompt${updatedById.size === 1 ? "" : "s"} to ${contextFolders.find((f) => f.id === bulkMoveFolderId)?.name || "folder"}`,
+        "success"
+      );
+      setBulkMoveFolderId("");
       setSelectedForBulk([]);
-      showToast(`Removed ${ids.length} prompt${ids.length === 1 ? "" : "s"} from folder`, "success");
     } catch (err) {
-      showToast(err instanceof Error ? err.message : "Failed to remove prompts", "error");
+      showToast(err instanceof Error ? err.message : "Failed to move prompts", "error");
+    }
+  };
+
+  const deleteSelectedPrompts = async () => {
+    if (activeSelectedForBulk.length === 0) return;
+    if (!window.confirm(`Delete ${activeSelectedForBulk.length} selected prompt${activeSelectedForBulk.length === 1 ? "" : "s"}? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      const results = await Promise.allSettled(activeSelectedForBulk.map((id) => deletePrompt(id)));
+      const deletedIds = results
+        .map((result, index) => ({ result, id: activeSelectedForBulk[index] }))
+        .filter(({ result }) => result.status === "fulfilled")
+        .map(({ id }) => id);
+      if (deletedIds.length > 0) {
+        setPrompts((prev) => prev.filter((p) => !deletedIds.includes(p.id)));
+      }
+      setSelectedForBulk([]);
+      showToast(`Deleted ${deletedIds.length} prompt${deletedIds.length === 1 ? "" : "s"}`, "success");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to delete prompts", "error");
     }
   };
 
@@ -618,71 +636,10 @@ export function DashboardContent({
 
       {/* Main Content */}
       <div className="space-y-8 animate-fadeIn">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {activeFilterLabel}
-            </h1>
-            <p className="text-text-muted text-sm mt-1">
-              {filteredPrompts.length === 0
-                ? hasActiveFilters
-                  ? "No prompts match your filters"
-                  : "Manage and organize your creative prompt library"
-                : hasActiveFilters
-                  ? `${filteredPrompts.length} of ${prompts.length} prompt${prompts.length === 1 ? "" : "s"}`
-                  : `${prompts.length} prompt${prompts.length === 1 ? "" : "s"} total`}
-            </p>
-          </div>
-          {hasActiveFilters && (
-            <button
-              onClick={clearAllFilters}
-              className="px-3 py-1.5 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300 transition-colors"
-            >
-              Reset filters
-            </button>
-          )}
-        </div>
-
-        {canBulkInFolder && (
-          <div className="sticky top-[57px] z-30 bg-background/95 backdrop-blur-sm border border-surface-200 rounded-lg px-3 py-2 flex items-center gap-2 text-xs">
-            <span className="text-text-dim">Folder actions:</span>
-            <button
-              onClick={selectAllInFolder}
-              className="px-2 py-1 rounded-md bg-surface-100 border border-surface-200 text-text-muted hover:text-foreground hover:border-surface-300"
-            >
-              Select all
-            </button>
-            <button
-              onClick={() => removeFromCurrentFolder(activeSelectedForBulk)}
-              disabled={selectedCount === 0}
-              className="px-2 py-1 rounded-md bg-brand-500/12 border border-brand-500/25 text-brand-300 hover:bg-brand-500/20 disabled:opacity-40"
-            >
-              Remove selected ({selectedCount})
-            </button>
-            <button
-              onClick={async () => {
-                if (!selectedFolderId || filteredPromptIds.length === 0) return;
-                if (!window.confirm("Remove all prompts from this folder?")) return;
-                await removeFromCurrentFolder(filteredPromptIds);
-              }}
-              disabled={filteredPromptIds.length === 0}
-              className="px-2 py-1 rounded-md bg-red-500/12 border border-red-500/25 text-red-300 hover:bg-red-500/20 disabled:opacity-40"
-            >
-              Remove all
-            </button>
-            <button
-              onClick={clearBulkSelection}
-              className="ml-auto px-2 py-1 rounded-md bg-surface-100 border border-surface-200 text-text-muted hover:text-foreground hover:border-surface-300"
-            >
-              Clear selection
-            </button>
-          </div>
-        )}
-
         {/* Active Search Chip */}
-        {searchQuery.trim() && (
-          <div className="flex items-center gap-2 flex-wrap">
+        {(searchQuery.trim() || hasActiveFilters) && (
+          <div className="flex items-center gap-2 flex-wrap justify-between">
+            {searchQuery.trim() ? (
             <button
               onClick={() => setSearchQuery('')}
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
@@ -692,6 +649,65 @@ export function DashboardContent({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            ) : <span />}
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="px-3 py-1.5 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300 transition-colors"
+              >
+                Reset view
+              </button>
+            )}
+          </div>
+        )}
+
+        {canBulkSelect && (
+          <div className="sticky top-[57px] z-30 rounded-xl border border-surface-200/90 bg-background/85 px-3 py-2 backdrop-blur-md shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={selectedCount === filteredPromptIds.length ? clearBulkSelection : selectAllVisible}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300"
+              >
+                <span>{selectedCount === filteredPromptIds.length ? "Clear all" : "Select all"}</span>
+              </button>
+              <div className="inline-flex items-center gap-1 rounded-lg border border-surface-200 bg-surface-100 px-2 py-1.5">
+                <span className="text-[11px] text-text-dim">Selected</span>
+                <span className="text-xs font-semibold text-foreground">{selectedCount}</span>
+              </div>
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <select
+                  value={bulkMoveFolderId}
+                  onChange={(e) => setBulkMoveFolderId(e.target.value)}
+                  className="h-8 min-w-[160px] rounded-lg border border-surface-200 bg-surface-100 px-2 text-xs text-text-muted focus:outline-none focus:border-brand-400"
+                >
+                  <option value="">Move to folder...</option>
+                  {sortedFolders.map((folder) => (
+                    <option key={folder.id} value={folder.id}>{folder.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={moveSelectedToFolder}
+                  disabled={selectedCount === 0 || !bulkMoveFolderId}
+                  className="h-8 px-3 rounded-lg bg-brand-500/15 border border-brand-500/25 text-xs text-brand-300 hover:bg-brand-500/25 disabled:opacity-40"
+                >
+                  Move
+                </button>
+                <button
+                  onClick={deleteSelectedPrompts}
+                  disabled={selectedCount === 0}
+                  className="h-8 px-3 rounded-lg bg-red-500/15 border border-red-500/30 text-xs text-red-300 hover:bg-red-500/25 disabled:opacity-40"
+                >
+                  Delete selected
+                </button>
+                <button
+                  onClick={clearBulkSelection}
+                  disabled={selectedCount === 0}
+                  className="h-8 px-3 rounded-lg bg-surface-100 border border-surface-200 text-xs text-text-muted hover:text-foreground hover:border-surface-300 disabled:opacity-40"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -738,8 +754,8 @@ export function DashboardContent({
             onFavoritePrompt={handleFavoritePrompt}
             selectedPromptId={effectiveSelectedPromptId}
             onSelectPrompt={setSelectedPromptId}
-            selectable={canBulkInFolder}
-            selectedIds={selectedForBulk}
+            selectable={canBulkSelect}
+            selectedIds={activeSelectedForBulk}
             onToggleSelect={toggleBulkSelection}
             folders={contextFolders.map((f) => ({ id: f.id, name: f.name }))}
             selectedFolderId={selectedFolderId}
