@@ -42,7 +42,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
   const handleShowWelcomeGuide = () => {
     setUserMenuOpen(false);
     localStorage.removeItem("sp-welcome-dismissed");
-    window.location.reload();
+    window.dispatchEvent(new CustomEvent("show-welcome-guide"));
   };
 
   const handleExportPrompts = async () => {
