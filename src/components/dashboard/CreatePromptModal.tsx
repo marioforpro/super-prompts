@@ -93,6 +93,9 @@ export function CreatePromptModal({
   const [isDetectingText, setIsDetectingText] = useState(false);
   const [detectedTextPreview, setDetectedTextPreview] = useState("");
 
+  // Progressive disclosure state
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   // Initialize form with existing prompt data
   useEffect(() => {
     if (prompt) {
@@ -136,6 +139,8 @@ export function CreatePromptModal({
         setMediaItems([]);
       }
       setRemovedMediaIds([]);
+      // Show advanced section if any advanced fields have content
+      setShowAdvanced(!!(prompt.negative_prompt || prompt.notes || prompt.source_url));
     } else {
       resetForm();
     }
@@ -204,6 +209,7 @@ export function CreatePromptModal({
     setMediaItems([]);
     setRemovedMediaIds([]);
     setAnalysisError("");
+    setShowAdvanced(false);
     setShowAnalysisPrompt(false);
     setIsDetectingText(false);
     setDetectedTextPreview("");
@@ -685,7 +691,8 @@ export function CreatePromptModal({
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-6">
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
               {error}
@@ -1004,6 +1011,20 @@ export function CreatePromptModal({
             />
           </div>
 
+          {/* Advanced Options Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center gap-2 py-2 text-sm text-text-muted hover:text-foreground transition-colors cursor-pointer"
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${showAdvanced ? 'rotate-0' : '-rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+            <span>Advanced options</span>
+          </button>
+
+          {showAdvanced && (
+            <>
           {/* Negative Prompt — collapsible */}
           <div className="mb-6">
             <button
@@ -1272,10 +1293,11 @@ export function CreatePromptModal({
               disabled={isLoading}
             />
           </div>
-        </form>
-
-        {/* Footer */}
-        <div className="border-t border-surface-200 p-6 bg-surface/50 backdrop-blur-sm flex items-center justify-between gap-3">
+            </>
+          )}
+        </div>
+        {/* Sticky Footer */}
+        <div className="border-t border-surface-200 p-4 bg-surface flex items-center gap-3 shrink-0">
           {prompt && (
             <button
               type="button"
@@ -1314,6 +1336,7 @@ export function CreatePromptModal({
             </button>
           </div>
         </div>
+        </form>
       </div>
 
       {/* Delete Confirmation Modal */}

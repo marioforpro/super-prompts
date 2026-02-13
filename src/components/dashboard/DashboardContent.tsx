@@ -29,11 +29,17 @@ export function DashboardContent({
   const {
     viewMode,
     searchQuery,
+    setSearchQuery,
     selectedFolderId,
+    setSelectedFolderId,
     selectedModelSlug,
+    setSelectedModelSlug,
     selectedTags,
+    setSelectedTags,
     selectedContentType,
+    setSelectedContentType,
     showFavoritesOnly,
+    setShowFavoritesOnly,
     folders: contextFolders,
     addFolder,
     addModel,
@@ -270,34 +276,71 @@ export function DashboardContent({
         {hasActiveFilters && (
           <div className="flex items-center gap-2 flex-wrap">
             {searchQuery.trim() && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+              <button
+                onClick={() => setSearchQuery('')}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
+              >
                 Search: &quot;{searchQuery}&quot;
-              </span>
+                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
             {selectedFolderId && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+              <button
+                onClick={() => setSelectedFolderId(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
+              >
                 Folder: {contextFolders.find((f) => f.id === selectedFolderId)?.name}
-              </span>
+                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
             {selectedModelSlug && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+              <button
+                onClick={() => setSelectedModelSlug(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
+              >
                 Model: {models.find((m) => m.slug === selectedModelSlug)?.name}
-              </span>
+                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
             {selectedTags.map((tag) => (
-              <span key={tag} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+              <button
+                key={tag}
+                onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
+              >
                 #{tag}
-              </span>
+                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             ))}
             {selectedContentType && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted">
+              <button
+                onClick={() => setSelectedContentType(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-100 border border-surface-200 text-xs text-text-muted hover:border-surface-300 hover:text-foreground transition-colors cursor-pointer group/chip"
+              >
                 Type: {selectedContentType.charAt(0) + selectedContentType.slice(1).toLowerCase()}
-              </span>
+                <svg className="w-3 h-3 text-text-dim group-hover/chip:text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
             {showFavoritesOnly && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-brand-400">
+              <button
+                onClick={() => setShowFavoritesOnly(false)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-xs text-brand-400 hover:border-brand-500/40 transition-colors cursor-pointer group/chip"
+              >
                 Favorites only
-              </span>
+                <svg className="w-3 h-3 text-brand-400/60 group-hover/chip:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             )}
           </div>
         )}
@@ -338,6 +381,17 @@ export function DashboardContent({
           />
         )}
       </div>
+
+      {/* Mobile FAB — New Prompt */}
+      <button
+        onClick={handleOpenModal}
+        className="fixed bottom-6 right-6 z-40 sm:hidden w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-500 text-white shadow-xl shadow-brand-500/30 hover:shadow-brand-500/40 active:scale-95 transition-all"
+        aria-label="New Prompt"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       {/* Toast Stack */}
       {toasts.length > 0 && (

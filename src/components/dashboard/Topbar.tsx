@@ -27,7 +27,13 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [toast, setToast] = useState<{ message: string; type: 'info' | 'error' } | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (message: string, type: 'info' | 'error' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const stored = localStorage.getItem("sp-theme") as "dark" | "light" | null;
@@ -59,7 +65,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       if (!prompts || prompts.length === 0) {
-        alert("No prompts to export.");
+        showToast("No prompts to export", "info");
         return;
       }
       const blob = new Blob([JSON.stringify(prompts, null, 2)], { type: "application/json" });
@@ -70,7 +76,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert("Export failed. Please try again.");
+      showToast("Export failed. Please try again.", "error");
     }
   };
 
@@ -322,6 +328,17 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           </div>
         </div>
       </div>
+
+      {/* Inline toast */}
+      {toast && (
+        <div className={`fixed top-16 right-6 z-50 px-4 py-3 rounded-lg text-sm shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300 ${
+          toast.type === 'error'
+            ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+            : 'bg-brand-500/20 border border-brand-500/30 text-brand-300'
+        }`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

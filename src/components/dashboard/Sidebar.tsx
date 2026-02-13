@@ -75,6 +75,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [tagError, setTagError] = useState("");
+  const [confirmDeleteTagId, setConfirmDeleteTagId] = useState<string | null>(null);
   const tagInputRef = useRef<HTMLInputElement>(null);
 
   // Drag-to-reorder state (indicator position is now managed via dragAfterIndex state)
@@ -369,7 +370,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <div
-        className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface z-50 border-r border-surface-200 transition-transform duration-300 transform md:transform-none ${
+        className={`fixed md:static top-0 left-0 h-screen w-64 bg-surface z-50 border-r border-surface-200 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] transform md:transform-none ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
@@ -392,7 +393,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1">
+          <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1 sidebar-scroll">
             {/* All Prompts */}
             <button
               onClick={() =>
@@ -439,7 +440,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </button>
 
             {/* Content type filter pills — no title, compact row */}
-            <div className="grid grid-cols-4 gap-1 mt-2 px-1">
+            <div className="grid grid-cols-4 gap-1.5 mt-2 px-1">
               {(['IMAGE', 'VIDEO', 'AUDIO', 'TEXT'] as const).map((type) => {
                 const isActive = selectedContentType === type;
                 const label = type === 'IMAGE' ? 'Image' : type === 'VIDEO' ? 'Video' : type === 'AUDIO' ? 'Audio' : 'Text';
@@ -461,7 +462,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         setShowFavoritesOnly(false);
                       })
                     }
-                    className={`flex items-center justify-center gap-0.5 py-1.5 rounded-md text-[10px] font-medium transition-all duration-150 cursor-pointer border ${
+                    className={`flex items-center justify-center gap-1 py-2 rounded-md text-xs font-medium transition-all duration-150 cursor-pointer border ${
                       isActive
                         ? 'bg-brand-500/15 border-brand-400/40 text-brand-300'
                         : 'bg-surface-100 border-surface-200 text-text-dim hover:text-text-muted hover:border-surface-300'
@@ -618,7 +619,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 onPointerMove={handleDragMove}
                                 onPointerUp={handleDragEnd}
                                 onPointerCancel={handleDragEnd}
-                                className="absolute left-0 top-0 bottom-0 w-4 flex items-center justify-center opacity-0 group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
+                                className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center opacity-40 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-40 cursor-grab active:cursor-grabbing transition-opacity z-10 touch-none"
                               >
                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 16 16">
                                   <circle cx="5" cy="3" r="1.3" /><circle cx="11" cy="3" r="1.3" />
@@ -635,7 +636,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                   e.stopPropagation();
                                   setFolderMenuId(folderMenuId === folder.id ? null : folder.id);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
+                                className="opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity p-0.5 hover:bg-surface-200 rounded cursor-pointer"
                               >
                                 <svg className="w-4 h-4 text-text-dim" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
@@ -889,14 +890,30 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteTag(tag.id);
+                              if (confirmDeleteTagId === tag.id) {
+                                handleDeleteTag(tag.id);
+                                setConfirmDeleteTagId(null);
+                              } else {
+                                setConfirmDeleteTagId(tag.id);
+                                setTimeout(() => setConfirmDeleteTagId(null), 3000);
+                              }
                             }}
-                            className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300 transition-all cursor-pointer"
-                            title="Delete tag"
+                            className={`absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded-full transition-all cursor-pointer ${
+                              confirmDeleteTagId === tag.id
+                                ? 'opacity-100 bg-red-500/30 text-red-300'
+                                : 'opacity-0 group-hover/tag:opacity-100 hover:bg-red-500/30 text-text-dim hover:text-red-300'
+                            }`}
+                            title={confirmDeleteTagId === tag.id ? "Click again to confirm delete" : "Delete tag"}
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
+                            {confirmDeleteTagId === tag.id ? (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            )}
                           </button>
                         </div>
                       ))
