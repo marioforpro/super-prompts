@@ -7,8 +7,6 @@ import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, deleteFolder, renameFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { createModel as createModelAction, updateModel as updateModelAction, deleteModel as deleteModelAction } from "@/lib/actions/models";
 import { deleteTag } from "@/lib/actions/tags";
-import { signOut } from "@/lib/actions/auth";
-import ThemeToggle from "./ThemeToggle";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -1031,17 +1029,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          {/* Settings + Sign Out */}
-          <div className="border-t border-surface-200 px-3 py-3 flex items-center justify-between">
-            <ThemeToggle />
-            <form action={signOut}>
-              <button type="submit" className="flex items-center gap-2 px-3 py-2 text-sm text-text-muted hover:text-foreground hover:bg-surface-100 rounded-lg transition-colors cursor-pointer">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>Sign Out</span>
-              </button>
-            </form>
+          {/* Footer */}
+          <div className="border-t border-surface-200 px-4 py-3">
+            <p className="text-[10px] text-text-dim text-center tracking-wider uppercase">Super Prompts v1.0</p>
           </div>
         </div>
       </div>

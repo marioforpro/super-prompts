@@ -63,6 +63,9 @@ export interface PromptMedia {
   file_size: number | null;
   sort_order: number;
   frame_fit: FrameFit;
+  crop_x: number;
+  crop_y: number;
+  crop_scale: number;
   created_at: string;
 }
 

@@ -13,7 +13,7 @@ import {
 import { createTag } from "@/lib/actions/tags";
 import { createFolder } from "@/lib/actions/folders";
 import { createModel } from "@/lib/actions/models";
-import { createPromptMedia, removePromptMedia, updateMediaFrameFit } from "@/lib/actions/media";
+import { createPromptMedia, removePromptMedia, updateMediaFrameFit, updateMediaCrop } from "@/lib/actions/media";
 import { createClient } from "@/lib/supabase/client";
 
 interface LocalMediaItem {
@@ -115,9 +115,9 @@ export function CreatePromptModal({
           type: m.type,
           frameFit: m.frame_fit,
           sortOrder: i,
-          cropX: 50,
-          cropY: 50,
-          cropScale: 1,
+          cropX: m.crop_x ?? 50,
+          cropY: m.crop_y ?? 50,
+          cropScale: m.crop_scale ?? 1,
         })));
       } else if (prompt.primary_media?.original_url) {
         // Fallback to primary_media
@@ -127,9 +127,9 @@ export function CreatePromptModal({
           type: prompt.primary_media.type,
           frameFit: prompt.primary_media.frame_fit || 'cover',
           sortOrder: 0,
-          cropX: 50,
-          cropY: 50,
-          cropScale: 1,
+          cropX: prompt.primary_media.crop_x ?? 50,
+          cropY: prompt.primary_media.crop_y ?? 50,
+          cropScale: prompt.primary_media.crop_scale ?? 1,
         }]);
       } else {
         setMediaItems([]);
@@ -508,12 +508,12 @@ export function CreatePromptModal({
         }
       }
 
-      // 2. Update frame_fit for existing items that changed
+      // 2. Update frame_fit and crop for existing items
       for (const item of mediaItems) {
         if (item.id && !item.file) {
-          // Check if frame_fit changed — always update to be safe
           try {
             await updateMediaFrameFit(item.id, item.frameFit);
+            await updateMediaCrop(item.id, item.cropX, item.cropY, item.cropScale);
           } catch {
             // Non-fatal
           }
@@ -550,7 +550,10 @@ export function CreatePromptModal({
           item.file.size,
           isFirst && !mediaItems.some(m => m.id), // Only set as primary if no existing items
           item.sortOrder,
-          item.frameFit
+          item.frameFit,
+          item.cropX,
+          item.cropY,
+          item.cropScale
         );
       }
     } finally {

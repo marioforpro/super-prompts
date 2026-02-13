@@ -16,7 +16,10 @@ export async function createPromptMedia(
   fileSize: number | null,
   setAsPrimary: boolean = true,
   sortOrder: number = 0,
-  frameFit: FrameFit = "cover"
+  frameFit: FrameFit = "cover",
+  cropX: number = 50,
+  cropY: number = 50,
+  cropScale: number = 1
 ): Promise<PromptMedia> {
   const supabase = await createClient();
 
@@ -50,6 +53,9 @@ export async function createPromptMedia(
       file_size: fileSize,
       sort_order: sortOrder,
       frame_fit: frameFit,
+      crop_x: cropX,
+      crop_y: cropY,
+      crop_scale: cropScale,
     })
     .select()
     .single();
@@ -164,6 +170,43 @@ export async function updateMediaFrameFit(
   const { data, error } = await supabase
     .from("prompt_media")
     .update({ frame_fit: frameFit })
+    .eq("id", mediaId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as PromptMedia;
+}
+
+/**
+ * Updates a media item's crop/zoom settings.
+ */
+export async function updateMediaCrop(
+  mediaId: string,
+  cropX: number,
+  cropY: number,
+  cropScale: number
+): Promise<PromptMedia> {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Verify ownership through prompt
+  const { data: media, error: fetchError } = await supabase
+    .from("prompt_media")
+    .select("prompt_id, prompts!prompt_media_prompt_id_fkey(user_id)")
+    .eq("id", mediaId)
+    .single();
+
+  if (fetchError || !media) throw new Error("Media not found");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ownerUserId = (media as any).prompts?.user_id;
+  if (ownerUserId !== user.id) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("prompt_media")
+    .update({ crop_x: cropX, crop_y: cropY, crop_scale: cropScale })
     .eq("id", mediaId)
     .select()
     .single();
