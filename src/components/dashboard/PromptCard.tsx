@@ -231,9 +231,6 @@ export function PromptCard({
                         playsInline
                         preload="metadata"
                         draggable={false}
-                        style={{
-                          filter: `brightness(${isHovered ? 0.78 : 1})`,
-                        }}
                       />
                     ) : (
                       <Image
@@ -247,10 +244,7 @@ export function PromptCard({
                           objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                           transform: `scale(${media.cropScale ?? 1})`,
                           transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
-                          filter: `brightness(${isHovered ? 0.78 : 1})`,
-                        } : {
-                          filter: `brightness(${isHovered ? 0.78 : 1})`,
-                        }}
+                        } : undefined}
                         sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                       />
                     )}
@@ -328,6 +322,14 @@ export function PromptCard({
             </div>
           )}
         </div>
+
+        {/* Hover Overlay */}
+        <div
+          className={cn(
+            'absolute inset-0 z-10 bg-black/35 transition-opacity duration-200 pointer-events-none',
+            isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-100'
+          )}
+        />
 
         {/* Action Icon — top-right corner */}
         <div
