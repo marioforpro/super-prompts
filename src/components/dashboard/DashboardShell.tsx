@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef } from "react";
+import { usePathname } from "next/navigation";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import { CreatePromptProvider } from "@/contexts/CreatePromptContext";
+import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -47,6 +49,8 @@ export default function DashboardShell({
 
 function DashboardInner({ children }: { children: React.ReactNode }) {
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useDashboard();
+  const { openCreateModal } = useCreatePromptModal();
+  const pathname = usePathname();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   return (
@@ -61,6 +65,19 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           <div className="px-6 py-6">{children}</div>
         </main>
       </div>
+      {pathname === "/dashboard" && (
+        <button
+          onClick={() => openCreateModal()}
+          className="group fixed right-5 bottom-5 z-[80] w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] transition-all duration-250"
+          aria-label="New Prompt"
+          title="New Prompt"
+        >
+          <span className="pointer-events-none absolute inset-y-0 -left-10 w-8 bg-brand-300/25 blur-[1px] translate-x-0 group-hover:translate-x-[74px] transition-transform duration-700" />
+          <svg className="relative z-[1] w-5 h-5 transition-transform duration-200 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
