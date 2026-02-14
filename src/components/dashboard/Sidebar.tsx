@@ -80,9 +80,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const dragOverClientYRef = useRef<number | null>(null);
   const suppressFolderClickRef = useRef(false);
   const suppressModelClickRef = useRef(false);
+  const hasLoadedModelOrderRef = useRef(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(MODEL_ORDER_STORAGE_KEY);
+    hasLoadedModelOrderRef.current = true;
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
@@ -94,9 +96,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(MODEL_ORDER_STORAGE_KEY, JSON.stringify(modelOrder));
-  }, [modelOrder]);
+  const persistModelOrder = (order: string[]) => {
+    if (!hasLoadedModelOrderRef.current) return;
+    localStorage.setItem(MODEL_ORDER_STORAGE_KEY, JSON.stringify(order));
+    window.dispatchEvent(
+      new CustomEvent(MODEL_ORDER_UPDATED_EVENT, {
+        detail: order,
+      })
+    );
+  };
 
   useEffect(() => {
     const handleModelOrderUpdated = (event: Event) => {
@@ -318,6 +326,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         const insertAt = modelDragAfterIndex !== null ? Math.min(modelDragAfterIndex, orderedSlugs.length) : adjustedTo;
         orderedSlugs.splice(insertAt, 0, moved);
         setModelOrder(orderedSlugs);
+        persistModelOrder(orderedSlugs);
       }
     }
 

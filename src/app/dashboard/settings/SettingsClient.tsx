@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { AiModel, Folder } from "@/lib/types";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createModel, updateModel, deleteModel } from "@/lib/actions/models";
@@ -57,6 +58,7 @@ interface SettingsClientProps {
 }
 
 export default function SettingsClient({ models: _initialModels, folders: _initialFolders }: SettingsClientProps) {
+  const router = useRouter();
   const {
     folders,
     models,
@@ -83,6 +85,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
   const [newModelColorPickerOpen, setNewModelColorPickerOpen] = useState(false);
   const newFolderColorPickerRef = useRef<HTMLDivElement>(null);
   const newModelColorPickerRef = useRef<HTMLDivElement>(null);
+  const [isSavingView, setIsSavingView] = useState(false);
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState("");
@@ -368,6 +371,13 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     }
   };
 
+  const handleSaveAndClose = () => {
+    setIsSavingView(true);
+    window.setTimeout(() => {
+      router.push("/dashboard");
+    }, 420);
+  };
+
   return (
     <div className="animate-fadeIn">
       <div className="w-full space-y-6">
@@ -386,13 +396,30 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <p className="text-sm text-text-dim">Organize folders and AI models in one place.</p>
             </div>
             </div>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-400 transition-colors"
+            <button
+              type="button"
+              onClick={handleSaveAndClose}
+              disabled={isSavingView}
+              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-400 disabled:opacity-80 disabled:cursor-default transition-colors"
               title="Save settings"
             >
-              Save
-            </Link>
+              {isSavingView ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-90" fill="currentColor" d="M12 3a9 9 0 019 9h-3a6 6 0 00-6-6V3z" />
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save
+                </>
+              )}
+            </button>
           </div>
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-300 text-sm">
