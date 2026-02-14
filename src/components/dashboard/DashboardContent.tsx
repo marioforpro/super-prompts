@@ -466,7 +466,7 @@ export function DashboardContent({
       {/* Floating FAB — New Prompt */}
       <button
         onClick={handleOpenModal}
-        className="group relative overflow-hidden fixed right-5 bottom-5 z-40 w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] transition-all duration-250"
+        className="group relative overflow-hidden fixed z-[60] w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] transition-all duration-250 right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] sm:right-[max(1.25rem,env(safe-area-inset-right))] sm:bottom-[max(1.25rem,env(safe-area-inset-bottom))]"
         aria-label="New Prompt"
         title="New Prompt"
       >
