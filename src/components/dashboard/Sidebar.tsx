@@ -454,7 +454,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         <div className="flex flex-col h-full">
           <div className="px-4 h-[57px] flex items-center justify-center border-b border-surface-200">
-            <Link href="/dashboard" className="flex items-center">
+            <Link href="/dashboard" className="flex items-center cursor-default">
               <Logo size="sm" showText={true} />
             </Link>
           </div>
