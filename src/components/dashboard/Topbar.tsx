@@ -148,7 +148,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
 
           <button
             onClick={() => openCreateModal()}
-            className="group relative overflow-hidden hidden sm:inline-flex items-center gap-2 h-[34px] px-3.5 rounded-lg border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.99] transition-all duration-250 cursor-default"
+            className="new-prompt-cta group relative overflow-hidden hidden sm:inline-flex items-center gap-2 h-[34px] px-3.5 rounded-lg border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.99] transition-all duration-250 cursor-default"
           >
             <span className="pointer-events-none absolute inset-y-0 -left-10 w-8 bg-brand-300/25 blur-[1px] translate-x-0 group-hover:translate-x-[220px] transition-transform duration-700" />
             <svg className="relative z-[1] w-4 h-4 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-[280px] rounded-2xl border border-surface-200/90 bg-[linear-gradient(180deg,rgba(22,24,37,0.96)_0%,rgba(18,20,32,0.97)_100%)] backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.55)] overflow-hidden">
+              <div className="account-menu-panel absolute right-0 mt-2 w-[280px] rounded-2xl border border-surface-200/90 bg-[linear-gradient(180deg,rgba(22,24,37,0.96)_0%,rgba(18,20,32,0.97)_100%)] backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.55)] overflow-hidden">
                 <div className="px-4 py-3.5 border-b border-surface-200/70">
                   <div className="flex items-center gap-3.5">
                     <div className="h-9 w-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-[0_6px_16px_rgba(232,118,75,0.35)]">

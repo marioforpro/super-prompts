@@ -38,17 +38,17 @@
   --brand-800: #5a2618;
   --brand-900: #3a1810;
 
-  --surface-base: #ffffff;
-  --surface-50: #f8f8f8;
-  --surface-100: #f0f0f0;
-  --surface-200: #e4e4e4;
-  --surface-300: #d0d0d0;
-  --surface-400: #b0b0b0;
+  --surface-base: #eef0f4;
+  --surface-50: #e9ecf1;
+  --surface-100: #dde1e8;
+  --surface-200: #cfd5df;
+  --surface-300: #bac2cf;
+  --surface-400: #9ea8b9;
 
-  --bg: #f4f4f4;
+  --bg: #e6e9ef;
   --fg: #1a1a1e;
-  --text-muted-val: #6a6a70;
-  --text-dim-val: #9a9a9e;
+  --text-muted-val: #5e6572;
+  --text-dim-val: #858e9c;
 }
 
 @theme inline {
@@ -237,6 +237,27 @@ html {
 [data-theme="light"] .glass-subtle {
   background: rgba(255, 255, 255, 0.5);
   border-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .new-prompt-cta,
+[data-theme="light"] .floating-prompt-cta {
+  background: linear-gradient(135deg, rgba(236, 239, 246, 0.96), rgba(228, 233, 243, 0.96));
+  color: #c85f36;
+  border-color: rgba(232, 118, 75, 0.40);
+  box-shadow: 0 0 0 1px rgba(232, 118, 75, 0.12), 0 10px 24px rgba(80, 90, 120, 0.16);
+}
+
+[data-theme="light"] .new-prompt-cta:hover,
+[data-theme="light"] .floating-prompt-cta:hover {
+  color: #b5522d;
+  border-color: rgba(232, 118, 75, 0.62);
+  box-shadow: 0 0 0 1px rgba(232, 118, 75, 0.24), 0 12px 28px rgba(232, 118, 75, 0.22);
+}
+
+[data-theme="light"] .account-menu-panel {
+  background: linear-gradient(180deg, rgba(236, 240, 247, 0.95) 0%, rgba(226, 232, 242, 0.97) 100%);
+  border-color: rgba(48, 58, 84, 0.14);
+  box-shadow: 0 18px 48px rgba(48, 58, 84, 0.18);
 }
 
 /* ===== COMPACT ZOOM SLIDER ===== */

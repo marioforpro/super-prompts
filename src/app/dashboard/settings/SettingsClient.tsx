@@ -414,9 +414,6 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                 </>
               ) : (
                 <>
-                  <svg className="relative z-[1] w-4 h-4 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M5 13l4 4L19 7" />
-                  </svg>
                   <span className="relative z-[1]">Save</span>
                 </>
               )}
