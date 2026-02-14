@@ -231,7 +231,10 @@ export function PromptCard({
                         playsInline
                         preload="metadata"
                         draggable={false}
-                        style={{ transform: `scale(${isHovered ? 1.04 : 1.01})` }}
+                        style={{
+                          transform: `scale(${isHovered ? 1.04 : 1.01})`,
+                          filter: `brightness(${isHovered ? 0.78 : 1})`,
+                        }}
                       />
                     ) : (
                       <Image
@@ -245,8 +248,10 @@ export function PromptCard({
                           objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                           transform: `scale(${(media.cropScale ?? 1) * (isHovered ? 1.03 : 1.01)})`,
                           transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
+                          filter: `brightness(${isHovered ? 0.78 : 1})`,
                         } : {
                           transform: `scale(${isHovered ? 1.03 : 1.01})`,
+                          filter: `brightness(${isHovered ? 0.78 : 1})`,
                         }}
                         sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                       />
@@ -325,14 +330,6 @@ export function PromptCard({
             </div>
           )}
         </div>
-
-        {/* Hover Overlay */}
-        <div
-          className={cn(
-            'absolute -inset-px z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-200 pointer-events-none',
-            isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-100'
-          )}
-        />
 
         {/* Action Icon — top-right corner */}
         <div
