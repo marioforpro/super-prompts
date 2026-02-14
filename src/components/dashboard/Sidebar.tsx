@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/icons/Logo";
-import { Settings2 } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { assignPromptToFolder } from "@/lib/actions/prompts";
@@ -680,7 +680,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="h-9 w-9 rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
               title="Manage folders and AI models"
             >
-              <Settings2 className="w-3.5 h-3.5" />
+              <Settings className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
