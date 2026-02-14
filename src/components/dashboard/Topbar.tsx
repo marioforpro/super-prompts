@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { PlusIcon } from "@/components/icons/Logo";
+import { Settings2 } from "lucide-react";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { signOut } from "@/lib/actions/auth";
@@ -148,9 +149,9 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
 
           <button
             onClick={() => openCreateModal()}
-            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3 rounded-lg border border-brand-500/40 bg-brand-500/18 text-brand-300 hover:text-brand-200 hover:bg-brand-500/24 hover:border-brand-500/60 transition-all"
+            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3 rounded-lg border border-brand-500/55 bg-gradient-to-r from-brand-500/22 to-brand-400/22 text-brand-200 hover:text-white hover:border-brand-400/70 hover:shadow-[0_0_20px_rgba(232,118,75,0.22)] transition-all"
           >
-            <span className="text-sm font-semibold leading-none">+</span>
+            <PlusIcon size={14} />
             <span className="text-xs font-semibold tracking-[0.08em] uppercase">New Prompt</span>
           </button>
         </div>
@@ -169,10 +170,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
               className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
               title="Account and settings"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936 1.724 1.724 0 002.65 0 1 1 0 011.35.936 1.724 1.724 0 001.91 1.403 1 1 0 01.936 1.35 1.724 1.724 0 000 2.65 1 1 0 01-.936 1.35 1.724 1.724 0 00-1.403 1.91 1 1 0 01-1.35.936 1.724 1.724 0 00-2.65 0 1 1 0 01-1.35-.936 1.724 1.724 0 00-1.91-1.403 1 1 0 01-.936-1.35 1.724 1.724 0 000-2.65 1 1 0 01.936-1.35 1.724 1.724 0 001.403-1.91z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12a3 3 0 100-6 3 3 0 000 6z" />
-              </svg>
+              <Settings2 className="w-4 h-4" />
             </button>
 
             {userMenuOpen && (

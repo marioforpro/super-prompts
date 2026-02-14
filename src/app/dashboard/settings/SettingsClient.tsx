@@ -40,18 +40,6 @@ function getModelColor(name: string): string {
   return COLOR_PALETTE[hash % COLOR_PALETTE.length];
 }
 
-function getSelectTextColor(hex: string): string {
-  const clean = hex.replace("#", "");
-  const full = clean.length === 3
-    ? clean.split("").map((char) => `${char}${char}`).join("")
-    : clean;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.62 ? "#111827" : "#f8fafc";
-}
-
 function toSlug(value: string) {
   return value
     .trim()
@@ -88,6 +76,8 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
   const [newFolderColor, setNewFolderColor] = useState(COLOR_PALETTE[0]);
   const [newModelName, setNewModelName] = useState("");
   const [newModelColor, setNewModelColor] = useState(COLOR_PALETTE[0]);
+  const [newFolderColorPickerOpen, setNewFolderColorPickerOpen] = useState(false);
+  const [newModelColorPickerOpen, setNewModelColorPickerOpen] = useState(false);
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState("");
@@ -370,32 +360,38 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{folderPromptTotal} prompts</span>
             </div>
 
-            <div className="grid grid-cols-[1fr_120px_auto] gap-2">
+            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <input
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 placeholder="New folder name"
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
-              <select
-                value={newFolderColor}
-                onChange={(e) => setNewFolderColor(e.target.value)}
-                className="h-10 rounded-lg border border-surface-200 px-2 text-xs"
-                style={{
-                  backgroundColor: newFolderColor,
-                  color: getSelectTextColor(newFolderColor),
-                }}
-              >
-                {COLOR_PALETTE.map((color, idx) => (
-                  <option
-                    key={color}
-                    value={color}
-                    style={{ backgroundColor: color, color: getSelectTextColor(color) }}
-                  >
-                    {`● Color ${idx + 1}`}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <button
+                  onClick={() => setNewFolderColorPickerOpen((prev) => !prev)}
+                  className="h-10 w-10 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center"
+                  title="Choose folder color"
+                >
+                  <span className="h-5 w-5 rounded-md border border-black/20" style={{ backgroundColor: newFolderColor }} />
+                </button>
+                {newFolderColorPickerOpen && (
+                  <div className="absolute right-0 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1.5 shadow-xl">
+                    {COLOR_PALETTE.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          setNewFolderColor(color);
+                          setNewFolderColorPickerOpen(false);
+                        }}
+                        className="w-5 h-5 rounded-full border border-black/20"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleAddFolder}
                 disabled={isLoading}
@@ -512,32 +508,38 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{modelPromptTotal} prompts</span>
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_120px_auto] gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
               <input
                 value={newModelName}
                 onChange={(e) => setNewModelName(e.target.value)}
                 placeholder="New model name"
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
-              <select
-                value={newModelColor}
-                onChange={(e) => setNewModelColor(e.target.value)}
-                className="h-10 rounded-lg border border-surface-200 px-2 text-xs"
-                style={{
-                  backgroundColor: newModelColor,
-                  color: getSelectTextColor(newModelColor),
-                }}
-              >
-                {COLOR_PALETTE.map((color, idx) => (
-                  <option
-                    key={color}
-                    value={color}
-                    style={{ backgroundColor: color, color: getSelectTextColor(color) }}
-                  >
-                    {`● Color ${idx + 1}`}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <button
+                  onClick={() => setNewModelColorPickerOpen((prev) => !prev)}
+                  className="h-10 w-10 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center"
+                  title="Choose model color"
+                >
+                  <span className="h-5 w-5 rounded-md border border-black/20" style={{ backgroundColor: newModelColor }} />
+                </button>
+                {newModelColorPickerOpen && (
+                  <div className="absolute right-0 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1.5 shadow-xl">
+                    {COLOR_PALETTE.map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => {
+                          setNewModelColor(color);
+                          setNewModelColorPickerOpen(false);
+                        }}
+                        className="w-5 h-5 rounded-full border border-black/20"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleAddModel}
                 disabled={isLoading}

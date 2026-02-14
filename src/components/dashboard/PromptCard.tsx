@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal, Trash2, SquarePen, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PromptBrandPlaceholder from './PromptBrandPlaceholder';
 
 export interface MediaItem {
   url: string;
@@ -37,28 +38,6 @@ export interface PromptCardProps {
   onFavorite?: () => void;
   onClick?: () => void;
 }
-
-const getGradientBackground = (seed: string): string => {
-  const colors = [
-    'from-orange-900 to-amber-900',
-    'from-amber-900 to-yellow-900',
-    'from-orange-950 to-red-900',
-    'from-stone-800 to-orange-900',
-    'from-zinc-800 to-amber-900',
-    'from-indigo-900 to-blue-900',
-    'from-violet-900 to-purple-900',
-    'from-emerald-900 to-teal-900',
-    'from-rose-900 to-pink-900',
-    'from-cyan-900 to-sky-900',
-    'from-fuchsia-900 to-violet-900',
-    'from-slate-800 to-zinc-900',
-    'from-teal-900 to-emerald-900',
-    'from-blue-900 to-indigo-900',
-  ];
-
-  const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
-};
 
 /**
  * Returns the aspect ratio class for consistent grid layout.
@@ -141,7 +120,6 @@ export function PromptCard({
   };
 
   const firstLine = content.split('\n')[0] || content.substring(0, 60);
-  const gradientClass = getGradientBackground(id);
   const aspectClass = getAspectRatio(modelCategory);
   useEffect(() => {
     if (!menuOpen) return;
@@ -332,19 +310,7 @@ export function PromptCard({
             )}
           </>
         ) : (
-          <div
-            className={cn(
-              'w-full h-full flex items-end justify-start p-6 bg-gradient-to-br',
-              gradientClass
-            )}
-          >
-            <p className={cn(
-              'text-sm font-medium text-white/80 line-clamp-3 transition-opacity duration-200',
-              isHovered ? 'opacity-0' : 'opacity-100'
-            )}>
-              {firstLine}
-            </p>
-          </div>
+          <PromptBrandPlaceholder hint={firstLine} />
         )}
 
         {/* Badges — top-left */}

@@ -6,6 +6,7 @@ import { PromptListView } from "./PromptListView";
 import { EmptyState } from "./EmptyState";
 import { CreatePromptModal } from "./CreatePromptModal";
 import WelcomeGuide from "./WelcomeGuide";
+import { PlusIcon } from "@/components/icons/Logo";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import { toggleFavorite, deletePrompt } from "@/lib/actions/prompts";
 import { deleteFolder } from "@/lib/actions/folders";
@@ -468,20 +469,19 @@ export function DashboardContent({
         )}
       </div>
 
-      {/* Mobile FAB — New Prompt */}
+      {/* Floating FAB — New Prompt */}
       <button
         onClick={handleOpenModal}
-        className="fixed bottom-6 right-6 z-40 sm:hidden w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-500 text-white shadow-xl shadow-brand-500/30 hover:shadow-brand-500/40 active:scale-95 transition-all"
+        className="fixed bottom-5 right-5 z-40 w-11 h-11 flex items-center justify-center rounded-full bg-brand-500 text-white shadow-xl shadow-brand-500/35 hover:bg-brand-400 hover:shadow-brand-500/45 active:scale-95 transition-all"
         aria-label="New Prompt"
+        title="New Prompt"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
+        <PlusIcon size={17} />
       </button>
 
       {/* Toast Stack */}
       {toasts.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col-reverse gap-2 items-end">
+        <div className="fixed bottom-20 right-5 z-50 flex flex-col-reverse gap-2 items-end">
           {toasts.map((toast) => (
             <div
               key={toast.id}

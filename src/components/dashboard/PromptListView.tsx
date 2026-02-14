@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Copy, Heart, ChevronDown, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboard } from '@/contexts/DashboardContext';
+import PromptBrandPlaceholder from './PromptBrandPlaceholder';
 
 export interface PromptListViewProps {
   prompts: Array<{
@@ -236,7 +237,7 @@ export function PromptListView({
                     )}
                   </>
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-900/40 to-amber-900/40" />
+                  <PromptBrandPlaceholder compact />
                 )}
               </div>
 
