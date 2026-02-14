@@ -348,3 +348,20 @@ html {
 [data-theme="light"] *:focus-visible {
   --tw-ring-offset-color: var(--bg);
 }
+
+/* ===== LIST VIEW ROWS ===== */
+.list-row {
+  background: linear-gradient(135deg, rgba(20, 22, 34, 0.86), rgba(14, 16, 28, 0.84));
+}
+
+.list-row:hover {
+  background: linear-gradient(135deg, rgba(24, 27, 42, 0.92), rgba(17, 19, 31, 0.90));
+}
+
+[data-theme="light"] .list-row {
+  background: linear-gradient(135deg, rgba(206, 214, 227, 0.86), rgba(196, 205, 220, 0.84));
+}
+
+[data-theme="light"] .list-row:hover {
+  background: linear-gradient(135deg, rgba(214, 221, 232, 0.94), rgba(202, 211, 225, 0.92));
+}

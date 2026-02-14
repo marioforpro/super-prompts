@@ -153,7 +153,7 @@ export function PromptListView({
                   dragPreviewRef.current = null;
                 }
               }}
-              className="px-3 py-2.5 grid items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer bg-[linear-gradient(135deg,rgba(20,22,34,0.86),rgba(14,16,28,0.84))] hover:border-brand-500/40 hover:bg-[linear-gradient(135deg,rgba(24,27,42,0.92),rgba(17,19,31,0.9))]"
+              className="list-row px-3 py-2.5 grid items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer hover:border-brand-500/40"
               style={{
                 gridTemplateColumns: '48px 1fr 120px 100px 64px',
                 boxShadow: isSelected
