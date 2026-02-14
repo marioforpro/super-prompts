@@ -440,6 +440,12 @@ export function DashboardContent({
             prompts={displayPrompts}
             onCopyPrompt={handleCopyPrompt}
             onFavoritePrompt={handleFavoritePrompt}
+            onEditPrompt={(id) => {
+              const prompt = filteredPrompts.find((p) => p.id === id) || prompts.find((p) => p.id === id);
+              if (prompt) handleEditPrompt(prompt);
+            }}
+            onSharePrompt={(id) => void handleSharePromptFromCard(id)}
+            onDeletePrompt={(id) => void handleDeletePromptFromCard(id)}
             selectedPromptId={effectiveSelectedPromptId}
             onSelectPrompt={setSelectedPromptId}
             onClickPrompt={(id) => {

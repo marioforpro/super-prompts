@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, Play } from 'lucide-react';
+import { Copy, Heart, Play, SquarePen, Share2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboard } from '@/contexts/DashboardContext';
 import PromptBrandPlaceholder from './PromptBrandPlaceholder';
@@ -25,6 +25,9 @@ export interface PromptListViewProps {
   }>;
   onCopyPrompt?: (id: string, content: string) => void;
   onFavoritePrompt?: (id: string) => void;
+  onEditPrompt?: (id: string) => void;
+  onSharePrompt?: (id: string) => void;
+  onDeletePrompt?: (id: string) => void;
   onClickPrompt?: (id: string) => void;
   selectedPromptId?: string | null;
   onSelectPrompt?: (id: string) => void;
@@ -34,6 +37,9 @@ export function PromptListView({
   prompts,
   onCopyPrompt,
   onFavoritePrompt,
+  onEditPrompt,
+  onSharePrompt,
+  onDeletePrompt,
   onClickPrompt,
   selectedPromptId,
   onSelectPrompt,
@@ -66,6 +72,18 @@ export function PromptListView({
   const handleCopyClick = (id: string, content: string, e: React.MouseEvent) => {
     e.stopPropagation();
     onCopyPrompt?.(id, content);
+  };
+  const handleEditClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditPrompt?.(id);
+  };
+  const handleShareClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSharePrompt?.(id);
+  };
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDeletePrompt?.(id);
   };
 
   const sortedPrompts = [...prompts].sort((a, b) => {
@@ -155,7 +173,7 @@ export function PromptListView({
               }}
               className="list-row px-3 py-2.5 grid items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer hover:border-brand-500/40"
               style={{
-                gridTemplateColumns: '48px 1fr 120px 100px 64px',
+                gridTemplateColumns: '48px 1fr 120px 100px 142px',
                 boxShadow: isSelected
                   ? 'inset 0 0 0 1px rgba(232,118,75,0.34), 0 12px 28px rgba(0,0,0,0.28)'
                   : '0 6px 16px rgba(0,0,0,0.18)',
@@ -257,6 +275,30 @@ export function PromptListView({
                   title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                 >
                   <Heart size={14} className={isFavorited ? 'fill-current' : ''} />
+                </button>
+                <button
+                  onClick={(e) => handleEditClick(prompt.id, e)}
+                  className="p-1.5 rounded-lg border border-transparent hover:border-surface-300 hover:bg-surface-200 transition-colors duration-200"
+                  aria-label="Edit prompt"
+                  title="Edit prompt"
+                >
+                  <SquarePen size={14} className="text-text-muted hover:text-foreground" />
+                </button>
+                <button
+                  onClick={(e) => handleShareClick(prompt.id, e)}
+                  className="p-1.5 rounded-lg border border-transparent hover:border-surface-300 hover:bg-surface-200 transition-colors duration-200"
+                  aria-label="Share prompt"
+                  title="Share prompt"
+                >
+                  <Share2 size={14} className="text-text-muted hover:text-foreground" />
+                </button>
+                <button
+                  onClick={(e) => handleDeleteClick(prompt.id, e)}
+                  className="p-1.5 rounded-lg border border-transparent hover:border-red-500/35 hover:bg-red-500/12 transition-colors duration-200"
+                  aria-label="Delete prompt"
+                  title="Delete prompt"
+                >
+                  <Trash2 size={14} className="text-text-muted hover:text-red-300" />
                 </button>
               </div>
             </div>
