@@ -216,7 +216,7 @@ export function PromptCard({
         {displayMedia.length > 0 ? (
           <>
             {/* Sliding media strip */}
-            <div className="relative w-full h-[calc(100%+1px)] -mb-px overflow-hidden">
+            <div className="relative w-full h-full overflow-hidden">
               <div
                 className="flex h-full transition-transform duration-300 ease-out"
                 style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
@@ -226,13 +226,12 @@ export function PromptCard({
                     {media.type === 'video' ? (
                       <video
                         src={media.url}
-                        className="w-full h-full object-cover transition-transform duration-300 [backface-visibility:hidden]"
+                        className="w-full h-full object-cover transition-all duration-300"
                         muted
                         playsInline
                         preload="metadata"
                         draggable={false}
                         style={{
-                          transform: `scale(${isHovered ? 1.04 : 1.01})`,
                           filter: `brightness(${isHovered ? 0.78 : 1})`,
                         }}
                       />
@@ -243,14 +242,13 @@ export function PromptCard({
                         fill
                         quality={92}
                         draggable={false}
-                        className="object-cover transition-transform duration-300 [backface-visibility:hidden]"
+                        className="object-cover transition-all duration-300"
                         style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
                           objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
-                          transform: `scale(${(media.cropScale ?? 1) * (isHovered ? 1.03 : 1.01)})`,
+                          transform: `scale(${media.cropScale ?? 1})`,
                           transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                           filter: `brightness(${isHovered ? 0.78 : 1})`,
                         } : {
-                          transform: `scale(${isHovered ? 1.03 : 1.01})`,
                           filter: `brightness(${isHovered ? 0.78 : 1})`,
                         }}
                         sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
