@@ -22,6 +22,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
   });
   const [toast, setToast] = useState<{ message: string; type: "info" | "error" } | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuHoverTimeoutRef = useRef<number | null>(null);
 
   const showToast = (message: string, type: "info" | "error" = "info") => {
     setToast({ message, type });
@@ -83,6 +84,33 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (userMenuHoverTimeoutRef.current) {
+        window.clearTimeout(userMenuHoverTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const clearUserMenuHoverTimeout = () => {
+    if (userMenuHoverTimeoutRef.current) {
+      window.clearTimeout(userMenuHoverTimeoutRef.current);
+      userMenuHoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleUserMenuMouseEnter = () => {
+    clearUserMenuHoverTimeout();
+    setUserMenuOpen(true);
+  };
+
+  const handleUserMenuMouseLeave = () => {
+    clearUserMenuHoverTimeout();
+    userMenuHoverTimeoutRef.current = window.setTimeout(() => {
+      setUserMenuOpen(false);
+    }, 140);
+  };
 
   return (
     <div className="sticky top-0 z-40 w-full h-[57px] bg-surface border-b border-surface-200">
@@ -159,11 +187,20 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          <div className="relative" ref={userMenuRef}>
+          <div
+            className="relative"
+            ref={userMenuRef}
+            onMouseEnter={handleUserMenuMouseEnter}
+            onMouseLeave={handleUserMenuMouseLeave}
+          >
             <button
-              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              onClick={() => {
+                clearUserMenuHoverTimeout();
+                setUserMenuOpen(!userMenuOpen);
+              }}
               className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 hover:bg-surface transition-colors inline-flex items-center justify-center"
               title="Account and settings"
+              aria-expanded={userMenuOpen}
             >
               <User className="w-4 h-4" />
             </button>
