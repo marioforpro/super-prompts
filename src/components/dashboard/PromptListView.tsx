@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { Copy, Heart, ChevronDown, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDashboard } from '@/contexts/DashboardContext';
 
 export interface PromptListViewProps {
   prompts: Array<{
@@ -69,6 +70,7 @@ export function PromptListView({
   selectedPromptId,
   onSelectPrompt,
 }: PromptListViewProps) {
+  const { setDraggedPromptId, setDraggedPromptIds } = useDashboard();
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>(
@@ -77,6 +79,16 @@ export function PromptListView({
       {}
     )
   );
+  const dragPreviewRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (dragPreviewRef.current) {
+        dragPreviewRef.current.remove();
+        dragPreviewRef.current = null;
+      }
+    };
+  }, []);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -136,6 +148,49 @@ export function PromptListView({
           return (
             <div
               key={prompt.id}
+              draggable
+              onDragStart={(event) => {
+                if (dragPreviewRef.current) {
+                  dragPreviewRef.current.remove();
+                  dragPreviewRef.current = null;
+                }
+                event.dataTransfer.setData('application/x-superprompts-prompt-id', prompt.id);
+                event.dataTransfer.setData('application/x-superprompts-prompt-ids', JSON.stringify([prompt.id]));
+                event.dataTransfer.setData('text/plain', prompt.id);
+                event.dataTransfer.effectAllowed = 'copyMove';
+                setDraggedPromptId(prompt.id);
+                setDraggedPromptIds([prompt.id]);
+
+                const preview = document.createElement('div');
+                preview.textContent = `+ ${prompt.title}`;
+                preview.style.position = 'fixed';
+                preview.style.top = '-1000px';
+                preview.style.left = '-1000px';
+                preview.style.padding = '8px 12px';
+                preview.style.borderRadius = '999px';
+                preview.style.fontSize = '12px';
+                preview.style.fontWeight = '600';
+                preview.style.color = '#f5f5f5';
+                preview.style.background = 'rgba(10,10,10,0.92)';
+                preview.style.border = '1px solid rgba(232,118,75,0.65)';
+                preview.style.boxShadow = '0 8px 24px rgba(0,0,0,0.35)';
+                preview.style.maxWidth = '260px';
+                preview.style.whiteSpace = 'nowrap';
+                preview.style.overflow = 'hidden';
+                preview.style.textOverflow = 'ellipsis';
+                preview.style.pointerEvents = 'none';
+                document.body.appendChild(preview);
+                dragPreviewRef.current = preview;
+                event.dataTransfer.setDragImage(preview, 18, 18);
+              }}
+              onDragEnd={() => {
+                setDraggedPromptId(null);
+                setDraggedPromptIds([]);
+                if (dragPreviewRef.current) {
+                  dragPreviewRef.current.remove();
+                  dragPreviewRef.current = null;
+                }
+              }}
               className="px-4 py-3 grid items-center gap-3 group transition-colors duration-200 cursor-pointer hover:bg-white/5"
               style={{
                 gridTemplateColumns: '48px 1fr 120px 100px 64px',

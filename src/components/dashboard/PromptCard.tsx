@@ -99,7 +99,7 @@ export function PromptCard({
   const [showCopied, setShowCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Use mediaItems if provided, otherwise fall back to coverUrl/coverType
@@ -146,9 +146,10 @@ export function PromptCard({
   useEffect(() => {
     if (!menuOpen) return;
     const handleDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      const target = e.target as Node;
+      if (menuPanelRef.current?.contains(target)) return;
+      if (menuButtonRef.current?.contains(target)) return;
+      setMenuOpen(false);
     };
     document.addEventListener('mousedown', handleDocClick);
     return () => document.removeEventListener('mousedown', handleDocClick);
@@ -167,6 +168,52 @@ export function PromptCard({
     return () => {
       window.removeEventListener('scroll', close, true);
       window.removeEventListener('resize', close);
+    };
+  }, [menuOpen]);
+
+  const closeMenuAndRun = (action?: () => void) => {
+    action?.();
+    setMenuOpen(false);
+  };
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnBlur = () => setMenuOpen(false);
+    window.addEventListener('blur', closeOnBlur);
+    return () => window.removeEventListener('blur', closeOnBlur);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnTouch = (event: TouchEvent) => {
+      const target = event.target as Node;
+      if (menuPanelRef.current?.contains(target)) return;
+      if (menuButtonRef.current?.contains(target)) return;
+      setMenuOpen(false);
+    };
+    document.addEventListener('touchstart', closeOnTouch, { passive: true });
+    return () => document.removeEventListener('touchstart', closeOnTouch);
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => {
+      if (document.visibilityState === 'hidden') {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('visibilitychange', close);
+    return () => {
+      document.removeEventListener('visibilitychange', close);
     };
   }, [menuOpen]);
 
@@ -324,11 +371,15 @@ export function PromptCard({
             isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-70'
           )}
         >
-          <div className="relative" ref={menuRef}>
+          <div className="relative">
             <button
               ref={menuButtonRef}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 setMenuOpen((prev) => !prev);
               }}
               className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
@@ -407,15 +458,15 @@ export function PromptCard({
 
       {menuOpen && menuPosition && (
         <div
-          ref={menuRef}
+          ref={menuPanelRef}
           className="fixed z-[140] w-[180px] rounded-lg border border-surface-300 bg-surface-100 shadow-2xl overflow-hidden"
           style={{ top: menuPosition.top, left: menuPosition.left }}
         >
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onEdit?.();
-              setMenuOpen(false);
+              e.preventDefault();
+              closeMenuAndRun(onEdit);
             }}
             className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
           >
@@ -425,8 +476,8 @@ export function PromptCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onShare?.();
-              setMenuOpen(false);
+              e.preventDefault();
+              closeMenuAndRun(onShare);
             }}
             className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
           >
@@ -437,8 +488,8 @@ export function PromptCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete?.();
-              setMenuOpen(false);
+              e.preventDefault();
+              closeMenuAndRun(onDelete);
             }}
             className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-red-300 hover:text-red-200 hover:bg-red-500/15"
           >

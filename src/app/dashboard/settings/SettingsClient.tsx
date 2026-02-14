@@ -40,6 +40,18 @@ function getModelColor(name: string): string {
   return COLOR_PALETTE[hash % COLOR_PALETTE.length];
 }
 
+function getSelectTextColor(hex: string): string {
+  const clean = hex.replace("#", "");
+  const full = clean.length === 3
+    ? clean.split("").map((char) => `${char}${char}`).join("")
+    : clean;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.62 ? "#111827" : "#f8fafc";
+}
+
 function toSlug(value: string) {
   return value
     .trim()
@@ -368,10 +380,20 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <select
                 value={newFolderColor}
                 onChange={(e) => setNewFolderColor(e.target.value)}
-                className="h-10 rounded-lg border border-surface-200 bg-surface px-2 text-xs text-text-muted"
+                className="h-10 rounded-lg border border-surface-200 px-2 text-xs"
+                style={{
+                  backgroundColor: newFolderColor,
+                  color: getSelectTextColor(newFolderColor),
+                }}
               >
                 {COLOR_PALETTE.map((color, idx) => (
-                  <option key={color} value={color}>{`Color ${idx + 1}`}</option>
+                  <option
+                    key={color}
+                    value={color}
+                    style={{ backgroundColor: color, color: getSelectTextColor(color) }}
+                  >
+                    {`● Color ${idx + 1}`}
+                  </option>
                 ))}
               </select>
               <button
@@ -500,10 +522,20 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <select
                 value={newModelColor}
                 onChange={(e) => setNewModelColor(e.target.value)}
-                className="h-10 rounded-lg border border-surface-200 bg-surface px-2 text-xs text-text-muted"
+                className="h-10 rounded-lg border border-surface-200 px-2 text-xs"
+                style={{
+                  backgroundColor: newModelColor,
+                  color: getSelectTextColor(newModelColor),
+                }}
               >
                 {COLOR_PALETTE.map((color, idx) => (
-                  <option key={color} value={color}>{`Color ${idx + 1}`}</option>
+                  <option
+                    key={color}
+                    value={color}
+                    style={{ backgroundColor: color, color: getSelectTextColor(color) }}
+                  >
+                    {`● Color ${idx + 1}`}
+                  </option>
                 ))}
               </select>
               <button

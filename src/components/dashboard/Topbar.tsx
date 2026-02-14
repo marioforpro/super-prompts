@@ -148,11 +148,9 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
 
           <button
             onClick={() => openCreateModal()}
-            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3 rounded-lg border border-cyan-400/35 bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(99,102,241,0.16))] text-cyan-200 hover:text-cyan-100 hover:border-cyan-300/50 shadow-[0_0_20px_rgba(34,211,238,0.12)] transition-all"
+            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3 rounded-lg border border-brand-500/40 bg-brand-500/18 text-brand-300 hover:text-brand-200 hover:bg-brand-500/24 hover:border-brand-500/60 transition-all"
           >
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-black/25 border border-cyan-300/30">
-              <PlusIcon size={12} />
-            </span>
+            <span className="text-sm font-semibold leading-none">+</span>
             <span className="text-xs font-semibold tracking-[0.08em] uppercase">New Prompt</span>
           </button>
         </div>
@@ -168,9 +166,13 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="h-[36px] w-[36px] rounded-full bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all cursor-pointer"
+              className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
+              title="Account and settings"
             >
-              {userInitial}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317a1 1 0 011.35-.936 1.724 1.724 0 002.65 0 1 1 0 011.35.936 1.724 1.724 0 001.91 1.403 1 1 0 01.936 1.35 1.724 1.724 0 000 2.65 1 1 0 01-.936 1.35 1.724 1.724 0 00-1.403 1.91 1 1 0 01-1.35.936 1.724 1.724 0 00-2.65 0 1 1 0 01-1.35-.936 1.724 1.724 0 00-1.91-1.403 1 1 0 01-.936-1.35 1.724 1.724 0 000-2.65 1 1 0 01.936-1.35 1.724 1.724 0 001.403-1.91z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
             </button>
 
             {userMenuOpen && (
