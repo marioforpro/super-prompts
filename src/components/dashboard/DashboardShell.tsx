@@ -54,14 +54,14 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-surface/30 overflow-hidden">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar onMenuToggle={toggleSidebar} searchInputRef={searchInputRef} />
-        <main className="flex-1 overflow-y-auto bg-background">
+        <main className="flex-1 overflow-y-auto bg-surface/20">
           <div className="px-6 py-6">{children}</div>
         </main>
       </div>

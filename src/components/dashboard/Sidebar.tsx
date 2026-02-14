@@ -447,11 +447,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         }`}
       >
         <div className="flex flex-col h-full">
-          <div className="px-4 h-[57px] flex items-center justify-between border-b border-surface-200">
+          <div className="relative px-4 h-[57px] flex items-center justify-center border-b border-surface-200">
             <Link href="/dashboard" className="flex items-center cursor-default">
               <Logo size="sm" showText={true} />
             </Link>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-surface-100 md:hidden">
+            <button onClick={onClose} className="absolute right-3 p-2 rounded-lg hover:bg-surface-100 md:hidden">
               <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -677,9 +677,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 window.location.assign("/dashboard/settings");
               }}
               className="h-9 w-9 rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
+              title="Manage folders and AI models"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 6v4m10 4H4m10 0v4M4 18h16" />
               </svg>
             </button>
           </div>
