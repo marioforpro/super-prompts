@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { AiModel, Folder } from "@/lib/types";
 import { useDashboard } from "@/contexts/DashboardContext";
@@ -34,6 +34,9 @@ const COLOR_PALETTE = [
   "#94a3b8",
   "#f0eff2",
 ];
+
+const MODEL_ORDER_STORAGE_KEY = "superprompts:model-order";
+const MODEL_ORDER_UPDATED_EVENT = "superprompts:model-order-updated";
 
 function getModelColor(name: string): string {
   const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -78,6 +81,8 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
   const [newModelColor, setNewModelColor] = useState(COLOR_PALETTE[0]);
   const [newFolderColorPickerOpen, setNewFolderColorPickerOpen] = useState(false);
   const [newModelColorPickerOpen, setNewModelColorPickerOpen] = useState(false);
+  const newFolderColorPickerRef = useRef<HTMLDivElement>(null);
+  const newModelColorPickerRef = useRef<HTMLDivElement>(null);
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editingFolderName, setEditingFolderName] = useState("");
@@ -97,7 +102,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
   const [modelOrder, setModelOrder] = useState<string[]>([]);
 
   useEffect(() => {
-    const raw = localStorage.getItem("superprompts:model-order");
+    const raw = localStorage.getItem(MODEL_ORDER_STORAGE_KEY);
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
@@ -109,9 +114,39 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     }
   }, []);
 
+  const persistModelOrder = (order: string[]) => {
+    localStorage.setItem(MODEL_ORDER_STORAGE_KEY, JSON.stringify(order));
+    window.dispatchEvent(
+      new CustomEvent(MODEL_ORDER_UPDATED_EVENT, {
+        detail: order,
+      })
+    );
+  };
+
   useEffect(() => {
-    localStorage.setItem("superprompts:model-order", JSON.stringify(modelOrder));
-  }, [modelOrder]);
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (
+        newFolderColorPickerOpen &&
+        newFolderColorPickerRef.current &&
+        !newFolderColorPickerRef.current.contains(target)
+      ) {
+        setNewFolderColorPickerOpen(false);
+      }
+
+      if (
+        newModelColorPickerOpen &&
+        newModelColorPickerRef.current &&
+        !newModelColorPickerRef.current.contains(target)
+      ) {
+        setNewModelColorPickerOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [newFolderColorPickerOpen, newModelColorPickerOpen]);
 
   const folderPromptCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -192,6 +227,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     const insertIndex = insertAfter ? adjustedTo + 1 : adjustedTo;
     slugs.splice(Math.max(0, Math.min(insertIndex, slugs.length)), 0, moved);
     setModelOrder(slugs);
+    persistModelOrder(slugs);
     setDragOverModelSlug(null);
     setDragModelToEnd(false);
   };
@@ -319,7 +355,11 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     try {
       await deleteModel(id);
       removeModel(id);
-      setModelOrder((prev) => prev.filter((item) => item !== slug));
+      setModelOrder((prev) => {
+        const next = prev.filter((item) => item !== slug);
+        persistModelOrder(next);
+        return next;
+      });
       setDeletingModelId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete model");
@@ -348,10 +388,10 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
             </div>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-surface hover:bg-surface-100 text-text-muted hover:text-foreground transition-colors"
-              title="Close settings"
+              className="inline-flex items-center justify-center h-9 px-4 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-400 transition-colors"
+              title="Save settings"
             >
-              <span className="text-lg leading-none">×</span>
+              Save
             </Link>
           </div>
           {error && (
@@ -375,7 +415,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                 placeholder="New folder name"
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
-              <div className="relative">
+              <div className="relative" ref={newFolderColorPickerRef}>
                 <button
                   onClick={() => setNewFolderColorPickerOpen((prev) => !prev)}
                   className="h-10 w-12 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center gap-1"
@@ -538,7 +578,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                 placeholder="New model name"
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
-              <div className="relative">
+              <div className="relative" ref={newModelColorPickerRef}>
                 <button
                   onClick={() => setNewModelColorPickerOpen((prev) => !prev)}
                   className="h-10 w-12 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center gap-1"

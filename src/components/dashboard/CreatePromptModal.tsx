@@ -1302,9 +1302,6 @@ export function CreatePromptModal({
                 : prompt
                   ? "Update"
                   : "Create"}
-              {!isLoading && (
-                <kbd className="hidden sm:inline ml-2 px-1 py-0.5 rounded bg-white/10 text-[10px] font-mono">⌘↵</kbd>
-              )}
             </button>
           </div>
         </div>

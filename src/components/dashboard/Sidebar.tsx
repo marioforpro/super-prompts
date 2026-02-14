@@ -20,6 +20,9 @@ const COLOR_PALETTE = [
   "#f472b6", "#fb7185", "#d4a574", "#94a3b8", "#f0eff2",
 ];
 
+const MODEL_ORDER_STORAGE_KEY = "superprompts:model-order";
+const MODEL_ORDER_UPDATED_EVENT = "superprompts:model-order-updated";
+
 function getModelColor(name: string): string {
   const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return COLOR_PALETTE[hash % COLOR_PALETTE.length];
@@ -79,7 +82,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const suppressModelClickRef = useRef(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem("superprompts:model-order");
+    const raw = localStorage.getItem(MODEL_ORDER_STORAGE_KEY);
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
@@ -92,8 +95,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("superprompts:model-order", JSON.stringify(modelOrder));
+    localStorage.setItem(MODEL_ORDER_STORAGE_KEY, JSON.stringify(modelOrder));
   }, [modelOrder]);
+
+  useEffect(() => {
+    const handleModelOrderUpdated = (event: Event) => {
+      const custom = event as CustomEvent<string[]>;
+      if (!Array.isArray(custom.detail)) return;
+      setModelOrder(custom.detail.filter((item) => typeof item === "string"));
+    };
+
+    window.addEventListener(MODEL_ORDER_UPDATED_EVENT, handleModelOrderUpdated as EventListener);
+    return () => {
+      window.removeEventListener(MODEL_ORDER_UPDATED_EVENT, handleModelOrderUpdated as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     if (isCreatingFolder && folderInputRef.current) folderInputRef.current.focus();
