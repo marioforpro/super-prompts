@@ -52,6 +52,7 @@ export function PromptGrid({
   const { setDraggedPromptId, setDraggedPromptIds } = useDashboard();
   const [mounted, setMounted] = useState(false);
   const dragPreviewRef = useRef<HTMLDivElement | null>(null);
+  const suppressNextDragRef = useRef(false);
 
   // Trigger fade-in shortly after mount using setTimeout for reliability
   useEffect(() => {
@@ -84,7 +85,18 @@ export function PromptGrid({
           <div
             key={prompt.id}
             draggable
+            onPointerDownCapture={(event) => {
+              const target = event.target as HTMLElement;
+              suppressNextDragRef.current = !!target.closest('[data-no-card-drag="true"]');
+            }}
+            onPointerUpCapture={() => {
+              suppressNextDragRef.current = false;
+            }}
             onDragStart={(event) => {
+              if (suppressNextDragRef.current) {
+                event.preventDefault();
+                return;
+              }
               const target = event.target as HTMLElement;
               if (target.closest('button') || target.closest('[role="menu"]')) {
                 event.preventDefault();
@@ -130,6 +142,7 @@ export function PromptGrid({
             onDragEnd={() => {
               setDraggedPromptId(null);
               setDraggedPromptIds([]);
+              suppressNextDragRef.current = false;
               if (dragPreviewRef.current) {
                 dragPreviewRef.current.remove();
                 dragPreviewRef.current = null;
