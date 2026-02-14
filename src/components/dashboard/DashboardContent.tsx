@@ -466,11 +466,12 @@ export function DashboardContent({
       {/* Floating FAB — New Prompt */}
       <button
         onClick={handleOpenModal}
-        className="fixed bottom-5 right-5 z-40 w-12 h-12 flex items-center justify-center rounded-xl border border-brand-300/35 bg-gradient-to-br from-[#ea7d53] to-[#cf633b] text-white shadow-[0_10px_24px_rgba(232,118,75,0.42)] hover:shadow-[0_12px_26px_rgba(232,118,75,0.5)] hover:brightness-105 active:scale-95 transition-all"
+        className="group relative overflow-hidden fixed bottom-5 right-5 z-40 w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/65 bg-gradient-to-r from-[#e8764b] to-[#d7673e] text-white shadow-[0_8px_20px_rgba(232,118,75,0.3)] hover:shadow-[0_10px_24px_rgba(232,118,75,0.36)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] transition-all duration-250"
         aria-label="New Prompt"
         title="New Prompt"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span className="pointer-events-none absolute inset-y-0 -left-10 w-8 bg-white/20 blur-[1px] translate-x-0 group-hover:translate-x-[74px] transition-transform duration-700" />
+        <svg className="relative z-[1] w-5 h-5 transition-transform duration-200 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M12 5v14M5 12h14" />
         </svg>
       </button>
