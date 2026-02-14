@@ -61,7 +61,7 @@ export function DashboardContent({
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
   const [deleteConfirm, setDeleteConfirm] = useState<
     | {
-        type: "folder" | "model";
+        type: "folder" | "model" | "prompt";
         id: string;
         name: string;
         promptCount: number;
@@ -336,28 +336,34 @@ export function DashboardContent({
     if (!deleteConfirm) return;
     if (deleteConfirm.type === "folder") {
       await handleDeleteSelectedFolder(deleteConfirm.id);
-    } else {
+    } else if (deleteConfirm.type === "model") {
       await handleDeleteSelectedModel(deleteConfirm.id);
-    }
-    setDeleteConfirm(null);
-  }, [deleteConfirm, handleDeleteSelectedFolder, handleDeleteSelectedModel]);
-
-  const handleDeletePromptFromCard = useCallback(
-    async (id: string) => {
-      const confirmed = window.confirm("Delete this prompt?");
-      if (!confirmed) return;
+    } else {
       try {
-        await deletePrompt(id);
-        setPrompts((prev) => prev.filter((prompt) => prompt.id !== id));
-        if (selectedPromptId === id) {
+        await deletePrompt(deleteConfirm.id);
+        setPrompts((prev) => prev.filter((prompt) => prompt.id !== deleteConfirm.id));
+        if (selectedPromptId === deleteConfirm.id) {
           setSelectedPromptId(null);
         }
         showToast("Prompt deleted", "success");
       } catch (err) {
         showToast(err instanceof Error ? err.message : "Failed to delete prompt", "error");
       }
+    }
+    setDeleteConfirm(null);
+  }, [deleteConfirm, handleDeleteSelectedFolder, handleDeleteSelectedModel, selectedPromptId, showToast]);
+
+  const handleDeletePromptFromCard = useCallback(
+    (id: string) => {
+      const prompt = prompts.find((item) => item.id === id);
+      setDeleteConfirm({
+        type: "prompt",
+        id,
+        name: prompt?.title || "this prompt",
+        promptCount: 0,
+      });
     },
-    [selectedPromptId, showToast]
+    [prompts]
   );
 
   const handleSharePromptFromCard = useCallback(
@@ -525,14 +531,12 @@ export function DashboardContent({
             <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
             <div className="relative w-full max-w-md rounded-2xl border border-surface-200 bg-[linear-gradient(180deg,rgba(22,24,37,0.98)_0%,rgba(17,19,31,0.99)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] p-5">
               <h3 className="text-base font-semibold text-foreground">
-                Delete {deleteConfirm.type === "folder" ? "folder" : "AI model"}
+                Delete {deleteConfirm.type === "folder" ? "folder" : deleteConfirm.type === "model" ? "AI model" : "prompt"}
               </h3>
               <p className="mt-2 text-sm text-text-muted">
-                {deleteConfirm.type === "folder"
-                  ? `You are deleting "${deleteConfirm.name}".`
-                  : `You are deleting "${deleteConfirm.name}".`}
+                {`You are deleting "${deleteConfirm.name}".`}
               </p>
-              {deleteConfirm.promptCount > 0 && (
+              {deleteConfirm.type !== "prompt" && deleteConfirm.promptCount > 0 && (
                 <p className="mt-2 text-sm text-red-300/90">
                   Warning: this will affect {deleteConfirm.promptCount} prompt{deleteConfirm.promptCount === 1 ? "" : "s"}.
                 </p>
