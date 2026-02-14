@@ -85,6 +85,11 @@ export function PromptGrid({
             key={prompt.id}
             draggable
             onDragStart={(event) => {
+              const target = event.target as HTMLElement;
+              if (target.closest('button') || target.closest('[role="menu"]')) {
+                event.preventDefault();
+                return;
+              }
               if (dragPreviewRef.current) {
                 dragPreviewRef.current.remove();
                 dragPreviewRef.current = null;

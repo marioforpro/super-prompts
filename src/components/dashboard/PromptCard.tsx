@@ -340,8 +340,13 @@ export function PromptCard({
           <div className="relative">
             <button
               ref={menuButtonRef}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
               onMouseDown={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
               }}
               onClick={(e) => {
                 e.stopPropagation();
