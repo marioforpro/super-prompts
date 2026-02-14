@@ -657,7 +657,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     }`}
                   >
                     <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: model.icon_url?.startsWith("#") ? model.icon_url : getModelColor(model.name) }}
                     />
 
