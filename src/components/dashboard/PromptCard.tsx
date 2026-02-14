@@ -392,7 +392,10 @@ export function PromptCard({
                 <Copy size={20} className="text-white" />
               )}
             </button>
-            <h3 className="text-sm font-semibold text-white line-clamp-2 text-center uppercase tracking-wide">
+            <h3
+              className="text-sm font-semibold text-white line-clamp-2 text-center uppercase tracking-wide [text-shadow:0_2px_6px_rgba(0,0,0,0.72)]"
+              style={{ WebkitTextStroke: "0.25px rgba(0, 0, 0, 0.75)" }}
+            >
               {title}
             </h3>
           </div>

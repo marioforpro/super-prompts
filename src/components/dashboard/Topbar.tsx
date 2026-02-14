@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { PlusIcon } from "@/components/icons/Logo";
-import { Settings2 } from "lucide-react";
+import { Settings, MoonStar, Download, Sparkles, LogOut } from "lucide-react";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { signOut } from "@/lib/actions/auth";
@@ -149,10 +149,10 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
 
           <button
             onClick={() => openCreateModal()}
-            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3 rounded-lg border border-brand-500/55 bg-gradient-to-r from-brand-500/22 to-brand-400/22 text-brand-200 hover:text-white hover:border-brand-400/70 hover:shadow-[0_0_20px_rgba(232,118,75,0.22)] transition-all"
+            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3.5 rounded-lg border border-brand-500/70 bg-gradient-to-r from-[#e8764b] to-[#d7673e] text-white shadow-[0_8px_20px_rgba(232,118,75,0.28)] hover:shadow-[0_10px_24px_rgba(232,118,75,0.34)] hover:brightness-105 active:scale-[0.99] transition-all"
           >
-            <PlusIcon size={14} />
-            <span className="text-xs font-semibold tracking-[0.08em] uppercase">New Prompt</span>
+            <PlusIcon size={15} />
+            <span className="text-xs font-semibold tracking-[0.06em] uppercase">New Prompt</span>
           </button>
         </div>
 
@@ -167,32 +167,35 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
           <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
+              className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 hover:bg-surface transition-colors inline-flex items-center justify-center"
               title="Account and settings"
             >
-              <Settings2 className="w-4 h-4" />
+              <Settings className="w-4 h-4" strokeWidth={1.9} />
             </button>
 
             {userMenuOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-surface-100 border border-surface-200 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
-                <div className="px-4 py-3 border-b border-surface-200">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              <div className="absolute right-0 mt-2 w-[280px] rounded-2xl border border-surface-200/90 bg-[linear-gradient(180deg,rgba(22,24,37,0.96)_0%,rgba(18,20,32,0.97)_100%)] backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.55)] overflow-hidden">
+                <div className="px-4 py-3.5 border-b border-surface-200/70">
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-[0_6px_16px_rgba(232,118,75,0.35)]">
                       {userInitial}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{userEmail}</p>
-                      <p className="text-xs text-text-dim">Free plan</p>
+                      <p className="text-xs text-text-dim mt-0.5">Free plan</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="py-1.5">
+                <div className="p-2 space-y-1">
                   <button
                     onClick={toggleTheme}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-sm text-text-muted hover:bg-white/[0.06] hover:text-foreground transition-colors cursor-pointer"
                   >
-                    <span>{theme === "dark" ? "Dark mode" : "Light mode"}</span>
+                    <span className="inline-flex items-center gap-2.5">
+                      <MoonStar className="w-4 h-4 opacity-90" />
+                      <span>{theme === "dark" ? "Dark mode" : "Light mode"}</span>
+                    </span>
                     <div
                       className="relative w-8 h-[18px] rounded-full transition-colors duration-200"
                       style={{ backgroundColor: theme === "dark" ? "var(--brand-400)" : "var(--surface-300)" }}
@@ -206,15 +209,17 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
 
                   <button
                     onClick={handleExportPrompts}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-text-muted hover:bg-white/[0.06] hover:text-foreground transition-colors cursor-pointer"
                   >
+                    <Download className="w-4 h-4 opacity-90" />
                     <span>Export prompts</span>
                   </button>
 
                   <button
                     onClick={handleShowWelcomeGuide}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-text-muted hover:bg-white/[0.06] hover:text-foreground transition-colors cursor-pointer"
                   >
+                    <Sparkles className="w-4 h-4 opacity-90" />
                     <span>Show welcome guide</span>
                   </button>
 
@@ -223,18 +228,20 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
                       setUserMenuOpen(false);
                       window.location.assign("/dashboard/settings");
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:bg-surface-200 hover:text-foreground transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-text-muted hover:bg-white/[0.06] hover:text-foreground transition-colors cursor-pointer"
                   >
+                    <Settings className="w-4 h-4 opacity-90" />
                     <span>Settings</span>
                   </button>
                 </div>
 
-                <div className="border-t border-surface-200 py-1.5">
+                <div className="border-t border-surface-200/70 p-2">
                   <form action={signOut}>
                     <button
                       type="submit"
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400/80 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-red-300/90 hover:bg-red-500/12 hover:text-red-200 transition-colors cursor-pointer"
                     >
+                      <LogOut className="w-4 h-4" />
                       <span>Sign out</span>
                     </button>
                   </form>

@@ -6,7 +6,6 @@ import { PromptListView } from "./PromptListView";
 import { EmptyState } from "./EmptyState";
 import { CreatePromptModal } from "./CreatePromptModal";
 import WelcomeGuide from "./WelcomeGuide";
-import { PlusIcon } from "@/components/icons/Logo";
 import type { Prompt, AiModel, Folder, Tag } from "@/lib/types";
 import { toggleFavorite, deletePrompt } from "@/lib/actions/prompts";
 import { deleteFolder } from "@/lib/actions/folders";
@@ -472,11 +471,13 @@ export function DashboardContent({
       {/* Floating FAB — New Prompt */}
       <button
         onClick={handleOpenModal}
-        className="fixed bottom-5 right-5 z-40 w-11 h-11 flex items-center justify-center rounded-full bg-brand-500 text-white shadow-xl shadow-brand-500/35 hover:bg-brand-400 hover:shadow-brand-500/45 active:scale-95 transition-all"
+        className="fixed bottom-5 right-5 z-40 w-12 h-12 flex items-center justify-center rounded-full border border-brand-300/35 bg-gradient-to-br from-[#ea7d53] to-[#cf633b] text-white shadow-[0_10px_24px_rgba(232,118,75,0.42)] hover:shadow-[0_12px_26px_rgba(232,118,75,0.5)] hover:brightness-105 active:scale-95 transition-all"
         aria-label="New Prompt"
         title="New Prompt"
       >
-        <PlusIcon size={17} />
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M12 5v14M5 12h14" />
+        </svg>
       </button>
 
       {/* Toast Stack */}
