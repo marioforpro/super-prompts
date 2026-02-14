@@ -59,6 +59,15 @@ export function DashboardContent({
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: 'success' | 'info' | 'error' }>>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<
+    | {
+        type: "folder" | "model";
+        id: string;
+        name: string;
+        promptCount: number;
+      }
+    | null
+  >(null);
   const toastIdRef = useRef(0);
 
   // Register modal open callback with parent
@@ -248,11 +257,6 @@ export function DashboardContent({
     if (!selectedModel) return 0;
     return prompts.filter((p) => p.ai_model?.slug === selectedModel.slug).length;
   }, [prompts, selectedModel]);
-  const canDeleteSelectedContext = selectedFolder
-    ? selectedFolderPromptCount === 0
-    : selectedModel
-      ? selectedModelPromptCount === 0
-      : false;
 
   const effectiveSelectedPromptId = selectedPromptId && filteredPrompts.some((p) => p.id === selectedPromptId)
     ? selectedPromptId
@@ -267,19 +271,15 @@ export function DashboardContent({
     setShowFavoritesOnly(false);
   };
 
-  const handleDeleteSelectedFolder = useCallback(async () => {
-    if (!selectedFolder) return;
-    const confirmed = window.confirm(`Delete folder "${selectedFolder.name}"? This cannot be undone.`);
-    if (!confirmed) return;
-
+  const handleDeleteSelectedFolder = useCallback(async (folderId: string) => {
     try {
-      await deleteFolder(selectedFolder.id);
-      removeFolder(selectedFolder.id);
+      await deleteFolder(folderId);
+      removeFolder(folderId);
       setPrompts((prev) =>
         prev.map((prompt) => ({
           ...prompt,
-          folder_id: prompt.folder_id === selectedFolder.id ? null : prompt.folder_id,
-          folder_ids: (prompt.folder_ids || []).filter((folderId) => folderId !== selectedFolder.id),
+          folder_id: prompt.folder_id === folderId ? null : prompt.folder_id,
+          folder_ids: (prompt.folder_ids || []).filter((itemFolderId) => itemFolderId !== folderId),
         }))
       );
       setSelectedFolderId(null);
@@ -287,19 +287,15 @@ export function DashboardContent({
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to delete folder", "error");
     }
-  }, [selectedFolder, removeFolder, setSelectedFolderId, showToast]);
+  }, [removeFolder, setSelectedFolderId, showToast]);
 
-  const handleDeleteSelectedModel = useCallback(async () => {
-    if (!selectedModel) return;
-    const confirmed = window.confirm(`Delete AI model "${selectedModel.name}"? This cannot be undone.`);
-    if (!confirmed) return;
-
+  const handleDeleteSelectedModel = useCallback(async (modelId: string) => {
     try {
-      await deleteModel(selectedModel.id);
-      removeModel(selectedModel.id);
+      await deleteModel(modelId);
+      removeModel(modelId);
       setPrompts((prev) =>
         prev.map((prompt) =>
-          prompt.ai_model?.id === selectedModel.id
+          prompt.ai_model?.id === modelId
             ? { ...prompt, model_id: null, ai_model: null, content_type: null }
             : prompt
         )
@@ -309,7 +305,37 @@ export function DashboardContent({
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to delete AI model", "error");
     }
-  }, [selectedModel, removeModel, setSelectedModelSlug, showToast]);
+  }, [removeModel, setSelectedModelSlug, showToast]);
+
+  const handleOpenDeleteConfirm = useCallback(() => {
+    if (selectedFolder) {
+      setDeleteConfirm({
+        type: "folder",
+        id: selectedFolder.id,
+        name: selectedFolder.name,
+        promptCount: selectedFolderPromptCount,
+      });
+      return;
+    }
+    if (selectedModel) {
+      setDeleteConfirm({
+        type: "model",
+        id: selectedModel.id,
+        name: selectedModel.name,
+        promptCount: selectedModelPromptCount,
+      });
+    }
+  }, [selectedFolder, selectedModel, selectedFolderPromptCount, selectedModelPromptCount]);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteConfirm) return;
+    if (deleteConfirm.type === "folder") {
+      await handleDeleteSelectedFolder(deleteConfirm.id);
+    } else {
+      await handleDeleteSelectedModel(deleteConfirm.id);
+    }
+    setDeleteConfirm(null);
+  }, [deleteConfirm, handleDeleteSelectedFolder, handleDeleteSelectedModel]);
 
   const handleDeletePromptFromCard = useCallback(
     async (id: string) => {
@@ -477,16 +503,50 @@ export function DashboardContent({
         {(selectedFolder || selectedModel) && (
           <div className="fixed bottom-5 left-1/2 md:left-[calc(50%+8rem)] z-30 -translate-x-1/2">
             <button
-              onClick={selectedFolder ? handleDeleteSelectedFolder : handleDeleteSelectedModel}
-              disabled={!canDeleteSelectedContext}
-              className={`inline-flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-medium backdrop-blur-sm transition-colors ${
-                canDeleteSelectedContext
-                  ? "border-red-500/25 bg-red-500/10 text-red-500/80 hover:bg-red-500/15 hover:text-red-400"
-                  : "border-red-500/15 bg-red-500/5 text-red-400/35 cursor-not-allowed"
-              }`}
+              onClick={handleOpenDeleteConfirm}
+              className="inline-flex h-8 items-center justify-center rounded-lg border border-red-500/25 bg-red-500/10 px-3 text-xs font-medium text-red-500/80 backdrop-blur-sm transition-colors hover:bg-red-500/15 hover:text-red-400"
             >
               {selectedFolder ? "Delete folder" : "Delete AI model"}
             </button>
+          </div>
+        )}
+
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-[90] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
+            <div className="relative w-full max-w-md rounded-2xl border border-surface-200 bg-[linear-gradient(180deg,rgba(22,24,37,0.98)_0%,rgba(17,19,31,0.99)_100%)] shadow-[0_24px_60px_rgba(0,0,0,0.55)] p-5">
+              <h3 className="text-base font-semibold text-foreground">
+                Delete {deleteConfirm.type === "folder" ? "folder" : "AI model"}
+              </h3>
+              <p className="mt-2 text-sm text-text-muted">
+                {deleteConfirm.type === "folder"
+                  ? `You are deleting "${deleteConfirm.name}".`
+                  : `You are deleting "${deleteConfirm.name}".`}
+              </p>
+              {deleteConfirm.promptCount > 0 && (
+                <p className="mt-2 text-sm text-red-300/90">
+                  Warning: this will affect {deleteConfirm.promptCount} prompt{deleteConfirm.promptCount === 1 ? "" : "s"}.
+                </p>
+              )}
+              <p className="mt-2 text-xs text-text-dim">
+                This action cannot be undone.
+              </p>
+
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="h-9 px-3 rounded-lg border border-surface-200 bg-surface-100 text-sm text-text-muted hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handleConfirmDelete()}
+                  className="h-9 px-3 rounded-lg border border-red-500/30 bg-red-500/14 text-sm text-red-300 hover:bg-red-500/20 hover:text-red-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
