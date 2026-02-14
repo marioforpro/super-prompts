@@ -317,6 +317,25 @@ export function DashboardContent({
     [selectedPromptId, showToast]
   );
 
+  const handleSharePromptFromCard = useCallback(
+    async (id: string) => {
+      const prompt = prompts.find((item) => item.id === id);
+      if (!prompt) return;
+      const shareText = `${prompt.title}\n\n${prompt.content}`;
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: prompt.title, text: shareText });
+        } else {
+          await navigator.clipboard.writeText(shareText);
+          showToast("Prompt copied for sharing", "success");
+        }
+      } catch {
+        // User canceled share sheet; no toast needed.
+      }
+    },
+    [prompts, showToast]
+  );
+
   // Transform prompts for display
   const displayPrompts = filteredPrompts.map((p) => ({
     id: p.id,
@@ -414,6 +433,11 @@ export function DashboardContent({
                 handleEditPrompt(prompt);
               }
             }}
+            onEditPrompt={(id) => {
+              const prompt = filteredPrompts.find((p) => p.id === id) || prompts.find((p) => p.id === id);
+              if (prompt) handleEditPrompt(prompt);
+            }}
+            onSharePrompt={(id) => void handleSharePromptFromCard(id)}
             onDeletePrompt={(id) => void handleDeletePromptFromCard(id)}
           />
         ) : (

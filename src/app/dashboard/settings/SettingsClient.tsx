@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { AiModel, ContentType, Folder } from "@/lib/types";
+import type { AiModel, Folder } from "@/lib/types";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createModel, updateModel, deleteModel } from "@/lib/actions/models";
 import {
@@ -34,8 +34,6 @@ const COLOR_PALETTE = [
   "#94a3b8",
   "#f0eff2",
 ];
-
-const CONTENT_TYPES: ContentType[] = ["IMAGE", "VIDEO", "AUDIO", "TEXT"];
 
 function getModelColor(name: string): string {
   const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -77,7 +75,6 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState(COLOR_PALETTE[0]);
   const [newModelName, setNewModelName] = useState("");
-  const [newModelContentType, setNewModelContentType] = useState<ContentType>("TEXT");
   const [newModelColor, setNewModelColor] = useState(COLOR_PALETTE[0]);
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
@@ -262,12 +259,11 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     setIsLoading(true);
     setError(null);
     try {
-      const created = await createModel(newModelName, toSlug(newModelName), "custom", newModelContentType);
+      const created = await createModel(newModelName, toSlug(newModelName), "custom", null);
       const withColor = await updateModel(created.id, { icon_url: newModelColor });
       addModel(withColor);
       setNewModelName("");
       setNewModelColor(COLOR_PALETTE[0]);
-      setNewModelContentType("TEXT");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create model");
     } finally {
@@ -302,19 +298,6 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
       setModelColorPickerId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update model color");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleModelContentTypeChange = async (id: string, contentType: ContentType) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const updated = await updateModel(id, { content_type: contentType });
-      updateModelCtx(id, updated);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update content type");
     } finally {
       setIsLoading(false);
     }
@@ -375,13 +358,22 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <span className="text-xs px-2 py-1 rounded-full bg-surface-200 text-text-muted">{folderPromptTotal} prompts</span>
             </div>
 
-            <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div className="grid grid-cols-[1fr_120px_auto] gap-2">
               <input
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 placeholder="New folder name"
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
+              <select
+                value={newFolderColor}
+                onChange={(e) => setNewFolderColor(e.target.value)}
+                className="h-10 rounded-lg border border-surface-200 bg-surface px-2 text-xs text-text-muted"
+              >
+                {COLOR_PALETTE.map((color, idx) => (
+                  <option key={color} value={color}>{`Color ${idx + 1}`}</option>
+                ))}
+              </select>
               <button
                 onClick={handleAddFolder}
                 disabled={isLoading}
@@ -389,17 +381,6 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               >
                 Add
               </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {COLOR_PALETTE.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setNewFolderColor(color)}
-                  className={`w-6 h-6 rounded-full transition-all ${newFolderColor === color ? "ring-2 ring-white scale-110" : "ring-1 ring-transparent"}`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
             </div>
 
             <div className="space-y-2">
@@ -517,12 +498,12 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                 className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-sm text-foreground placeholder-text-dim focus:outline-none focus:border-brand-400"
               />
               <select
-                value={newModelContentType}
-                onChange={(e) => setNewModelContentType(e.target.value as ContentType)}
-                className="h-10 rounded-lg border border-surface-200 bg-surface px-3 text-xs text-text-muted"
+                value={newModelColor}
+                onChange={(e) => setNewModelColor(e.target.value)}
+                className="h-10 rounded-lg border border-surface-200 bg-surface px-2 text-xs text-text-muted"
               >
-                {CONTENT_TYPES.map((type) => (
-                  <option key={type} value={type}>{type}</option>
+                {COLOR_PALETTE.map((color, idx) => (
+                  <option key={color} value={color}>{`Color ${idx + 1}`}</option>
                 ))}
               </select>
               <button
@@ -532,17 +513,6 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               >
                 Add
               </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-                {COLOR_PALETTE.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setNewModelColor(color)}
-                    className={`w-6 h-6 rounded-full transition-all ${newModelColor === color ? "ring-2 ring-white scale-110" : "ring-1 ring-transparent"}`}
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
             </div>
 
             <div className="space-y-2">
@@ -600,15 +570,6 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   <span className="text-xs px-2 py-0.5 rounded-full bg-surface-200 text-text-muted">
                     {modelPromptCounts[model.slug] || 0}
                   </span>
-                  <select
-                    value={(model.content_type || "TEXT") as ContentType}
-                    onChange={(e) => void handleModelContentTypeChange(model.id, e.target.value as ContentType)}
-                    className="h-7 rounded-md border border-surface-200 bg-surface px-2 text-[10px] text-text-dim"
-                  >
-                    {CONTENT_TYPES.map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
                   <button
                     onClick={() => setModelColorPickerId(modelColorPickerId === model.id ? null : model.id)}
                     className="w-6 h-6 rounded-md border border-surface-200"

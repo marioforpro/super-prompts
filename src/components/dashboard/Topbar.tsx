@@ -145,17 +145,19 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
               </svg>
             </button>
           </div>
+
+          <button
+            onClick={() => openCreateModal()}
+            className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3 rounded-lg border border-cyan-400/35 bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(99,102,241,0.16))] text-cyan-200 hover:text-cyan-100 hover:border-cyan-300/50 shadow-[0_0_20px_rgba(34,211,238,0.12)] transition-all"
+          >
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-black/25 border border-cyan-300/30">
+              <PlusIcon size={12} />
+            </span>
+            <span className="text-xs font-semibold tracking-[0.08em] uppercase">New Prompt</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3 flex-shrink-0">
-          <button
-            onClick={() => openCreateModal()}
-            className="hidden sm:flex items-center gap-2 px-4 h-[36px] bg-gradient-to-br from-brand-400 to-brand-500 hover:from-brand-300 hover:to-brand-400 text-white rounded-lg transition-all shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 font-medium text-sm cursor-pointer"
-          >
-            <PlusIcon size={16} />
-            <span>New Prompt</span>
-          </button>
-
           <button
             onClick={() => openCreateModal()}
             className="sm:hidden h-[36px] w-[36px] flex items-center justify-center bg-gradient-to-br from-brand-400 to-brand-500 text-white rounded-lg shadow-lg shadow-brand-500/20 cursor-pointer"

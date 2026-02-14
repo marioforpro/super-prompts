@@ -1093,21 +1093,7 @@ export function CreatePromptModal({
                   (() => {
                     const sel = models.find(m => m.id === modelId);
                     if (!sel) return <span className="text-text-dim text-sm">Select a model...</span>;
-                    return (
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm text-foreground truncate">{sel.name}</span>
-                        {sel.content_type && (
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
-                            sel.content_type === 'IMAGE' ? 'bg-yellow-500/15 text-yellow-400' :
-                            sel.content_type === 'VIDEO' ? 'bg-blue-500/15 text-blue-400' :
-                            sel.content_type === 'AUDIO' ? 'bg-purple-500/15 text-purple-400' :
-                            'bg-emerald-500/15 text-emerald-400'
-                          }`}>
-                            {sel.content_type === 'IMAGE' ? 'Image' : sel.content_type === 'VIDEO' ? 'Video' : sel.content_type === 'AUDIO' ? 'Audio' : 'Text'}
-                          </span>
-                        )}
-                      </span>
-                    );
+                    return <span className="text-sm text-foreground truncate">{sel.name}</span>;
                   })()
                 ) : (
                   <span className="text-text-dim text-sm">Select a model...</span>
@@ -1125,7 +1111,6 @@ export function CreatePromptModal({
                     type="button"
                     onClick={() => {
                       setModelId(null);
-                      setContentType(null);
                       setModelDropdownOpen(false);
                     }}
                     className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
@@ -1142,7 +1127,6 @@ export function CreatePromptModal({
                       type="button"
                       onClick={() => {
                         setModelId(model.id);
-                        if (model.content_type) setContentType(model.content_type);
                         setModelDropdownOpen(false);
                       }}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-surface-200 ${
@@ -1150,16 +1134,6 @@ export function CreatePromptModal({
                       }`}
                     >
                       <span className="truncate flex-1 text-left">{model.name}</span>
-                      {model.content_type && (
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
-                          model.content_type === 'IMAGE' ? 'bg-yellow-500/15 text-yellow-400' :
-                          model.content_type === 'VIDEO' ? 'bg-blue-500/15 text-blue-400' :
-                          model.content_type === 'AUDIO' ? 'bg-purple-500/15 text-purple-400' :
-                          'bg-emerald-500/15 text-emerald-400'
-                        }`}>
-                          {model.content_type === 'IMAGE' ? 'Image' : model.content_type === 'VIDEO' ? 'Video' : model.content_type === 'AUDIO' ? 'Audio' : 'Text'}
-                        </span>
-                      )}
                     </button>
                   ))}
                   <div className="h-px bg-surface-200" />

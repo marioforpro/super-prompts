@@ -646,8 +646,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </nav>
 
-          <div className="border-t border-surface-200 px-3 py-3 flex justify-end items-center gap-2">
-            <div className="h-7 w-px bg-surface-300/80" />
+          <div className="border-t border-surface-200 px-3 py-3 flex justify-end items-center">
             <button
               onClick={() => {
                 if (window.innerWidth < 768) onClose();

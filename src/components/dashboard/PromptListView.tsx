@@ -191,11 +191,6 @@ export function PromptListView({
                   {prompt.modelName && (
                     <span className="md:hidden text-xs text-text-dim shrink-0">{prompt.modelName}</span>
                   )}
-                  {prompt.contentType && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-text-dim">
-                      {prompt.contentType.toLowerCase()}
-                    </span>
-                  )}
                   {prompt.tags && prompt.tags.length > 0 && (
                     <span className="text-xs text-text-dim truncate">
                       {prompt.tags.slice(0, 2).join(', ')}

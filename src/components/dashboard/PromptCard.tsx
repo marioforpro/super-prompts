@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal, Trash2, SquarePen, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface MediaItem {
@@ -27,6 +27,8 @@ export interface PromptCardProps {
   contentType?: string | null;
   isFavorite?: boolean;
   tags?: string[];
+  onEdit?: () => void;
+  onShare?: () => void;
   onDelete?: () => void;
   selectable?: boolean;
   selected?: boolean;
@@ -81,6 +83,8 @@ export function PromptCard({
   modelCategory,
   isFavorite = false,
   tags = [],
+  onEdit,
+  onShare,
   onDelete,
   selectable = false,
   selected = false,
@@ -407,6 +411,29 @@ export function PromptCard({
           className="fixed z-[140] w-[180px] rounded-lg border border-surface-300 bg-surface-100 shadow-2xl overflow-hidden"
           style={{ top: menuPosition.top, left: menuPosition.left }}
         >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit?.();
+              setMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
+          >
+            <SquarePen size={12} />
+            <span>Edit prompt</span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onShare?.();
+              setMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-2 text-left px-3 py-2.5 text-xs text-text-muted hover:text-foreground hover:bg-surface-200"
+          >
+            <Share2 size={12} />
+            <span>Share prompt</span>
+          </button>
+          <div className="h-px bg-surface-200" />
           <button
             onClick={(e) => {
               e.stopPropagation();

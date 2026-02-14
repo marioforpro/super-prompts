@@ -27,6 +27,8 @@ export interface PromptGridProps {
   onClickPrompt?: (id: string) => void;
   selectedPromptId?: string | null;
   onSelectPrompt?: (id: string) => void;
+  onEditPrompt?: (id: string) => void;
+  onSharePrompt?: (id: string) => void;
   onDeletePrompt?: (promptId: string) => void;
   selectable?: boolean;
   selectedIds?: string[];
@@ -40,6 +42,8 @@ export function PromptGrid({
   onClickPrompt,
   selectedPromptId,
   onSelectPrompt,
+  onEditPrompt,
+  onSharePrompt,
   onDeletePrompt,
   selectable = false,
   selectedIds = [],
@@ -149,6 +153,8 @@ export function PromptGrid({
               contentType={prompt.contentType}
               isFavorite={prompt.isFavorite}
               tags={prompt.tags}
+              onEdit={onEditPrompt ? () => onEditPrompt(prompt.id) : undefined}
+              onShare={onSharePrompt ? () => onSharePrompt(prompt.id) : undefined}
               onDelete={onDeletePrompt ? () => onDeletePrompt(prompt.id) : undefined}
               selectable={selectable}
               selected={selectedIds.includes(prompt.id)}
