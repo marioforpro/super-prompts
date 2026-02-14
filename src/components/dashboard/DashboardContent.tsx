@@ -236,6 +236,23 @@ export function DashboardContent({
     () => contextModels.find((model) => model.slug === selectedModelSlug) || null,
     [contextModels, selectedModelSlug]
   );
+  const selectedFolderPromptCount = useMemo(() => {
+    if (!selectedFolder) return 0;
+    return prompts.filter((p) =>
+      (p.folder_ids && p.folder_ids.length > 0)
+        ? p.folder_ids.includes(selectedFolder.id)
+        : p.folder_id === selectedFolder.id
+    ).length;
+  }, [prompts, selectedFolder]);
+  const selectedModelPromptCount = useMemo(() => {
+    if (!selectedModel) return 0;
+    return prompts.filter((p) => p.ai_model?.slug === selectedModel.slug).length;
+  }, [prompts, selectedModel]);
+  const canDeleteSelectedContext = selectedFolder
+    ? selectedFolderPromptCount === 0
+    : selectedModel
+      ? selectedModelPromptCount === 0
+      : false;
 
   const effectiveSelectedPromptId = selectedPromptId && filteredPrompts.some((p) => p.id === selectedPromptId)
     ? selectedPromptId
@@ -461,7 +478,12 @@ export function DashboardContent({
           <div className="fixed bottom-5 left-1/2 md:left-[calc(50%+8rem)] z-30 -translate-x-1/2">
             <button
               onClick={selectedFolder ? handleDeleteSelectedFolder : handleDeleteSelectedModel}
-              className="inline-flex h-8 items-center justify-center rounded-lg border border-red-500/25 bg-red-500/10 px-3 text-xs font-medium text-red-500/80 backdrop-blur-sm transition-colors hover:bg-red-500/15 hover:text-red-400"
+              disabled={!canDeleteSelectedContext}
+              className={`inline-flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-medium backdrop-blur-sm transition-colors ${
+                canDeleteSelectedContext
+                  ? "border-red-500/25 bg-red-500/10 text-red-500/80 hover:bg-red-500/15 hover:text-red-400"
+                  : "border-red-500/15 bg-red-500/5 text-red-400/35 cursor-not-allowed"
+              }`}
             >
               {selectedFolder ? "Delete folder" : "Delete AI model"}
             </button>
