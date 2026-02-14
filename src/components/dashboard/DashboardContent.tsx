@@ -466,9 +466,13 @@ export function DashboardContent({
       {/* Floating FAB — New Prompt */}
       <button
         onClick={handleOpenModal}
-        className="group relative overflow-hidden fixed z-[60] w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] transition-all duration-250 right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] sm:right-[max(1.25rem,env(safe-area-inset-right))] sm:bottom-[max(1.25rem,env(safe-area-inset-bottom))]"
+        className="group relative overflow-hidden fixed right-5 bottom-5 sm:right-6 sm:bottom-6 z-[60] w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 hover:shadow-[0_0_0_1px_rgba(232,118,75,0.35),0_12px_28px_rgba(232,118,75,0.18)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98] transition-all duration-250"
         aria-label="New Prompt"
         title="New Prompt"
+        style={{
+          right: "max(1.25rem, env(safe-area-inset-right))",
+          bottom: "max(1.25rem, env(safe-area-inset-bottom))",
+        }}
       >
         <span className="pointer-events-none absolute inset-y-0 -left-10 w-8 bg-brand-300/25 blur-[1px] translate-x-0 group-hover:translate-x-[74px] transition-transform duration-700" />
         <svg className="relative z-[1] w-5 h-5 transition-transform duration-200 group-hover:scale-105" fill="none" stroke="currentColor" viewBox="0 0 24 24">
