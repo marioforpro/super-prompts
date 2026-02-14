@@ -171,7 +171,7 @@ export function PromptListView({
                   dragPreviewRef.current = null;
                 }
               }}
-              className="list-row px-3 py-2.5 grid grid-cols-[48px_minmax(0,1fr)_142px] md:grid-cols-[48px_minmax(0,1fr)_120px_142px] xl:grid-cols-[48px_minmax(0,1fr)_120px_100px_142px] items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer hover:border-brand-500/40"
+              className="list-row px-3 py-2.5 grid grid-cols-[48px_minmax(0,1fr)_176px] md:grid-cols-[48px_minmax(0,1fr)_120px_176px] xl:grid-cols-[48px_minmax(0,1fr)_120px_100px_176px] items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer hover:border-brand-500/40"
               style={{
                 boxShadow: isSelected
                   ? 'inset 0 0 0 1px rgba(232,118,75,0.34), 0 12px 28px rgba(0,0,0,0.28)'
@@ -253,7 +253,7 @@ export function PromptListView({
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200">
+              <div className="flex items-center justify-end gap-1.5 whitespace-nowrap opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={(e) => handleCopyClick(prompt.id, prompt.content, e)}
                   className="p-1.5 rounded-lg border border-transparent hover:border-surface-300 hover:bg-surface-200 transition-colors duration-200"
