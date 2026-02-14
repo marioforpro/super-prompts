@@ -72,7 +72,7 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
           aria-label="New Prompt"
           title="New Prompt"
         >
-          <svg className="w-5 h-5 transition-all duration-200 hover:drop-shadow-[0_0_6px_rgba(232,118,75,0.45)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M12 5v14M5 12h14" />
           </svg>
         </button>
