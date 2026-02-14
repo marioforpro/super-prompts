@@ -156,18 +156,13 @@ export function DashboardContent({
         setPrompts(
           prompts.map((p) => (p.id === id ? updatedPrompt : p))
         );
-        showToast(
-          updatedPrompt.is_favorite
-            ? "Added to favorites"
-            : "Removed from favorites"
-        );
       } catch (err) {
         showToast(
           err instanceof Error ? err.message : "Failed to update favorite"
         );
       }
     },
-    [prompts]
+    [prompts, showToast]
   );
 
   useEffect(() => {

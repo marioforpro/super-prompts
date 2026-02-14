@@ -340,19 +340,15 @@ export function PromptCard({
           <div className="relative">
             <button
               ref={menuButtonRef}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-              }}
               onMouseDown={(e) => {
                 e.stopPropagation();
-                e.preventDefault();
               }}
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 setMenuOpen((prev) => !prev);
               }}
+              draggable={false}
               className="w-[30px] h-[30px] flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95"
               aria-label="Prompt actions"
               title="Prompt actions"
@@ -362,6 +358,7 @@ export function PromptCard({
           </div>
           <button
             onClick={handleFavoriteClick}
+            draggable={false}
             className={cn(
               'w-[30px] h-[30px] flex items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 hover:scale-110 active:scale-95',
               isFavoritedLocally
@@ -385,6 +382,7 @@ export function PromptCard({
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={handleCopyClick}
+              draggable={false}
               className="pointer-events-auto w-11 h-11 flex items-center justify-center rounded-full bg-black/55 hover:bg-black/70 backdrop-blur-md border border-white/15 transition-all duration-200 hover:scale-110 active:scale-95"
               aria-label="Copy prompt"
               title="Copy prompt"
