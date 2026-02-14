@@ -212,7 +212,7 @@ export function PromptCard({
       tabIndex={0}
     >
       {/* Cover Image/Video or Gradient Placeholder */}
-      <div className={cn('relative w-full bg-background overflow-hidden', aspectClass)}>
+      <div className={cn('relative w-full bg-black overflow-hidden', aspectClass)}>
         {displayMedia.length > 0 ? (
           <>
             {/* Sliding media strip */}
@@ -223,7 +223,10 @@ export function PromptCard({
               >
                 {displayMedia.map((media, idx) => (
                   <div key={idx} className="relative min-w-full h-full flex-shrink-0 overflow-hidden">
-                    <div className="w-full h-full transition-transform duration-300 group-hover:scale-[1.03]">
+                    <div
+                      className="w-full h-full transition-all duration-300 group-hover:scale-[1.03]"
+                      style={{ filter: isHovered ? 'brightness(0.78)' : 'brightness(1)' }}
+                    >
                       {media.type === 'video' ? (
                         <video
                           src={media.url}
@@ -324,14 +327,6 @@ export function PromptCard({
             </div>
           )}
         </div>
-
-        {/* Hover Overlay */}
-        <div
-          className={cn(
-            'absolute -inset-px rounded-[inherit] z-10 bg-black/35 transition-opacity duration-200 pointer-events-none',
-            isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-100'
-          )}
-        />
 
         {/* Action Icon — top-right corner */}
         <div
