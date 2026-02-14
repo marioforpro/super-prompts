@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Logo from "@/components/icons/Logo";
+import { Settings2 } from "lucide-react";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { createFolder, updateFolder as updateFolderAction } from "@/lib/actions/folders";
 import { assignPromptToFolder } from "@/lib/actions/prompts";
@@ -679,9 +680,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="h-9 w-9 rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 transition-colors inline-flex items-center justify-center"
               title="Manage folders and AI models"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M7 6v4m10 4H4m10 0v4M4 18h16" />
-              </svg>
+              <Settings2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
