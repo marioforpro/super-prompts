@@ -400,23 +400,24 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               type="button"
               onClick={handleSaveAndClose}
               disabled={isSavingView}
-              className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg bg-brand-500 text-white text-sm font-medium hover:bg-brand-400 disabled:opacity-80 disabled:cursor-default transition-colors"
+              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg border border-brand-500/70 bg-gradient-to-r from-[#e8764b] to-[#d7673e] text-white text-sm font-medium shadow-[0_8px_20px_rgba(232,118,75,0.26)] hover:shadow-[0_10px_24px_rgba(232,118,75,0.32)] hover:-translate-y-px active:translate-y-0 disabled:opacity-80 disabled:cursor-default transition-all"
               title="Save settings"
             >
+              <span className="pointer-events-none absolute inset-y-0 -left-10 w-8 bg-white/20 blur-[1px] translate-x-0 group-hover:translate-x-[180px] transition-transform duration-700" />
               {isSavingView ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg className="relative z-[1] w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" />
                     <path className="opacity-90" fill="currentColor" d="M12 3a9 9 0 019 9h-3a6 6 0 00-6-6V3z" />
                   </svg>
-                  Saving...
+                  <span className="relative z-[1]">Saving...</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="relative z-[1] w-4 h-4 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M5 13l4 4L19 7" />
                   </svg>
-                  Save
+                  <span className="relative z-[1]">Save</span>
                 </>
               )}
             </button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import { createPortal } from 'react-dom';
 import { Copy, Heart, Play, ChevronLeft, ChevronRight, MoreHorizontal, Trash2, SquarePen, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PromptBrandPlaceholder from './PromptBrandPlaceholder';
@@ -431,9 +432,10 @@ export function PromptCard({
         )}
       </div>
 
-      {menuOpen && menuPosition && (
+      {typeof document !== 'undefined' && menuOpen && menuPosition && createPortal(
         <div
           ref={menuPanelRef}
+          role="menu"
           className="fixed z-[140] w-[180px] rounded-lg border border-surface-300 bg-surface-100 shadow-2xl overflow-hidden"
           style={{ top: menuPosition.top, left: menuPosition.left }}
         >
@@ -471,7 +473,8 @@ export function PromptCard({
             <Trash2 size={12} />
             <span>Delete prompt</span>
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
