@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { PlusIcon } from "@/components/icons/Logo";
-import { Settings, MoonStar, Download, Sparkles, LogOut } from "lucide-react";
+import { Settings, Settings2, MoonStar, Download, Sparkles, LogOut } from "lucide-react";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { signOut } from "@/lib/actions/auth";
@@ -151,7 +151,9 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
             onClick={() => openCreateModal()}
             className="hidden sm:inline-flex items-center gap-2 h-[34px] px-3.5 rounded-lg border border-brand-500/70 bg-gradient-to-r from-[#e8764b] to-[#d7673e] text-white shadow-[0_8px_20px_rgba(232,118,75,0.28)] hover:shadow-[0_10px_24px_rgba(232,118,75,0.34)] hover:brightness-105 active:scale-[0.99] transition-all"
           >
-            <PlusIcon size={15} />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M12 5v14M5 12h14" />
+            </svg>
             <span className="text-xs font-semibold tracking-[0.06em] uppercase">New Prompt</span>
           </button>
         </div>
@@ -170,7 +172,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
               className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 hover:bg-surface transition-colors inline-flex items-center justify-center"
               title="Account and settings"
             >
-              <Settings className="w-4 h-4" strokeWidth={1.9} />
+              <Settings2 className="w-4 h-4" />
             </button>
 
             {userMenuOpen && (

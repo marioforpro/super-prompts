@@ -471,7 +471,7 @@ export function DashboardContent({
       {/* Floating FAB — New Prompt */}
       <button
         onClick={handleOpenModal}
-        className="fixed bottom-5 right-5 z-40 w-12 h-12 flex items-center justify-center rounded-full border border-brand-300/35 bg-gradient-to-br from-[#ea7d53] to-[#cf633b] text-white shadow-[0_10px_24px_rgba(232,118,75,0.42)] hover:shadow-[0_12px_26px_rgba(232,118,75,0.5)] hover:brightness-105 active:scale-95 transition-all"
+        className="fixed bottom-5 right-5 z-40 w-12 h-12 flex items-center justify-center rounded-xl border border-brand-300/35 bg-gradient-to-br from-[#ea7d53] to-[#cf633b] text-white shadow-[0_10px_24px_rgba(232,118,75,0.42)] hover:shadow-[0_12px_26px_rgba(232,118,75,0.5)] hover:brightness-105 active:scale-95 transition-all"
         aria-label="New Prompt"
         title="New Prompt"
       >

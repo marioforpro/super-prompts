@@ -90,8 +90,10 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
 
   const [dragFolderId, setDragFolderId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [dragFolderToEnd, setDragFolderToEnd] = useState(false);
   const [dragModelSlug, setDragModelSlug] = useState<string | null>(null);
   const [dragOverModelSlug, setDragOverModelSlug] = useState<string | null>(null);
+  const [dragModelToEnd, setDragModelToEnd] = useState(false);
   const [modelOrder, setModelOrder] = useState<string[]>([]);
 
   useEffect(() => {
@@ -164,28 +166,34 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
     });
   };
 
-  const handleDropFolder = (targetId: string) => {
+  const handleDropFolder = (targetId: string, insertAfter = false) => {
     if (!dragFolderId || dragFolderId === targetId) return;
     const ordered = [...sortedFolders];
     const from = ordered.findIndex((f) => f.id === dragFolderId);
     const to = ordered.findIndex((f) => f.id === targetId);
     if (from === -1 || to === -1) return;
     const [moved] = ordered.splice(from, 1);
-    ordered.splice(to, 0, moved);
+    const adjustedTo = ordered.findIndex((f) => f.id === targetId);
+    const insertIndex = insertAfter ? adjustedTo + 1 : adjustedTo;
+    ordered.splice(Math.max(0, Math.min(insertIndex, ordered.length)), 0, moved);
     saveFolderOrder(ordered);
     setDragOverFolderId(null);
+    setDragFolderToEnd(false);
   };
 
-  const handleDropModel = (targetSlug: string) => {
+  const handleDropModel = (targetSlug: string, insertAfter = false) => {
     if (!dragModelSlug || dragModelSlug === targetSlug) return;
     const slugs = sortedModels.map((m) => m.slug);
     const from = slugs.findIndex((slug) => slug === dragModelSlug);
     const to = slugs.findIndex((slug) => slug === targetSlug);
     if (from === -1 || to === -1) return;
     const [moved] = slugs.splice(from, 1);
-    slugs.splice(to, 0, moved);
+    const adjustedTo = slugs.findIndex((slug) => slug === targetSlug);
+    const insertIndex = insertAfter ? adjustedTo + 1 : adjustedTo;
+    slugs.splice(Math.max(0, Math.min(insertIndex, slugs.length)), 0, moved);
     setModelOrder(slugs);
     setDragOverModelSlug(null);
+    setDragModelToEnd(false);
   };
 
   const handleAddFolder = async () => {
@@ -370,13 +378,16 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <div className="relative">
                 <button
                   onClick={() => setNewFolderColorPickerOpen((prev) => !prev)}
-                  className="h-10 w-10 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center"
+                  className="h-10 w-12 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center gap-1"
                   title="Choose folder color"
                 >
-                  <span className="h-5 w-5 rounded-md border border-black/20" style={{ backgroundColor: newFolderColor }} />
+                  <span className="h-4 w-4 rounded-full border border-black/25" style={{ backgroundColor: newFolderColor }} />
+                  <svg className="w-3 h-3 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
                 {newFolderColorPickerOpen && (
-                  <div className="absolute right-0 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1.5 shadow-xl">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-[176px] rounded-xl border border-surface-200 bg-surface-100 p-2.5 grid grid-cols-5 gap-2 shadow-2xl shadow-black/45">
                     {COLOR_PALETTE.map((color) => (
                       <button
                         key={color}
@@ -384,7 +395,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                           setNewFolderColor(color);
                           setNewFolderColorPickerOpen(false);
                         }}
-                        className="w-5 h-5 rounded-full border border-black/20"
+                        className={`w-6 h-6 rounded-full border border-black/25 transition-transform hover:scale-110 ${newFolderColor === color ? "ring-2 ring-brand-300 ring-offset-1 ring-offset-surface-100" : ""}`}
                         style={{ backgroundColor: color }}
                         title={color}
                       />
@@ -409,23 +420,35 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   onDragStart={() => setDragFolderId(folder.id)}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    if (dragFolderId) setDragOverFolderId(folder.id);
+                    if (!dragFolderId) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const isLowerHalf = e.clientY > rect.top + rect.height / 2;
+                    const isLastItem = sortedFolders[sortedFolders.length - 1]?.id === folder.id;
+                    setDragOverFolderId(folder.id);
+                    setDragFolderToEnd(isLastItem && isLowerHalf);
                   }}
                   onDragEnter={() => {
                     if (dragFolderId) setDragOverFolderId(folder.id);
                   }}
                   onDragLeave={() => {
-                    if (dragOverFolderId === folder.id) setDragOverFolderId(null);
+                    if (dragOverFolderId === folder.id) {
+                      setDragOverFolderId(null);
+                      setDragFolderToEnd(false);
+                    }
                   }}
-                  onDrop={() => handleDropFolder(folder.id)}
+                  onDrop={() => handleDropFolder(folder.id, dragFolderToEnd)}
                   onDragEnd={() => {
                     setDragFolderId(null);
                     setDragOverFolderId(null);
+                    setDragFolderToEnd(false);
                   }}
                   className="relative rounded-xl border border-surface-200 bg-surface px-3 py-2.5 flex items-center gap-2"
                 >
-                  {dragFolderId && dragOverFolderId === folder.id && dragFolderId !== folder.id && (
+                  {dragFolderId && dragOverFolderId === folder.id && dragFolderId !== folder.id && !dragFolderToEnd && (
                     <div className="absolute left-2 right-2 top-0 h-0.5 bg-brand-400 rounded-full" />
+                  )}
+                  {dragFolderId && dragOverFolderId === folder.id && dragFolderId !== folder.id && dragFolderToEnd && (
+                    <div className="absolute left-2 right-2 bottom-0 h-0.5 bg-brand-400 rounded-full" />
                   )}
                   <span className="text-text-dim text-xs">⋮⋮</span>
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: folder.color || COLOR_PALETTE[0] }} />
@@ -469,12 +492,12 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   </button>
 
                   {folderColorPickerId === folder.id && (
-                    <div className="absolute right-8 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1">
+                    <div className="absolute right-8 top-[calc(100%+8px)] z-30 w-[176px] rounded-xl border border-surface-200 bg-surface-100 p-2.5 grid grid-cols-5 gap-2 shadow-2xl shadow-black/45">
                       {COLOR_PALETTE.map((color) => (
                         <button
                           key={color}
                           onClick={() => handleFolderColorChange(folder.id, color)}
-                          className="w-5 h-5 rounded-full"
+                          className={`w-6 h-6 rounded-full border border-black/25 transition-transform hover:scale-110 ${(folder.color || COLOR_PALETTE[0]) === color ? "ring-2 ring-brand-300 ring-offset-1 ring-offset-surface-100" : ""}`}
                           style={{ backgroundColor: color }}
                         />
                       ))}
@@ -518,13 +541,16 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
               <div className="relative">
                 <button
                   onClick={() => setNewModelColorPickerOpen((prev) => !prev)}
-                  className="h-10 w-10 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center"
+                  className="h-10 w-12 rounded-lg border border-surface-200 bg-surface inline-flex items-center justify-center gap-1"
                   title="Choose model color"
                 >
-                  <span className="h-5 w-5 rounded-md border border-black/20" style={{ backgroundColor: newModelColor }} />
+                  <span className="h-4 w-4 rounded-full border border-black/25" style={{ backgroundColor: newModelColor }} />
+                  <svg className="w-3 h-3 text-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
                 {newModelColorPickerOpen && (
-                  <div className="absolute right-0 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1.5 shadow-xl">
+                  <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-[176px] rounded-xl border border-surface-200 bg-surface-100 p-2.5 grid grid-cols-5 gap-2 shadow-2xl shadow-black/45">
                     {COLOR_PALETTE.map((color) => (
                       <button
                         key={color}
@@ -532,7 +558,7 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                           setNewModelColor(color);
                           setNewModelColorPickerOpen(false);
                         }}
-                        className="w-5 h-5 rounded-full border border-black/20"
+                        className={`w-6 h-6 rounded-full border border-black/25 transition-transform hover:scale-110 ${newModelColor === color ? "ring-2 ring-brand-300 ring-offset-1 ring-offset-surface-100" : ""}`}
                         style={{ backgroundColor: color }}
                         title={color}
                       />
@@ -557,23 +583,35 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   onDragStart={() => setDragModelSlug(model.slug)}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    if (dragModelSlug) setDragOverModelSlug(model.slug);
+                    if (!dragModelSlug) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const isLowerHalf = e.clientY > rect.top + rect.height / 2;
+                    const isLastItem = sortedModels[sortedModels.length - 1]?.slug === model.slug;
+                    setDragOverModelSlug(model.slug);
+                    setDragModelToEnd(isLastItem && isLowerHalf);
                   }}
                   onDragEnter={() => {
                     if (dragModelSlug) setDragOverModelSlug(model.slug);
                   }}
                   onDragLeave={() => {
-                    if (dragOverModelSlug === model.slug) setDragOverModelSlug(null);
+                    if (dragOverModelSlug === model.slug) {
+                      setDragOverModelSlug(null);
+                      setDragModelToEnd(false);
+                    }
                   }}
-                  onDrop={() => handleDropModel(model.slug)}
+                  onDrop={() => handleDropModel(model.slug, dragModelToEnd)}
                   onDragEnd={() => {
                     setDragModelSlug(null);
                     setDragOverModelSlug(null);
+                    setDragModelToEnd(false);
                   }}
                   className="relative rounded-xl border border-surface-200 bg-surface px-3 py-2.5 flex items-center gap-2"
                 >
-                  {dragModelSlug && dragOverModelSlug === model.slug && dragModelSlug !== model.slug && (
+                  {dragModelSlug && dragOverModelSlug === model.slug && dragModelSlug !== model.slug && !dragModelToEnd && (
                     <div className="absolute left-2 right-2 top-0 h-0.5 bg-brand-400 rounded-full" />
+                  )}
+                  {dragModelSlug && dragOverModelSlug === model.slug && dragModelSlug !== model.slug && dragModelToEnd && (
+                    <div className="absolute left-2 right-2 bottom-0 h-0.5 bg-brand-400 rounded-full" />
                   )}
                   <span className="text-text-dim text-xs">⋮⋮</span>
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: model.icon_url || getModelColor(model.name) }} />
@@ -617,12 +655,12 @@ export default function SettingsClient({ models: _initialModels, folders: _initi
                   </button>
 
                   {modelColorPickerId === model.id && (
-                    <div className="absolute right-8 top-11 z-20 rounded-lg border border-surface-200 bg-surface p-2 grid grid-cols-5 gap-1">
+                    <div className="absolute right-8 top-[calc(100%+8px)] z-30 w-[176px] rounded-xl border border-surface-200 bg-surface-100 p-2.5 grid grid-cols-5 gap-2 shadow-2xl shadow-black/45">
                       {COLOR_PALETTE.map((color) => (
                         <button
                           key={color}
                           onClick={() => handleModelColorChange(model.id, color)}
-                          className="w-5 h-5 rounded-full"
+                          className={`w-6 h-6 rounded-full border border-black/25 transition-transform hover:scale-110 ${(model.icon_url || getModelColor(model.name)) === color ? "ring-2 ring-brand-300 ring-offset-1 ring-offset-surface-100" : ""}`}
                           style={{ backgroundColor: color }}
                         />
                       ))}
