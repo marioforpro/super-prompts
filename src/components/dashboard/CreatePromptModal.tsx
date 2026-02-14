@@ -85,6 +85,8 @@ export function CreatePromptModal({
   const [showAnalysisPrompt, setShowAnalysisPrompt] = useState(false);
   const [isDetectingText, setIsDetectingText] = useState(false);
   const [detectedTextPreview, setDetectedTextPreview] = useState("");
+  const [showPostAnalysisImagePrompt, setShowPostAnalysisImagePrompt] = useState(false);
+  const [analyzedImageRef, setAnalyzedImageRef] = useState<{ id?: string; preview: string } | null>(null);
 
   // Progressive disclosure state
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -206,6 +208,8 @@ export function CreatePromptModal({
     setShowAnalysisPrompt(false);
     setIsDetectingText(false);
     setDetectedTextPreview("");
+    setShowPostAnalysisImagePrompt(false);
+    setAnalyzedImageRef(null);
   };
 
   const MAX_MEDIA_ITEMS = 3;
@@ -397,6 +401,8 @@ export function CreatePromptModal({
     if (!imageItem) return;
 
     setShowAnalysisPrompt(false);
+    setShowPostAnalysisImagePrompt(false);
+    setAnalyzedImageRef(null);
     setIsAnalyzing(true);
     setAnalysisError("");
 
@@ -468,6 +474,13 @@ export function CreatePromptModal({
           }
         }
       }
+
+      // Successful extraction often means the uploaded screenshot was only a source.
+      // Offer a quick cleanup action so users can remove that image immediately.
+      if (result.prompt_text || result.suggested_title || result.model_name) {
+        setAnalyzedImageRef({ id: imageItem.id, preview: imageItem.preview });
+        setShowPostAnalysisImagePrompt(true);
+      }
     } catch (err) {
       setAnalysisError(err instanceof Error ? err.message : 'Analysis failed');
     } finally {
@@ -500,6 +513,17 @@ export function CreatePromptModal({
     }
   }, []);
 
+  useEffect(() => {
+    if (!analyzedImageRef) return;
+    const stillExists = mediaItems.some((item) =>
+      (analyzedImageRef.id && item.id === analyzedImageRef.id) || item.preview === analyzedImageRef.preview
+    );
+    if (!stillExists) {
+      setShowPostAnalysisImagePrompt(false);
+      setAnalyzedImageRef(null);
+    }
+  }, [mediaItems, analyzedImageRef]);
+
   // Remove media at index
   const handleRemoveMedia = (index: number) => {
     const item = mediaItems[index];
@@ -516,6 +540,18 @@ export function CreatePromptModal({
       // Re-index sort orders
       return updated.map((m, i) => ({ ...m, sortOrder: i }));
     });
+  };
+
+  const handleRemoveAnalyzedSourceImage = () => {
+    if (!analyzedImageRef) return;
+    const index = mediaItems.findIndex((item) =>
+      (analyzedImageRef.id && item.id === analyzedImageRef.id) || item.preview === analyzedImageRef.preview
+    );
+    if (index >= 0) {
+      handleRemoveMedia(index);
+    }
+    setShowPostAnalysisImagePrompt(false);
+    setAnalyzedImageRef(null);
   };
 
   // Update frame fit for a media item
@@ -1033,6 +1069,36 @@ export function CreatePromptModal({
             {/* Analysis error */}
             {analysisError && (
               <p className="text-xs text-red-400 mt-1.5 text-center">{analysisError}</p>
+            )}
+
+            {showPostAnalysisImagePrompt && (
+              <div className="mt-3 rounded-lg border border-brand-400/30 bg-brand-500/8 overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                  <svg className="w-4 h-4 text-brand-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                  </svg>
+                  <span className="text-sm text-text-muted flex-1">
+                    Prompt extracted. Remove source image?
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAnalyzedSourceImage}
+                    className="px-3 py-1 rounded-md text-xs font-medium bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 hover:text-brand-200 border border-brand-500/30 transition-all cursor-pointer"
+                  >
+                    Remove (recommended)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPostAnalysisImagePrompt(false);
+                      setAnalyzedImageRef(null);
+                    }}
+                    className="px-3 py-1 rounded-md text-xs font-medium text-text-dim hover:text-text-muted hover:bg-surface-200 transition-all cursor-pointer"
+                  >
+                    Keep
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
