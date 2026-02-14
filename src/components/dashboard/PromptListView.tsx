@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useDashboard } from '@/contexts/DashboardContext';
 import PromptBrandPlaceholder from './PromptBrandPlaceholder';
 
+type ListSortMode = 'newest' | 'oldest' | 'title-az' | 'title-za' | 'model-az';
+
 export interface PromptListViewProps {
   prompts: Array<{
     id: string;
@@ -37,6 +39,7 @@ export function PromptListView({
   onSelectPrompt,
 }: PromptListViewProps) {
   const { setDraggedPromptId, setDraggedPromptIds } = useDashboard();
+  const [sortMode, setSortMode] = useState<ListSortMode>('newest');
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>(
     prompts.reduce(
       (acc, p) => ({ ...acc, [p.id]: p.isFavorite || false }),
@@ -65,12 +68,40 @@ export function PromptListView({
     onCopyPrompt?.(id, content);
   };
 
-  const sortedPrompts = [...prompts].sort(
-    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-  );
+  const sortedPrompts = [...prompts].sort((a, b) => {
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    switch (sortMode) {
+      case 'oldest':
+        return aTime - bTime;
+      case 'title-az':
+        return a.title.localeCompare(b.title);
+      case 'title-za':
+        return b.title.localeCompare(a.title);
+      case 'model-az':
+        return (a.modelName || '').localeCompare(b.modelName || '');
+      case 'newest':
+      default:
+        return bTime - aTime;
+    }
+  });
 
   return (
     <div className="w-full rounded-xl border border-surface-200/80 bg-surface-100/28 backdrop-blur-sm overflow-hidden">
+      <div className="flex items-center justify-end px-2.5 pt-2.5 pb-0.5">
+        <select
+          value={sortMode}
+          onChange={(event) => setSortMode(event.target.value as ListSortMode)}
+          className="h-8 rounded-lg border border-surface-300/80 bg-surface-100 px-2.5 text-xs text-text-muted focus:outline-none focus:ring-1 focus:ring-brand-500/30 focus:border-brand-500/60"
+          aria-label="Sort prompts in list view"
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="title-az">Title A-Z</option>
+          <option value="title-za">Title Z-A</option>
+          <option value="model-az">Model A-Z</option>
+        </select>
+      </div>
       <div className="p-2.5 space-y-2">
         {sortedPrompts.map((prompt) => {
           const isFavorited = favoriteMap[prompt.id];
@@ -151,6 +182,7 @@ export function PromptListView({
                         muted
                         playsInline
                         preload="metadata"
+                        draggable={false}
                       />
                     ) : (
                       <Image
@@ -159,6 +191,7 @@ export function PromptListView({
                         fill
                         className="object-cover"
                         sizes="48px"
+                        draggable={false}
                       />
                     )}
                     {prompt.coverType === 'video' && (
