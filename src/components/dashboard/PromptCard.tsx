@@ -216,7 +216,7 @@ export function PromptCard({
         {displayMedia.length > 0 ? (
           <>
             {/* Sliding media strip */}
-            <div className="relative w-full h-full overflow-hidden">
+            <div className="relative w-full h-[calc(100%+1px)] -mb-px overflow-hidden">
               <div
                 className="flex h-full transition-transform duration-300 ease-out"
                 style={{ transform: `translateX(-${currentMediaIndex * 100}%)` }}
@@ -226,7 +226,7 @@ export function PromptCard({
                     {media.type === 'video' ? (
                       <video
                         src={media.url}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 [backface-visibility:hidden]"
                         muted
                         playsInline
                         preload="metadata"
@@ -239,7 +239,7 @@ export function PromptCard({
                         fill
                         quality={92}
                         draggable={false}
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        className="object-cover transition-transform duration-300 group-hover:scale-110 [backface-visibility:hidden]"
                         style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
                           objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
                           transform: `scale(${media.cropScale ?? 1})`,
