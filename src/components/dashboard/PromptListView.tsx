@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Copy, Heart, ChevronDown, Play } from 'lucide-react';
+import { Copy, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDashboard } from '@/contexts/DashboardContext';
 import PromptBrandPlaceholder from './PromptBrandPlaceholder';
@@ -28,41 +28,6 @@ export interface PromptListViewProps {
   onSelectPrompt?: (id: string) => void;
 }
 
-type SortField = 'title' | 'model' | 'date';
-type SortDirection = 'asc' | 'desc';
-
-function SortButton({
-  label,
-  field,
-  sortField,
-  sortDirection,
-  onSort,
-}: {
-  label: string;
-  field: SortField;
-  sortField: SortField;
-  sortDirection: SortDirection;
-  onSort: (field: SortField) => void;
-}) {
-  return (
-    <button
-      onClick={() => onSort(field)}
-      className="flex items-center gap-1.5 text-xs font-medium text-text-muted hover:text-foreground transition-colors duration-200"
-    >
-      {label}
-      {sortField === field && (
-        <ChevronDown
-          size={12}
-          className={cn(
-            'transition-transform duration-200 ml-0.5',
-            sortDirection === 'desc' ? 'rotate-0' : 'rotate-180'
-          )}
-        />
-      )}
-    </button>
-  );
-}
-
 export function PromptListView({
   prompts,
   onCopyPrompt,
@@ -72,8 +37,6 @@ export function PromptListView({
   onSelectPrompt,
 }: PromptListViewProps) {
   const { setDraggedPromptId, setDraggedPromptIds } = useDashboard();
-  const [sortField, setSortField] = useState<SortField>('date');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [favoriteMap, setFavoriteMap] = useState<Record<string, boolean>>(
     prompts.reduce(
       (acc, p) => ({ ...acc, [p.id]: p.isFavorite || false }),
@@ -91,15 +54,6 @@ export function PromptListView({
     };
   }, []);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
   const handleFavoriteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setFavoriteMap((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -111,40 +65,13 @@ export function PromptListView({
     onCopyPrompt?.(id, content);
   };
 
-  const sortedPrompts = [...prompts].sort((a, b) => {
-    let compareValue = 0;
-
-    switch (sortField) {
-      case 'title':
-        compareValue = a.title.localeCompare(b.title);
-        break;
-      case 'model':
-        compareValue = (a.modelName || '').localeCompare(b.modelName || '');
-        break;
-      case 'date':
-        compareValue =
-          new Date(b.createdAt || 0).getTime() -
-          new Date(a.createdAt || 0).getTime();
-        break;
-    }
-
-    return sortDirection === 'asc' ? compareValue : -compareValue;
-  });
+  const sortedPrompts = [...prompts].sort(
+    (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+  );
 
   return (
-    <div className="w-full rounded-xl border border-surface-200 bg-surface-100/35 backdrop-blur-sm overflow-hidden">
-      <div
-        className="sticky top-0 z-10 px-4 py-3 border-b border-surface-200 bg-[linear-gradient(180deg,rgba(20,22,34,0.95),rgba(16,18,28,0.9))] grid items-center gap-3"
-        style={{ gridTemplateColumns: '48px 1fr 120px 100px 64px' }}
-      >
-        <div />
-        <SortButton label="TITLE" field="title" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} />
-        <div className="hidden md:block"><SortButton label="MODEL" field="model" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} /></div>
-        <div className="hidden sm:block"><SortButton label="DATE" field="date" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} /></div>
-        <div />
-      </div>
-
-      <div className="p-2 space-y-1.5">
+    <div className="w-full rounded-xl border border-surface-200/80 bg-surface-100/28 backdrop-blur-sm overflow-hidden">
+      <div className="p-2.5 space-y-2">
         {sortedPrompts.map((prompt) => {
           const isFavorited = favoriteMap[prompt.id];
           const isSelected = selectedPromptId === prompt.id;
@@ -195,11 +122,12 @@ export function PromptListView({
                   dragPreviewRef.current = null;
                 }
               }}
-              className="px-3 py-2.5 grid items-center gap-3 group rounded-lg border border-transparent transition-all duration-200 cursor-pointer bg-surface/55 hover:bg-surface hover:border-surface-200"
+              className="px-3 py-2.5 grid items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer bg-[linear-gradient(135deg,rgba(20,22,34,0.86),rgba(14,16,28,0.84))] hover:border-brand-500/40 hover:bg-[linear-gradient(135deg,rgba(24,27,42,0.92),rgba(17,19,31,0.9))]"
               style={{
                 gridTemplateColumns: '48px 1fr 120px 100px 64px',
-                backgroundColor: isSelected ? 'rgba(232,118,75,0.08)' : undefined,
-                boxShadow: isSelected ? 'inset 0 0 0 1px rgba(232,118,75,0.45), 0 8px 20px rgba(0,0,0,0.24)' : undefined,
+                boxShadow: isSelected
+                  ? 'inset 0 0 0 1px rgba(232,118,75,0.34), 0 12px 28px rgba(0,0,0,0.28)'
+                  : '0 6px 16px rgba(0,0,0,0.18)',
               }}
               onClick={() => {
                 onSelectPrompt?.(prompt.id);
@@ -245,7 +173,7 @@ export function PromptListView({
               </div>
 
               <div className="min-w-0">
-                <h4 className="text-sm font-semibold text-foreground truncate tracking-[0.01em]">{prompt.title}</h4>
+                <h4 className="text-sm font-semibold text-foreground truncate tracking-[0.03em] uppercase">{prompt.title}</h4>
                 <div className="flex items-center gap-2 mt-0.5 min-w-0">
                   {prompt.modelName && (
                     <span className="md:hidden text-xs text-text-dim shrink-0">{prompt.modelName}</span>
@@ -261,7 +189,7 @@ export function PromptListView({
 
               <div className="hidden md:block">
                 {prompt.modelName ? (
-                  <span className="text-xs font-medium text-text-muted bg-surface-200 px-2 py-1 rounded-md border border-surface-300">
+                  <span className="text-xs font-medium text-text-muted bg-surface-200/70 px-2 py-1 rounded-full border border-surface-300/80">
                     {prompt.modelName}
                   </span>
                 ) : (
@@ -270,7 +198,7 @@ export function PromptListView({
               </div>
 
               <div className="hidden sm:block">
-                <span className="text-xs text-text-muted">
+                <span className="text-xs text-text-dim">
                   {prompt.createdAt ? new Date(prompt.createdAt).toLocaleDateString() : '—'}
                 </span>
               </div>
@@ -278,7 +206,7 @@ export function PromptListView({
               <div className="flex items-center gap-1.5 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={(e) => handleCopyClick(prompt.id, prompt.content, e)}
-                  className="p-1.5 rounded-md border border-transparent hover:border-surface-300 hover:bg-surface-200 transition-colors duration-200"
+                  className="p-1.5 rounded-lg border border-transparent hover:border-surface-300 hover:bg-surface-200 transition-colors duration-200"
                   aria-label="Copy prompt"
                   title="Copy prompt"
                 >
