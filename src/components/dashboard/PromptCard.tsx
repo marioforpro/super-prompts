@@ -224,8 +224,7 @@ export function PromptCard({
                 {displayMedia.map((media, idx) => (
                   <div key={idx} className="relative min-w-full h-full flex-shrink-0 overflow-hidden">
                     <div
-                      className="w-full h-full transition-all duration-300 group-hover:scale-[1.03]"
-                      style={{ filter: isHovered ? 'brightness(0.78)' : 'brightness(1)' }}
+                      className="w-full h-full transition-transform duration-300 transform-gpu will-change-transform group-hover:scale-[1.03]"
                     >
                       {media.type === 'video' ? (
                         <video
