@@ -68,11 +68,11 @@ function DashboardInner({ children }: { children: React.ReactNode }) {
       {pathname === "/dashboard" && (
         <button
           onClick={() => openCreateModal()}
-          className="floating-prompt-cta fixed right-5 bottom-5 z-[80] w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-200 hover:border-brand-500/70 transition-colors cursor-default"
+          className="floating-prompt-cta fixed right-5 bottom-5 z-[80] w-12 h-12 flex items-center justify-center rounded-xl border border-brand-500/45 bg-[linear-gradient(135deg,rgba(10,12,20,0.96),rgba(18,20,34,0.96))] text-brand-300 shadow-[0_0_0_1px_rgba(232,118,75,0.18),0_10px_24px_rgba(0,0,0,0.34)] hover:text-brand-300 hover:border-brand-500/70 transition-colors cursor-default"
           aria-label="New Prompt"
           title="New Prompt"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 transition-all duration-200 hover:drop-shadow-[0_0_6px_rgba(232,118,75,0.45)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.8} d="M12 5v14M5 12h14" />
           </svg>
         </button>
