@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Settings, Settings2, MoonStar, Download, Sparkles, LogOut } from "lucide-react";
+import { Settings, User, MoonStar, Download, Sparkles, LogOut } from "lucide-react";
 import { useCreatePromptModal } from "@/contexts/CreatePromptContext";
 import { useDashboard } from "@/contexts/DashboardContext";
 import { signOut } from "@/lib/actions/auth";
@@ -165,7 +165,7 @@ export default function Topbar({ onMenuToggle, searchInputRef }: TopbarProps) {
               className="h-[36px] w-[36px] rounded-lg border border-surface-200 bg-surface-100 text-text-muted hover:text-foreground hover:border-surface-300 hover:bg-surface transition-colors inline-flex items-center justify-center"
               title="Account and settings"
             >
-              <Settings2 className="w-4 h-4" />
+              <User className="w-4 h-4" />
             </button>
 
             {userMenuOpen && (
