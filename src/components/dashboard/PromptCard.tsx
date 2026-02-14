@@ -223,31 +223,33 @@ export function PromptCard({
               >
                 {displayMedia.map((media, idx) => (
                   <div key={idx} className="relative min-w-full h-full flex-shrink-0 overflow-hidden">
-                    {media.type === 'video' ? (
-                      <video
-                        src={media.url}
-                        className="w-full h-full object-cover transition-all duration-300"
-                        muted
-                        playsInline
-                        preload="metadata"
-                        draggable={false}
-                      />
-                    ) : (
-                      <Image
-                        src={media.url}
-                        alt={`${title} - ${idx + 1}`}
-                        fill
-                        quality={92}
-                        draggable={false}
-                        className="object-cover transition-all duration-300"
-                        style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
-                          objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
-                          transform: `scale(${media.cropScale ?? 1})`,
-                          transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
-                        } : undefined}
-                        sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-                      />
-                    )}
+                    <div className="w-full h-full transition-transform duration-300 group-hover:scale-[1.03]">
+                      {media.type === 'video' ? (
+                        <video
+                          src={media.url}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                          draggable={false}
+                        />
+                      ) : (
+                        <Image
+                          src={media.url}
+                          alt={`${title} - ${idx + 1}`}
+                          fill
+                          quality={92}
+                          draggable={false}
+                          className="object-cover"
+                          style={(media.cropX !== undefined || media.cropScale !== undefined) ? {
+                            objectPosition: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
+                            transform: `scale(${media.cropScale ?? 1})`,
+                            transformOrigin: `${media.cropX ?? 50}% ${media.cropY ?? 50}%`,
+                          } : undefined}
+                          sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+                        />
+                      )}
+                    </div>
                     {media.type === 'video' && !isHovered && idx === currentMediaIndex && (
                       <div className="absolute bottom-3 left-3 flex items-center justify-center w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm transition-opacity duration-200">
                         <Play size={18} className="text-white fill-white" />
@@ -326,7 +328,7 @@ export function PromptCard({
         {/* Hover Overlay */}
         <div
           className={cn(
-            'absolute inset-0 z-10 bg-black/35 transition-opacity duration-200 pointer-events-none',
+            'absolute -inset-px rounded-[inherit] z-10 bg-black/35 transition-opacity duration-200 pointer-events-none',
             isHovered ? 'opacity-100' : 'opacity-0 [@media(hover:none)]:opacity-100'
           )}
         />
