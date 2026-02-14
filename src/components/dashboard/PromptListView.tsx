@@ -171,9 +171,8 @@ export function PromptListView({
                   dragPreviewRef.current = null;
                 }
               }}
-              className="list-row px-3 py-2.5 grid items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer hover:border-brand-500/40"
+              className="list-row px-3 py-2.5 grid grid-cols-[48px_minmax(0,1fr)_142px] md:grid-cols-[48px_minmax(0,1fr)_120px_142px] xl:grid-cols-[48px_minmax(0,1fr)_120px_100px_142px] items-center gap-3 group rounded-xl border border-surface-200/70 transition-all duration-200 cursor-pointer hover:border-brand-500/40"
               style={{
-                gridTemplateColumns: '48px 1fr 120px 100px 142px',
                 boxShadow: isSelected
                   ? 'inset 0 0 0 1px rgba(232,118,75,0.34), 0 12px 28px rgba(0,0,0,0.28)'
                   : '0 6px 16px rgba(0,0,0,0.18)',
@@ -248,7 +247,7 @@ export function PromptListView({
                 )}
               </div>
 
-              <div className="hidden sm:block">
+              <div className="hidden xl:block">
                 <span className="text-xs text-text-dim">
                   {prompt.createdAt ? new Date(prompt.createdAt).toLocaleDateString() : '—'}
                 </span>
