@@ -725,12 +725,12 @@ export function CreatePromptModal({
     <>
       {/* Overlay */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90]"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] bg-surface border-l border-surface-200 shadow-2xl shadow-black/40 z-50 flex flex-col overflow-hidden animate-in slide-in-from-right-full duration-300">
+      <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[500px] bg-surface border-l border-surface-200 shadow-2xl shadow-black/40 z-[100] flex flex-col overflow-hidden animate-in slide-in-from-right-full duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-surface-200">
           <div>
@@ -1105,7 +1105,7 @@ export function CreatePromptModal({
 
               {/* Dropdown menu */}
               {modelDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-surface-100 border border-surface-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 z-[110] bg-surface-100 border border-surface-200 rounded-lg shadow-xl max-h-64 overflow-y-auto">
                   {/* None option */}
                   <button
                     type="button"
@@ -1312,10 +1312,10 @@ export function CreatePromptModal({
       {showDeleteConfirm && (
         <>
           <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[110]"
             onClick={() => setShowDeleteConfirm(false)}
           />
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[120] p-4">
             <div className="w-full max-w-sm bg-surface border border-surface-200 rounded-xl shadow-2xl shadow-black/40 overflow-hidden">
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-foreground mb-2">
