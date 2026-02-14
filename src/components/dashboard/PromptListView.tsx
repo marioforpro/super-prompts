@@ -132,8 +132,11 @@ export function PromptListView({
   });
 
   return (
-    <div className="w-full">
-      <div className="px-4 py-3 border-b border-white/5 grid items-center gap-3" style={{ gridTemplateColumns: '48px 1fr 120px 100px 64px' }}>
+    <div className="w-full rounded-xl border border-surface-200 bg-surface-100/35 backdrop-blur-sm overflow-hidden">
+      <div
+        className="sticky top-0 z-10 px-4 py-3 border-b border-surface-200 bg-[linear-gradient(180deg,rgba(20,22,34,0.95),rgba(16,18,28,0.9))] grid items-center gap-3"
+        style={{ gridTemplateColumns: '48px 1fr 120px 100px 64px' }}
+      >
         <div />
         <SortButton label="TITLE" field="title" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} />
         <div className="hidden md:block"><SortButton label="MODEL" field="model" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} /></div>
@@ -141,7 +144,7 @@ export function PromptListView({
         <div />
       </div>
 
-      <div className="divide-y divide-white/5">
+      <div className="p-2 space-y-1.5">
         {sortedPrompts.map((prompt) => {
           const isFavorited = favoriteMap[prompt.id];
           const isSelected = selectedPromptId === prompt.id;
@@ -192,11 +195,11 @@ export function PromptListView({
                   dragPreviewRef.current = null;
                 }
               }}
-              className="px-4 py-3 grid items-center gap-3 group transition-colors duration-200 cursor-pointer hover:bg-white/5"
+              className="px-3 py-2.5 grid items-center gap-3 group rounded-lg border border-transparent transition-all duration-200 cursor-pointer bg-surface/55 hover:bg-surface hover:border-surface-200"
               style={{
                 gridTemplateColumns: '48px 1fr 120px 100px 64px',
                 backgroundColor: isSelected ? 'rgba(232,118,75,0.08)' : undefined,
-                boxShadow: isSelected ? 'inset 0 0 0 1px rgba(232,118,75,0.45)' : undefined,
+                boxShadow: isSelected ? 'inset 0 0 0 1px rgba(232,118,75,0.45), 0 8px 20px rgba(0,0,0,0.24)' : undefined,
               }}
               onClick={() => {
                 onSelectPrompt?.(prompt.id);
@@ -210,7 +213,7 @@ export function PromptListView({
                 }
               }}
             >
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden flex-shrink-0 bg-surface">
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0 bg-surface border border-surface-200">
                 {prompt.coverUrl ? (
                   <>
                     {prompt.coverType === 'video' ? (
@@ -242,7 +245,7 @@ export function PromptListView({
               </div>
 
               <div className="min-w-0">
-                <h4 className="text-sm font-medium text-foreground truncate">{prompt.title}</h4>
+                <h4 className="text-sm font-semibold text-foreground truncate tracking-[0.01em]">{prompt.title}</h4>
                 <div className="flex items-center gap-2 mt-0.5 min-w-0">
                   {prompt.modelName && (
                     <span className="md:hidden text-xs text-text-dim shrink-0">{prompt.modelName}</span>
@@ -258,7 +261,7 @@ export function PromptListView({
 
               <div className="hidden md:block">
                 {prompt.modelName ? (
-                  <span className="text-xs font-medium text-text-muted bg-white/5 px-2 py-1 rounded">
+                  <span className="text-xs font-medium text-text-muted bg-surface-200 px-2 py-1 rounded-md border border-surface-300">
                     {prompt.modelName}
                   </span>
                 ) : (
@@ -272,10 +275,10 @@ export function PromptListView({
                 </span>
               </div>
 
-              <div className="flex items-center gap-1 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200">
+              <div className="flex items-center gap-1.5 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={(e) => handleCopyClick(prompt.id, prompt.content, e)}
-                  className="p-1.5 rounded hover:bg-white/10 transition-colors duration-200"
+                  className="p-1.5 rounded-md border border-transparent hover:border-surface-300 hover:bg-surface-200 transition-colors duration-200"
                   aria-label="Copy prompt"
                   title="Copy prompt"
                 >
@@ -284,10 +287,10 @@ export function PromptListView({
                 <button
                   onClick={(e) => handleFavoriteClick(prompt.id, e)}
                   className={cn(
-                    'p-1.5 rounded transition-colors duration-200',
+                    'p-1.5 rounded-md border transition-colors duration-200',
                     isFavorited
-                      ? 'text-red-400 hover:bg-red-500/20'
-                      : 'text-text-muted hover:bg-white/10 hover:text-foreground'
+                      ? 'text-red-400 border-red-500/25 hover:bg-red-500/20'
+                      : 'text-text-muted border-transparent hover:border-surface-300 hover:bg-surface-200 hover:text-foreground'
                   )}
                   aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                   title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
