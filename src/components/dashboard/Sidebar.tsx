@@ -446,17 +446,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-lg hover:bg-surface-100 md:hidden">
-          <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
         <div className="flex flex-col h-full">
-          <div className="px-4 h-[57px] flex items-center justify-center border-b border-surface-200">
+          <div className="px-4 h-[57px] flex items-center justify-between border-b border-surface-200">
             <Link href="/dashboard" className="flex items-center cursor-default">
               <Logo size="sm" showText={true} />
             </Link>
+            <button onClick={onClose} className="p-2 rounded-lg hover:bg-surface-100 md:hidden">
+              <svg className="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           <nav ref={navScrollRef} className="flex-1 overflow-y-auto px-3 py-4 sidebar-scroll">
